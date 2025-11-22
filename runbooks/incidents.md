@@ -184,14 +184,17 @@ Provide structured guidance for identifying, responding to, and resolving infras
 ## Tools and Resources
 
 ### Monitoring and Logs
-- Application logs location: TBD
-- Metrics dashboard: TBD
-- Alert management: TBD
+- Application logs location: TBD (e.g., `/var/log/app/`, CloudWatch, Datadog)
+- Metrics dashboard: TBD (e.g., Grafana, Railway dashboard)
+- Alert management: TBD (e.g., PagerDuty, Opsgenie)
 
 ### Contact Information
 - On-call rotation: TBD
+  - Format: `Name: Role, Phone: XXX-XXX-XXXX, Email: xxx@blackroad.com`
 - Escalation contacts: TBD
+  - Format: `Name: Role, Phone: XXX-XXX-XXXX, Email: xxx@blackroad.com`
 - External vendors: TBD
+  - Format: `Vendor Name: Service, Support: XXX-XXX-XXXX, Portal: https://...`
 
 ### External Resources
 - Platform status pages

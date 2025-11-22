@@ -116,7 +116,7 @@ For critical security patches or urgent fixes:
 
 This runbook will be expanded as infrastructure-as-code implementations are added:
 
-- Terraform/OpenTofu deployment procedures
+- Infrastructure-as-code deployment procedures (Terraform, OpenTofu, or similar)
 - Automated deployment scripts
 - Environment-specific configuration details
 - Service-specific deployment guides
