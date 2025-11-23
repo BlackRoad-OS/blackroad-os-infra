@@ -87,8 +87,30 @@ claude
 
 ### Resources
 - 📂 [**Execution Prompts**](./docs/execution-prompts/) — Complete prompts for all repos
-- 📊 [**Season Tracker**](./docs/season-tracker.md) — Track progress across repos
+- 📊 [**Season Tracker**](./docs/season-tracker.md) — Track backend progress across repos
 - 📝 [**PR Templates**](./docs/pr-templates/) — Ready-to-use PR descriptions
+
+---
+
+### Build All Websites (Consistent Patterns)
+
+Single prompt that works for ALL websites (Console, Web, Home, Brand, Docs):
+
+```bash
+cd ~/projects/blackroad-os-<website-name>
+claude
+# Paste: docs/execution-prompts/websites-all-features.md
+```
+
+**Adds to each website:**
+- Health & metadata endpoints (`/health`, `/api/info`, `/api/version`)
+- Standardized environment configuration
+- Consistent navigation with service links
+- Brand CSS variables integration
+- System status widgets
+- Complete documentation
+
+📊 [**Website Tracker**](./docs/website-tracker.md) — Track website progress
 
 ---
 
