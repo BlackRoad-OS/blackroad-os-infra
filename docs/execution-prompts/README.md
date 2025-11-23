@@ -33,6 +33,26 @@ claude
 
 Paste the contents of [console-all-seasons.md](./console-all-seasons.md)
 
+### 4. Websites (All of them)
+
+```bash
+cd ~/projects/blackroad-os-<website-name>
+claude
+```
+
+Paste the contents of [websites-all-features.md](./websites-all-features.md)
+
+This single prompt works for ALL websites:
+- `blackroad-os-prism-console` — Admin console
+- `blackroad-os-web` — Marketing site
+- `blackroad-os-home` — Landing hub
+- `blackroad-os-brand` — Brand guidelines
+- `blackroad-os-docs` — Documentation portal
+
+Claude will detect which repo it's in and apply only relevant changes.
+
+See [website-tracker.md](../website-tracker.md) for detailed website buildout tracking.
+
 ---
 
 ## What These Prompts Do
@@ -68,6 +88,18 @@ Each prompt applies ALL relevant seasons to its repo:
 - ✅ S8: React Testing Library tests, GitHub Actions
 
 **Result:** Full admin dashboard with agents, tasks, auth, and tests.
+
+### Websites ([websites-all-features.md](./websites-all-features.md))
+- ✅ Health endpoints (`/health`, `/api/health`)
+- ✅ Metadata endpoints (`/api/info`, `/api/version`)
+- ✅ Environment configuration (standardized `.env.example`)
+- ✅ Consistent navigation with service links
+- ✅ Brand CSS variables integration
+- ✅ Landing pages appropriate to each site
+- ✅ System status widgets
+- ✅ Complete README documentation
+
+**Result:** Consistent, production-ready websites with health checks, branding, and navigation across all properties.
 
 ---
 
