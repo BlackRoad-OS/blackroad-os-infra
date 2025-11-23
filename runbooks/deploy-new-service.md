@@ -16,8 +16,24 @@ Use this runbook to stand up a brand-new service on Railway while keeping DNS, e
 
 ## Step-by-Step
 1. **Create a Railway service manifest**
-   - Copy an existing file in `docs/railway-guide.md` as a template.
-   - Set `name`, `repository`, `build`, `start`, `env`, `healthcheck`, and `ports`.
+   - Use the following template as a starting point for your manifest:
+
+     ```yaml
+     name: my-service
+     repository: git@github.com:BlackRoad/my-service.git
+     build: npm run build
+     start: npm start
+     env:
+       NODE_ENV: production
+       API_KEY: ${API_KEY}
+     healthcheck:
+       path: /health
+       interval: 30s
+       timeout: 5s
+     ports:
+       - 8080
+     ```
+   - Set `name`, `repository`, `build`, `start`, `env`, `healthcheck`, and `ports` as appropriate for your service.
    - Commit the manifest under `docs/` or `railway/` (once the tree is expanded).
 
 2. **Update Terraform for the environment**
