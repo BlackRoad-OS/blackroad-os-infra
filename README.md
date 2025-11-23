@@ -1,49 +1,43 @@
 # blackroad-os-infra
 
-Infrastructure-as-code and operational runbooks for the BlackRoad OS ecosystem. This repo defines Terraform scaffolding, shared modules, and checklists so humans and agents can manage environments consistently—no direct cloud console edits.
+`blackroad-os-infra` is the infrastructure and environment coordination repo for BlackRoad OS. It defines the service registry, environment maps, Railway mappings, DNS plans, and operational runbooks so humans and agents can see what runs where and how services connect.
 
-## How Things Connect
+## Purpose
 
-```
-Code Repos (api, core, web, prism-console, agents)
-           ↓
-   Terraform Modules (dns, networking, app_service, monitoring, secrets)
-           ↓
-     Environments (dev → staging → prod)
-           ↓
-   Platforms (Railway, Cloudflare)
-```
+- Capture a single source of truth for BlackRoad OS environments (local, development, staging, production).
+- Map services to Railway projects and Cloudflare DNS without storing secrets.
+- Provide runbooks for deployments, incidents, and Season progress.
+- Keep naming, domains, and health endpoints consistent across all `blackroad-os-*` repos.
 
-## Key Folders
+## Key artifacts
 
-- `envs/` — Environment definitions (`dev`, `staging`, `prod`) that compose shared modules
-- `modules/` — Reusable Terraform modules (`networking`, `dns`, `app_service`, `monitoring`, `secrets`)
-- `runbooks/` — Deployment, incident, and maintenance checklists for humans/agents
-- `docs/` — Environment/DNS/Railway/observability guides plus legacy lane docs
+- `infra/services.yml` — Service registry with repos, base URLs, and health endpoints.
+- `infra/env/*.json` — Environment maps (domain roots, Railway project IDs, per-service base URLs).
+- `infra/railway/services.md` — Railway service mappings by environment.
+- `cloudflare/DNS_BLUEPRINT.md` — DNS plan for production, staging, and development.
+- `docs/DEPLOYMENT_RUNBOOK.md` — How to deploy safely via Railway and DNS.
+- `docs/INCIDENT_RUNBOOK.md` — Checklists for common outage scenarios.
+- `docs/SEASONS_INFRA_NOTES.md` — How infra aligns to the Season roadmap.
+- `docs/ENVIRONMENT_VARIABLES.md` — Canonical environment variable/secret names (no values).
 
-## Operating Rules
+Legacy Terraform scaffolding remains under `modules/` and `envs/`; prefer the `infra/` directory for the current single-source-of-truth documents until automation is reintroduced.
 
-- All infrastructure changes flow through this repo and pull requests.
-- Prefer environment variables for credentials (e.g., `CLOUDFLARE_API_TOKEN`) once secret storage is wired.
-- Keep dev/staging/prod configurations aligned; document intentional drift.
+## Relationship to other repos
 
-## Getting Started
+This repo documents how the sibling services are wired:
 
-1. Pick an environment under `envs/<env>` and review its README.
-2. Configure required variables (tfvars or environment variables).
-3. Run Terraform:
+- `blackroad-os-core` — domain types and primitives (library only)
+- `blackroad-os-operator` — agent runtime and jobs
+- `blackroad-os-api` — typed API gateway
+- `blackroad-os-prism-console` — operator console UI
+- `blackroad-os-web` — public-facing landing shell
+- `blackroad-os-docs` — canonical documentation site
+- `blackroad-os-home`, `blackroad-os-brand`, `blackroad-os-ideas`, `blackroad-os-demo`, `blackroad-os-research` — satellite experiences
 
-```bash
-terraform init
-terraform plan -var-file=<env>.tfvars
-terraform apply -var-file=<env>.tfvars
-```
+All work participates in the "BlackRoad OS - Master Orchestration" project; keep service registry and runbooks in sync with changes across repos.
 
-## Runbooks and Docs
+## Guardrails
 
-- Deployment playbook: `runbooks/deployments/core_services.md`
-- Incident response: `runbooks/incidents/`
-- Maintenance: `runbooks/maintenance/`
-- Guides: `docs/env-overview.md`, `docs/cloudflare-dns-blueprint.md`, `docs/railway-guide.md`, `docs/observability-and-alerts.md`
-
-> TODO(agent/human): Fill in real provider credentials, Railway automation, and monitoring integrations as the platform matures.
+- Do **not** store secrets or live tokens here.
+- Keep environment names consistent (`local`, `development`, `staging`, `production`).
+- Use the service registry and environment maps as the source for future Terraform/Pulumi generation and Cloudflare/Railway updates.

@@ -1,0 +1,47 @@
+{
+  "name": "production",
+  "domain_root": "blackroad.systems",
+  "railway_project_id": "TODO-railway-project-prod",
+  "services": {
+    "operator": {
+      "railway_service_name": "operator",
+      "base_url": "https://operator.blackroad.systems"
+    },
+    "api": {
+      "railway_service_name": "api",
+      "base_url": "https://api.blackroad.systems"
+    },
+    "prism": {
+      "railway_service_name": "prism-console",
+      "base_url": "https://prism.blackroad.systems"
+    },
+    "web": {
+      "railway_service_name": "web",
+      "base_url": "https://blackroad.systems"
+    },
+    "docs": {
+      "railway_service_name": "docs",
+      "base_url": "https://docs.blackroad.systems"
+    },
+    "home": {
+      "railway_service_name": "home",
+      "base_url": "https://home.blackroad.systems"
+    },
+    "brand": {
+      "railway_service_name": "brand",
+      "base_url": "https://brand.blackroad.systems"
+    },
+    "ideas": {
+      "railway_service_name": "ideas",
+      "base_url": "https://ideas.blackroad.systems"
+    },
+    "demo": {
+      "railway_service_name": "demo",
+      "base_url": "https://demo.blackroad.systems"
+    },
+    "research": {
+      "railway_service_name": "research",
+      "base_url": "https://research.blackroad.systems"
+    }
+  }
+}

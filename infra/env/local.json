@@ -1,0 +1,47 @@
+{
+  "name": "local",
+  "domain_root": "localhost",
+  "railway_project_id": "local-dev-shell",
+  "services": {
+    "operator": {
+      "railway_service_name": "operator",
+      "base_url": "http://localhost:5003"
+    },
+    "api": {
+      "railway_service_name": "api",
+      "base_url": "http://localhost:5002"
+    },
+    "prism": {
+      "railway_service_name": "prism-console",
+      "base_url": "http://localhost:3001"
+    },
+    "web": {
+      "railway_service_name": "web",
+      "base_url": "http://localhost:3000"
+    },
+    "docs": {
+      "railway_service_name": "docs",
+      "base_url": "http://localhost:3002"
+    },
+    "home": {
+      "railway_service_name": "home",
+      "base_url": "http://localhost:3003"
+    },
+    "brand": {
+      "railway_service_name": "brand",
+      "base_url": "http://localhost:3004"
+    },
+    "ideas": {
+      "railway_service_name": "ideas",
+      "base_url": "http://localhost:3005"
+    },
+    "demo": {
+      "railway_service_name": "demo",
+      "base_url": "http://localhost:3006"
+    },
+    "research": {
+      "railway_service_name": "research",
+      "base_url": "http://localhost:3007"
+    }
+  }
+}
