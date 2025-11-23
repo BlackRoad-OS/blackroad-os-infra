@@ -5,7 +5,7 @@ BlackRoad OS tracks architectural progress in Seasons. This file links infra mil
 ## Season 1 — Baseline
 
 - Single-service deployments validated (web/API as pioneers).
-- Manual DNS and Railway configuration, but documented in `docs/cloudflare-dns-blueprint.md` and `docs/railway-guide.md`.
+- Manual DNS and Railway configuration, but documented in `cloudflare/DNS_BLUEPRINT.md` and `infra/railway/services.md`.
 - Minimal observability with manual checks.
 
 ## Season 2 — Multi-repo cohesion (current focus)
