@@ -38,6 +38,7 @@ Additional domains (e.g., `blackroad.io`, `lucidia.earth`) can be added as exten
 
 ## Staging DNS Plan (staging.blackroad.systems)
 
+> **Note:** The following table documents DNS records for the `staging.blackroad.systems` zone. In this context, `@` refers to the apex of `staging.blackroad.systems` (i.e., `staging.blackroad.systems` itself).
 | Name        | Type  | Proxy  | Target                                   | Notes                                  |
 |-------------|-------|--------|-------------------------------------------|----------------------------------------|
 | @           | A/CNAME | Proxied | <RAILWAY_IP_OR_CNAME_FOR_STAGING_WEB>    | `blackroad-os-web` staging             |
