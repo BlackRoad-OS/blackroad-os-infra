@@ -58,7 +58,7 @@ Development mirrors staging but can be lighter-weight or short-lived. Records ca
 
 | Name        | Type  | Proxy  | Target                              | Notes                                  |
 |-------------|-------|--------|--------------------------------------|----------------------------------------|
-| @           | A/CNAME | Proxied | <RAILWAY_IP_OR_CNAME_FOR_DEV_WEB> | `blackroad-os-web` dev/root            |
+| dev         | A/CNAME | Proxied | <RAILWAY_IP_OR_CNAME_FOR_DEV_WEB> | `blackroad-os-web` dev/root            |
 | api         | CNAME | Proxied | <RAILWAY_CNAME_FOR_DEV_API>        | `blackroad-os-api` dev                 |
 | prism       | CNAME | Proxied | <RAILWAY_CNAME_FOR_DEV_PRISM>      | `blackroad-os-prism-console` dev       |
 | operator    | CNAME | Proxied | <RAILWAY_CNAME_FOR_DEV_OPERATOR>   | `blackroad-os-operator` dev            |
