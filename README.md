@@ -5,6 +5,7 @@ Infrastructure-as-code and runbooks for BlackRoad OS: DNS, Cloudflare, Railway e
 ## Contents
 
 - [**Lanes**](#lanes) — End-to-end feature patterns (UI → API → Core → DB)
+- [**Quick Start**](#quick-start) — Build all repos with execution prompts
 - [**Runbooks**](#runbooks) — Operational guides for deployments, incidents, and development
 - [**Environments**](#environments) — Railway environment configurations
 - [**DNS**](#dns) — Cloudflare DNS setup and management
@@ -30,6 +31,64 @@ A lane provides:
 - Database persistence in PostgreSQL (Prisma models)
 
 **Example:** Agent Registry v1 allows admins to create and manage Agents through Prism Console, with full CRUD operations persisted in Postgres.
+
+---
+
+## Quick Start
+
+### Build All Repos (Fastest Path to Production)
+
+Complete, copy-paste ready prompts to build out all features at once:
+
+#### 1. Core
+```bash
+cd ~/projects/blackroad-os-core
+claude
+# Paste: docs/execution-prompts/core-all-seasons.md
+```
+
+**Adds:**
+- AgentRun model (trigger runs, history)
+- Task model (CRUD operations)
+- User model (JWT auth)
+- Validation utils + error standardization
+- In-memory metrics + request IDs
+- Jest tests + GitHub Actions CI
+
+#### 2. API
+```bash
+cd ~/projects/blackroad-os-api
+claude
+# Paste: docs/execution-prompts/api-all-seasons.md
+```
+
+**Adds:**
+- Agent runs proxy
+- Tasks proxy
+- Auth proxy
+- Request ID propagation
+- Metrics proxy
+- Proxy tests with nock + CI
+
+#### 3. Console
+```bash
+cd ~/projects/blackroad-os-prism-console
+claude
+# Paste: docs/execution-prompts/console-all-seasons.md
+```
+
+**Adds:**
+- Agent runs UI (trigger + history)
+- Tasks UI (create, list, update, delete)
+- Login/register pages
+- Protected routes + auth context
+- Status dashboard with metrics
+- React Testing Library tests + CI
+
+### Resources
+- 📂 [**Execution Prompts**](./docs/execution-prompts/) — Complete prompts for all repos
+- 📊 [**Season Tracker**](./docs/season-tracker.md) — Track progress across repos
+- 📝 [**PR Templates**](./docs/pr-templates/) — Ready-to-use PR descriptions
 
 ---
 
