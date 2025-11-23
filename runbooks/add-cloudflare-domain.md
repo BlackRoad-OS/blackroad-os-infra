@@ -25,7 +25,7 @@ Use this playbook to onboard a new domain or subdomain into Cloudflare while kee
    - `operator.<domain>` → orchestration surface
    - `prism.<domain>` → console
    - `www.<domain>` → marketing/landing
-   - `*.<domain>` → wildcard catch routed to a maintenance page or default host
+   - `*.<domain>` → wildcard catch-all routed to a maintenance page or default host
 
 4. **Apply via Terraform**
    - Run `terraform plan -var-file=<env>.tfvars` to review new records.
