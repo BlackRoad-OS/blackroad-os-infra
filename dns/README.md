@@ -1,37 +1,9 @@
-# DNS Configuration
+# DNS Configuration (Legacy Placeholder)
 
-This directory contains DNS configuration and management for BlackRoad OS infrastructure.
+DNS infrastructure-as-code is now modeled in the Terraform [`modules/dns`](../modules/dns/) module and wired through environment definitions in `envs/<env>`. This directory is kept for historical reference.
 
-## Purpose
+## Where to Look
 
-Manage DNS records, zones, and configurations for all BlackRoad OS domains and services.
-
-## What Belongs Here
-
-- DNS zone configurations
-- Domain records (A, AAAA, CNAME, TXT, MX, etc.)
-- DNS provider configurations (e.g., Cloudflare)
-- DNS-related automation scripts
-- Documentation for DNS architecture and policies
-
-## Structure (Future)
-
-```
-dns/
-├── zones/           # DNS zone files
-├── records/         # Individual record configurations
-├── providers/       # Provider-specific configurations
-└── README.md        # This file
-```
-
-## Getting Started
-
-This directory is currently a placeholder. DNS infrastructure-as-code will be added in future iterations.
-
-## Best Practices
-
-- Always test DNS changes in a non-production environment first
-- Document the purpose of each DNS record
-- Use version control for all DNS configuration changes
-- Follow naming conventions for consistency
-- Keep TTL values appropriate for each record type
+- Cloudflare zone and records: `modules/dns`
+- Environment-specific records: `envs/<env>/variables.tf` or tfvars
+- Operational steps: `docs/cloudflare-dns-blueprint.md`
