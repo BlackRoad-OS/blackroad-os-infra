@@ -12,6 +12,7 @@
 ## Key artifacts
 
 - `infra/services.yml` — Service registry with repos, base URLs, and health endpoints.
+- `registry/services.json` — JSON mirror of the service registry for automation/CLI consumption.
 - `infra/env/*.json` — Environment maps (domain roots, Railway project IDs, per-service base URLs).
 - `infra/railway/services.md` — Railway service mappings by environment.
 - `cloudflare/DNS_BLUEPRINT.md` — DNS plan for production, staging, and development.
