@@ -31,14 +31,14 @@ variable "records" {
       type    = "CNAME"
       value   = "railway.dev.blackroad.systems"
       proxied = true
-      ttl     = 300
+      ttl     = 1
     },
     {
       name    = "web"
       type    = "CNAME"
       value   = "railway.dev.blackroad.systems"
       proxied = true
-      ttl     = 300
+      ttl     = 1
     }
   ]
 }

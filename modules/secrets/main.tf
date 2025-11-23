@@ -8,8 +8,3 @@ terraform {
 locals {
   secret_paths = { for name, _ in var.secrets : name => "/${var.env}/${name}" }
 }
-
-output "secret_paths" {
-  description = "Expected paths or identifiers for declared secrets"
-  value       = local.secret_paths
-}
