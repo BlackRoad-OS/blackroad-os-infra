@@ -84,11 +84,13 @@
       "properties": {
         "cpu": {
           "type": "string",
-          "description": "CPU sizing guidance (e.g., shared-1x, 1x)."
+          "enum": ["shared-1x", "1x", "2x", "4x"],
+          "description": "CPU sizing guidance. Allowed values: shared-1x, 1x, 2x, 4x."
         },
         "memory": {
           "type": "string",
-          "description": "Memory guidance (e.g., 512MB, 1GB)."
+          "enum": ["512MB", "1GB", "2GB", "4GB"],
+          "description": "Memory guidance. Allowed values: 512MB, 1GB, 2GB, 4GB."
         }
       }
     },
