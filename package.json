@@ -2,9 +2,9 @@
   "name": "blackroad-os-infra",
   "private": true,
   "scripts": {
-    "validate:dns": "NODE_OPTIONS=\"--require ts-node/register\" node scripts/validate_dns.ts",
-    "validate:railway": "NODE_OPTIONS=\"--require ts-node/register\" node scripts/validate_railway.ts",
-    "generate:sig": "NODE_OPTIONS=\"--require ts-node/register\" node scripts/generate_sig_examples.ts",
+    "validate:dns": "ts-node scripts/validate_dns.ts",
+    "validate:railway": "ts-node scripts/validate_railway.ts",
+    "generate:sig": "ts-node scripts/generate_sig_examples.ts",
     "build:types": "tsc --noEmit"
   },
   "dependencies": {
