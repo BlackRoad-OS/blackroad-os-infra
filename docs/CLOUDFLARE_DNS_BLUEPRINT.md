@@ -4,7 +4,7 @@ Use these blueprints to implement, audit, and evolve DNS for BlackRoad OS. Keep 
 
 ## Checklist for changes
 
-1. Confirm the zone blueprint exists and is valid (`node scripts/validate_dns.ts`).
+1. Confirm the zone blueprint exists and is valid (`npm run validate:dns`).
 2. Map each record to its hosting surface (Pages vs Railway vs other) and document proxy expectations.
 3. Apply or update records in Cloudflare (UI or API) to match the blueprint.
 4. Capture change context in PR description and, if applicable, deploy logs.
@@ -20,5 +20,5 @@ Use these blueprints to implement, audit, and evolve DNS for BlackRoad OS. Keep 
 ## Applying updates
 
 - Modify the YAML blueprint under `cloudflare/zones/`.
-- Run `node scripts/validate_dns.ts` to catch schema or coverage gaps.
+- Run `npm run validate:dns` to catch schema or coverage gaps.
 - Merge changes via PR; then apply in Cloudflare using API scripts or the UI while keeping `notes` aligned with the repo blueprint.
