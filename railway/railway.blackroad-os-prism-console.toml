@@ -1,0 +1,72 @@
+# Railway Service Configuration: blackroad-os-prism-console
+
+[service]
+name = "blackroad-os-prism-console"
+description = "Admin console UI for BlackRoad OS"
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npm run build"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[healthcheck]
+path = "/health"
+interval = 30
+timeout = 5
+
+[network]
+# Port is set via $PORT environment variable by Railway
+# Default: 3001
+
+# Environment-specific configuration
+# Actual values are set in Railway dashboard, not here
+
+[env]
+# Required - set in Railway dashboard
+# BR_OS_ENV = "staging" or "prod"
+# BR_OS_PRISM_VERSION = "0.1.0"
+# BR_OS_PRISM_COMMIT = "$RAILWAY_GIT_COMMIT_SHA"
+# NODE_ENV = "production"
+# NEXT_PUBLIC_ENV = "staging" or "prod"
+
+# API integration - set in Railway dashboard
+# NEXT_PUBLIC_API_URL = "https://api.blackroad.io" (or staging)
+# NEXTAUTH_URL = "https://prism.blackroad.io" (or staging)
+# NEXTAUTH_SECRET = "[SECRET - stored in Railway]"
+
+# Authentication - set in Railway dashboard
+# NEXT_PUBLIC_AUTH_ENABLED = "true"
+# JWT_SECRET = "[SECRET - stored in Railway]"
+# SESSION_MAX_AGE = "86400"
+
+# Optional - set in Railway dashboard if needed
+# NEXT_PUBLIC_SENTRY_DSN = "[Public Sentry DSN]"
+# SENTRY_DSN = "[SECRET - stored in Railway]"
+# LOG_LEVEL = "info"
+
+[resources]
+# Staging: 0.5 vCPU, 512MB
+# Production: 1 vCPU, 1GB
+# Set in Railway dashboard
+
+[scaling]
+# Staging: 1 instance
+# Production: 2+ instances for availability
+# Configure in Railway dashboard
+
+[security]
+# IMPORTANT: This is an admin interface
+# Consider IP allowlisting in Railway or Cloudflare
+# Enable rate limiting on login endpoints
+# Configure Cloudflare WAF rules for additional protection
+# Use strong NEXTAUTH_SECRET and JWT_SECRET
+
+[notes]
+# Next.js application with authentication
+# Multiple domain aliases: prism.blackroad.io and console.blackroad.io
+# Protected routes require authentication
+# Consider using Vercel as alternative platform

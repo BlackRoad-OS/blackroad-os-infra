@@ -1,0 +1,119 @@
+# Infrastructure Blueprint: blackroad-os-prism-console
+
+Admin console UI for BlackRoad OS.
+
+## Service Overview
+- **Service Name**: blackroad-os-prism-console
+- **Type**: Admin Dashboard (SPA/SSR)
+- **Language**: Next.js (React/TypeScript)
+- **Repository**: https://github.com/BlackRoad-OS/blackroad-os-prism-console
+
+## Deployment Configuration
+
+### Local Environment
+```yaml
+platform: local
+entrypoint: "npm run dev"
+port: 3001
+dependencies:
+  - blackroad-os-api (required)
+```
+
+### Staging Environment
+```yaml
+platform: railway  # or vercel
+railway_project: "blackroad-os-prism-console-staging"
+port: 3001
+domains:
+  - "prism.staging.blackroad.io"
+  - "console.staging.blackroad.io"
+healthcheck: "/health"
+auto_deploy: true
+branch: "main"
+```
+
+### Production Environment
+```yaml
+platform: railway  # or vercel
+railway_project: "blackroad-os-prism-console-prod"
+port: 3001
+domains:
+  - "prism.blackroad.io"
+  - "console.blackroad.io"
+healthcheck: "/health"
+auto_deploy: false
+branch: "main"
+```
+
+## Environment Variables
+
+### Required (All Environments)
+- `BR_OS_ENV` - Environment name: local/staging/prod
+- `BR_OS_PRISM_VERSION` - Deployed version string
+- `BR_OS_PRISM_COMMIT` - Git commit SHA
+- `NODE_ENV` - Node environment: development/production
+- `NEXT_PUBLIC_ENV` - Public environment name
+
+### API Integration
+- `NEXT_PUBLIC_API_URL` - URL to blackroad-os-api service (public)
+- `NEXTAUTH_URL` - Full URL of this console app (for auth callbacks)
+- `NEXTAUTH_SECRET` - NextAuth.js secret for session encryption (stored in provider secrets manager)
+
+### Authentication
+- `NEXT_PUBLIC_AUTH_ENABLED` - Enable authentication (default: true)
+- `JWT_SECRET` - JWT signing secret (stored in provider secrets manager)
+- `SESSION_MAX_AGE` - Session duration in seconds (default: 86400)
+
+### Optional
+- `NEXT_PUBLIC_SENTRY_DSN` - Client-side error tracking
+- `SENTRY_DSN` - Server-side error tracking (stored in provider secrets manager)
+- `LOG_LEVEL` - Logging verbosity
+
+## Resource Requirements
+
+### Local
+- CPU: Best effort
+- Memory: 512MB minimum
+- Disk: Minimal
+
+### Staging
+- CPU: 0.5 vCPU
+- Memory: 512MB
+- Disk: 1GB
+- Instances: 1
+
+### Production
+- CPU: 1 vCPU
+- Memory: 1GB
+- Disk: 2GB
+- Instances: 2+ (for availability)
+
+## Health Checks
+- Endpoint: `GET /health`
+- Expected Response: 200 OK with JSON body
+- Interval: 30s
+- Timeout: 5s
+- Unhealthy Threshold: 3
+
+## Build Configuration
+```yaml
+build_command: "npm run build"
+start_command: "npm start"
+install_command: "npm ci"
+node_version: "20.x"
+```
+
+## Security Notes
+- Authentication required for all routes except /login and /health
+- Protected behind Cloudflare with additional security rules
+- IP allowlisting recommended for production
+- Rate limiting on login endpoints
+- CSRF protection enabled
+- Content Security Policy headers configured
+
+## Notes
+- Admin-only interface, not public-facing
+- Communicates with blackroad-os-api, not core directly
+- Session management via NextAuth.js
+- Real-time updates via polling or SSE
+- Responsive design for mobile admin access

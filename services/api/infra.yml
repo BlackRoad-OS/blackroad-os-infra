@@ -1,0 +1,93 @@
+# Infrastructure Blueprint: blackroad-os-api
+
+Public API proxy service for BlackRoad OS.
+
+## Service Overview
+- **Service Name**: blackroad-os-api
+- **Type**: REST API Gateway/Proxy
+- **Language**: Node.js/TypeScript
+- **Repository**: https://github.com/BlackRoad-OS/blackroad-os-api
+
+## Deployment Configuration
+
+### Local Environment
+```yaml
+platform: local
+entrypoint: "npm run dev"
+port: 8080
+dependencies:
+  - blackroad-os-core (required)
+```
+
+### Staging Environment
+```yaml
+platform: railway
+railway_project: "blackroad-os-api-staging"
+port: 8080
+domain: "api.staging.blackroad.io"
+healthcheck: "/health"
+auto_deploy: true
+branch: "main"
+```
+
+### Production Environment
+```yaml
+platform: railway
+railway_project: "blackroad-os-api-prod"
+port: 8080
+domain: "api.blackroad.io"
+healthcheck: "/health"
+auto_deploy: false  # Manual approval required
+branch: "main"
+```
+
+## Environment Variables
+
+### Required (All Environments)
+- `BR_OS_ENV` - Environment name: local/staging/prod
+- `BR_OS_API_VERSION` - Deployed version string
+- `BR_OS_API_COMMIT` - Git commit SHA
+- `PORT` - HTTP port (default: 8080)
+- `NODE_ENV` - Node environment: development/production
+
+### Service Dependencies
+- `CORE_BASE_URL` - URL to blackroad-os-core service (stored in provider secrets manager)
+- `CORE_API_KEY` - API key for core service authentication (stored in provider secrets manager)
+
+### Optional
+- `LOG_LEVEL` - Logging verbosity: debug/info/warn/error
+- `REQUEST_TIMEOUT_MS` - Timeout for upstream requests (default: 30000)
+- `RATE_LIMIT_MAX` - Max requests per window (default: 100)
+- `RATE_LIMIT_WINDOW_MS` - Rate limit window in ms (default: 60000)
+
+## Resource Requirements
+
+### Local
+- CPU: Best effort
+- Memory: 256MB minimum
+- Disk: Minimal (logs only)
+
+### Staging
+- CPU: 0.5 vCPU
+- Memory: 512MB
+- Disk: 1GB (logs)
+- Instances: 1
+
+### Production
+- CPU: 1 vCPU
+- Memory: 1GB
+- Disk: 2GB (logs)
+- Instances: 2+ (auto-scaling)
+
+## Health Checks
+- Endpoint: `GET /health`
+- Expected Response: 200 OK with JSON body
+- Interval: 30s
+- Timeout: 5s
+- Unhealthy Threshold: 3
+
+## Notes
+- Acts as a proxy/gateway to blackroad-os-core
+- Should propagate request IDs to core service
+- Implements rate limiting and basic auth
+- No database connection needed (stateless)

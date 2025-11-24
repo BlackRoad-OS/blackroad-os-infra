@@ -3,10 +3,12 @@
   "private": true,
   "scripts": {
     "gen:sig": "ts-node scripts/gen_sig_beacon.ts",
-    "lint:infra": "bash scripts/fmt.sh"
+    "lint:infra": "bash scripts/fmt.sh",
+    "validate": "ts-node scripts/validate-infra.ts"
   },
   "dependencies": {
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "yaml": "^2.3.4"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

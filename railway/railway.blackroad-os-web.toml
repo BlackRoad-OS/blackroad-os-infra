@@ -1,0 +1,59 @@
+# Railway Service Configuration: blackroad-os-web
+
+[service]
+name = "blackroad-os-web"
+description = "Marketing and public-facing website for BlackRoad OS"
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npm run build"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[healthcheck]
+path = "/health"
+interval = 30
+timeout = 5
+
+[network]
+# Port is set via $PORT environment variable by Railway
+# Default: 3000
+
+# Environment-specific configuration
+# Actual values are set in Railway dashboard, not here
+
+[env]
+# Required - set in Railway dashboard
+# BR_OS_ENV = "staging" or "prod"
+# BR_OS_WEB_VERSION = "0.1.0"
+# BR_OS_WEB_COMMIT = "$RAILWAY_GIT_COMMIT_SHA"
+# NODE_ENV = "production"
+# NEXT_PUBLIC_ENV = "staging" or "prod"
+
+# API integration - set in Railway dashboard
+# NEXT_PUBLIC_API_URL = "https://api.blackroad.io" (or staging)
+# API_KEY = "[SECRET - stored in Railway]"
+
+# Optional - set in Railway dashboard if needed
+# NEXT_PUBLIC_ANALYTICS_ID = "[Analytics ID]"
+# NEXT_PUBLIC_SENTRY_DSN = "[Public Sentry DSN]"
+# REVALIDATE_SECONDS = "60"
+
+[resources]
+# Staging: 0.5 vCPU, 512MB
+# Production: 1 vCPU, 1GB
+# Set in Railway dashboard
+
+[scaling]
+# Staging: 1 instance
+# Production: 2+ instances for high availability
+# Configure in Railway dashboard
+
+[notes]
+# This is a Next.js application
+# Static files are built at deploy time
+# Consider using Vercel as alternative platform
+# CDN caching via Cloudflare handles most traffic
