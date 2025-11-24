@@ -1,0 +1,40 @@
+{
+  "name": "blackroad-os-web",
+  "serviceType": "web",
+  "build": {
+    "type": "nixpacks",
+    "path": "."
+  },
+  "envVars": [
+    {
+      "name": "BR_SERVICE_NAME",
+      "description": "Identifier propagated to beacons and logs for correlation."
+    },
+    {
+      "name": "BR_ENV",
+      "description": "Deployment environment (dev, stage, prod) used for routing and config selection."
+    },
+    {
+      "name": "BR_BEACON_ENDPOINT",
+      "description": "URL for publishing health beacons (operator/core will ingest)."
+    },
+    {
+      "name": "PORT",
+      "description": "Port exposed by the web server within the Railway container."
+    },
+    {
+      "name": "NEXT_PUBLIC_API_BASE_URL",
+      "description": "Client-visible API base URL for SPA calls (no secret tokens).",
+      "optional": true
+    }
+  ],
+  "healthcheck": {
+    "path": "/health",
+    "expectedStatus": 200
+  },
+  "resources": {
+    "cpu": "shared-1x",
+    "memory": "512MB"
+  },
+  "notes": "Static-first web served via Pages; Railway template covers SSR previews and fallback hosting."
+}

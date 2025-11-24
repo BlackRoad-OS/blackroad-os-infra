@@ -1,0 +1,40 @@
+{
+  "name": "blackroad-os-api",
+  "serviceType": "web",
+  "build": {
+    "type": "dockerfile",
+    "path": "Dockerfile"
+  },
+  "envVars": [
+    {
+      "name": "BR_SERVICE_NAME",
+      "description": "Identifier for API layer beacons and logging."
+    },
+    {
+      "name": "BR_ENV",
+      "description": "Deployment environment (dev/stage/prod)."
+    },
+    {
+      "name": "BR_BEACON_ENDPOINT",
+      "description": "URL for publishing API health beacons."
+    },
+    {
+      "name": "PORT",
+      "description": "Port exposed by the API server."
+    },
+    {
+      "name": "ALLOWLISTED_ORIGINS",
+      "description": "Comma-delimited list of web origins allowed for CORS.",
+      "optional": true
+    }
+  ],
+  "healthcheck": {
+    "path": "/api/health",
+    "expectedStatus": 200
+  },
+  "resources": {
+    "cpu": "1x",
+    "memory": "1GB"
+  },
+  "notes": "Public API surface backing web and console requests."
+}

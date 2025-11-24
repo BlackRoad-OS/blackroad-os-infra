@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackroad.io/schemas/cloudflare/dns.schema.json",
+  "title": "Cloudflare DNS Blueprint Schema",
+  "description": "Blueprint for Cloudflare DNS zones managed as code for BlackRoad OS services.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["zone", "records"],
+  "properties": {
+    "zone": {
+      "type": "string",
+      "description": "Root domain managed by the blueprint (e.g., blackroad.io)."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the zone purpose."
+    },
+    "core_subdomains": {
+      "type": "array",
+      "description": "Subdomains considered core for stewardship checks.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "name", "content", "ttl", "proxied"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["A", "AAAA", "CNAME", "TXT", "MX", "NS"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Relative or absolute record name. Use '@' for apex."
+          },
+          "content": {
+            "type": "string",
+            "description": "Record target (hostname or placeholder)."
+          },
+          "proxied": {
+            "type": "boolean",
+            "description": "Whether Cloudflare proxy/CDN is enabled."
+          },
+          "ttl": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Time to live in seconds."
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Priority for MX-like records when applicable."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Operational notes explaining routing decisions."
+          }
+        }
+      }
+    }
+  }
+}

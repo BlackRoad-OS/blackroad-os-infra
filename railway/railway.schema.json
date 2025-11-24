@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackroad.io/schemas/railway/railway.schema.json",
+  "title": "Railway Service Template Schema",
+  "description": "Template describing how BlackRoad OS services are bootstrapped on Railway.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "serviceType", "build", "envVars", "healthcheck", "resources"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Canonical Railway service name (blackroad-os-<service>)."
+    },
+    "serviceType": {
+      "type": "string",
+      "enum": ["web", "worker", "cron"],
+      "description": "Execution model for the service."
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "path"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["dockerfile", "nixpacks"],
+          "description": "Build strategy."
+        },
+        "path": {
+          "type": "string",
+          "description": "Path to Dockerfile or Nixpacks entry relative to repo root."
+        },
+        "args": {
+          "type": "array",
+          "description": "Optional build arguments.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "envVars": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean",
+            "description": "Marks non-blocking configuration items."
+          }
+        }
+      }
+    },
+    "healthcheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path Railway should probe for health."
+        },
+        "expectedStatus": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599,
+          "description": "HTTP status Railway should expect."
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu", "memory"],
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "description": "CPU sizing guidance (e.g., shared-1x, 1x)."
+        },
+        "memory": {
+          "type": "string",
+          "description": "Memory guidance (e.g., 512MB, 1GB)."
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Operational context for the service."
+    }
+  }
+}

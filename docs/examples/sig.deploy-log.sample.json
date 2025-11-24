@@ -1,0 +1,14 @@
+{
+  "service": "blackroad-os-api",
+  "env": "prod",
+  "git_sha": "9ac5e5f7",
+  "actor": "deploy-conductor-02",
+  "started_at": "2025-11-23T21:58:10Z",
+  "completed_at": "2025-11-23T22:02:44Z",
+  "outcome": "success",
+  "links": {
+    "pr": "https://github.com/blackroad-os/blackroad-os-api/pull/123",
+    "ci_run": "https://ci.example.com/runs/blackroad-os-api/9876",
+    "incident": "https://status.blackroad.io/incidents/2025-11-23-api"
+  }
+}

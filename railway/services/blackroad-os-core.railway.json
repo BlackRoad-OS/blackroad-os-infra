@@ -1,0 +1,41 @@
+{
+  "name": "blackroad-os-core",
+  "serviceType": "worker",
+  "build": {
+    "type": "dockerfile",
+    "path": "Dockerfile"
+  },
+  "envVars": [
+    {
+      "name": "BR_SERVICE_NAME",
+      "description": "Identifier for orchestrator events and beacons."
+    },
+    {
+      "name": "BR_ENV",
+      "description": "Environment selector used to choose downstream credentials."
+    },
+    {
+      "name": "BR_BEACON_ENDPOINT",
+      "description": "URL to post control-plane heartbeat beacons."
+    },
+    {
+      "name": "QUEUE_URL",
+      "description": "Queue/bus endpoint for orchestration jobs.",
+      "optional": true
+    },
+    {
+      "name": "DATABASE_URL",
+      "description": "Primary database connection string.",
+      "optional": true
+    }
+  ],
+  "healthcheck": {
+    "path": "/health",
+    "expectedStatus": 200
+  },
+  "resources": {
+    "cpu": "1x",
+    "memory": "1GB"
+  },
+  "notes": "Control-plane worker coordinating deploys and policy enforcement."
+}

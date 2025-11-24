@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackroad.io/schemas/sig.deploy-log.spec.json",
+  "title": "SIG Deploy Log Specification",
+  "description": "Append-only deploy log entries for BlackRoad OS services.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["service", "env", "git_sha", "actor", "started_at", "completed_at", "outcome", "links"],
+  "properties": {
+    "service": {
+      "type": "string",
+      "description": "Service name deploying (blackroad-os-<service>)."
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Deployment environment."
+    },
+    "git_sha": {
+      "type": "string",
+      "description": "Commit SHA deployed."
+    },
+    "actor": {
+      "type": "string",
+      "description": "Human or agent id initiating the deployment."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when deployment began."
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when deployment finished."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["success", "rollback", "failed"],
+      "description": "Result of the deployment."
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "References to automation artifacts.",
+      "required": ["pr", "ci_run"],
+      "properties": {
+        "pr": {
+          "type": "string",
+          "description": "Link to the pull request."
+        },
+        "ci_run": {
+          "type": "string",
+          "description": "Link to the CI run for this deployment."
+        },
+        "incident": {
+          "type": "string",
+          "description": "Link to incident document if applicable."
+        }
+      }
+    }
+  },
+  "example": {
+    "service": "blackroad-os-api",
+    "env": "prod",
+    "git_sha": "9ac5e5f7",
+    "actor": "deploy-conductor-02",
+    "started_at": "2025-11-23T21:58:10Z",
+    "completed_at": "2025-11-23T22:02:44Z",
+    "outcome": "success",
+    "links": {
+      "pr": "https://github.com/blackroad-os/blackroad-os-api/pull/123",
+      "ci_run": "https://ci.example.com/runs/blackroad-os-api/9876",
+      "incident": "https://status.blackroad.io/incidents/2025-11-23-api"
+    }
+  }
+}

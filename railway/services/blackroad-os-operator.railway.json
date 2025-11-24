@@ -1,0 +1,41 @@
+{
+  "name": "blackroad-os-operator",
+  "serviceType": "worker",
+  "build": {
+    "type": "dockerfile",
+    "path": "Dockerfile"
+  },
+  "envVars": [
+    {
+      "name": "BR_SERVICE_NAME",
+      "description": "Identifier for operator tasks and beacon publishing."
+    },
+    {
+      "name": "BR_ENV",
+      "description": "Deployment environment (dev/stage/prod)."
+    },
+    {
+      "name": "BR_BEACON_ENDPOINT",
+      "description": "URL to post automation health beacons."
+    },
+    {
+      "name": "OPS_RUNBOOK_BASE",
+      "description": "Link prefix for ops runbooks referenced in logs.",
+      "optional": true
+    },
+    {
+      "name": "GITOPS_REPO",
+      "description": "Repository URL for desired-state configs.",
+      "optional": true
+    }
+  ],
+  "healthcheck": {
+    "path": "/health",
+    "expectedStatus": 200
+  },
+  "resources": {
+    "cpu": "shared-1x",
+    "memory": "512MB"
+  },
+  "notes": "Automation runner for deploy orchestration, policy hooks, and beacon aggregation."
+}

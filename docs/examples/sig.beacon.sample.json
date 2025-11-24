@@ -1,0 +1,13 @@
+{
+  "service": "blackroad-os-web",
+  "version": "2025.11.23+githash",
+  "env": "prod",
+  "status": "healthy",
+  "url": "https://web.blackroad.io/health",
+  "last_checked_at": "2025-11-23T22:05:42Z",
+  "meta": {
+    "region": "us-central",
+    "agent_id": "infra-steward-01",
+    "ps_sha_infinity": "pssha∞:br:infra-steward-01:<HASH>"
+  }
+}
