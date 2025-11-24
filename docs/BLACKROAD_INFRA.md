@@ -173,7 +173,7 @@ Below we detail the two primary “OS” zones:
 | `brand`  | `blackroad-os-brand.pages.dev`   | Brand system – `blackroad-os-brand` |
 | `chat`   | `nextjs-ai-chatbot.pages.dev`    | Chatbot UI – `nextjs-ai-chatbot` (Vercel/Cf hybrid) |
 | `console`| `blackroad-os-prism-console.pages.dev` | Prism console – `blackroad-os-prism-console` |
-| `core`  | `blackroad-os-core.pages.dev`    | OS core UI/API – `blackroad-os-core` |
+| `core`   | `blackroad-os-core.pages.dev`    | OS core UI/API – `blackroad-os-core` |
 | `dashboard` | `blackroad-os-operator.pages.dev` | Ops/Operator dashboard – `blackroad-os-operator` |
 | `demo`   | `blackroad-os-demo.pages.dev`    | Demo/showcase – `blackroad-os-demo` |
 | `docs`   | `blackroad-os-docs.pages.dev`    | Docs – `blackroad-os-docs` |
