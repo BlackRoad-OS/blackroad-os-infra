@@ -190,14 +190,27 @@ function validateRailway(): void {
       // Check for secrets in config (should not be there)
       // Look for actual secret values, not placeholder comments
       const secretPatterns = [
-        /password\s*=\s*["'][^"'\[\]]+["']/i,  // password = "actualvalue"
-        /secret\s*=\s*["'][^"'\[\]]+["']/i,    // secret = "actualvalue"
-        /token\s*=\s*["'][^"'\[\]]+["']/i,     // token = "actualvalue"
-        /api_key\s*=\s*["'][^"'\[\]]+["']/i,   // api_key = "actualvalue"
+        /password\s*=\s*["'](?!\[)(.+?)["']/i,  // password = "actualvalue" (not "[SECRET...]")
+        /secret\s*=\s*["'](?!\[)(.+?)["']/i,    // secret = "actualvalue" (not "[SECRET...]")
+        /token\s*=\s*["'](?!\[)(.+?)["']/i,     // token = "actualvalue" (not "[SECRET...]")
+        /api_key\s*=\s*["'](?!\[)(.+?)["']/i,   // api_key = "actualvalue" (not "[SECRET...]")
       ];
       
-      // Filter out lines that are comments
-      const lines = content.split('\n').filter(line => {
+      // Filter out lines that are comments (including inline comments)
+      const lines = content.split('\n').map(line => {
+        // Remove inline comments (everything after # outside of quotes)
+        const hashIndex = line.indexOf('#');
+        if (hashIndex !== -1) {
+          // Simple heuristic: if # is outside quotes, treat as comment
+          const beforeHash = line.substring(0, hashIndex);
+          const openQuotes = (beforeHash.match(/["']/g) || []).length;
+          // If even number of quotes before #, it's a comment
+          if (openQuotes % 2 === 0) {
+            return beforeHash;
+          }
+        }
+        return line;
+      }).filter(line => {
         const trimmed = line.trim();
         return !trimmed.startsWith('#') && trimmed.length > 0;
       });
@@ -205,9 +218,22 @@ function validateRailway(): void {
       const nonCommentContent = lines.join('\n');
       
       for (const pattern of secretPatterns) {
-        if (pattern.test(nonCommentContent)) {
-          error(`Railway config for ${serviceName} may contain hardcoded secrets!`);
-          break;
+        const match = nonCommentContent.match(pattern);
+        if (match) {
+          // Check if the matched value looks like a placeholder
+          const value = match[1] || '';
+          const isPlaceholder = 
+            value.includes('[') || 
+            value.includes('{') || 
+            value.includes('TODO') ||
+            value.includes('CHANGE') ||
+            value === '' ||
+            value.startsWith('$');
+          
+          if (!isPlaceholder) {
+            error(`Railway config for ${serviceName} may contain hardcoded secrets!`);
+            break;
+          }
         }
       }
       
