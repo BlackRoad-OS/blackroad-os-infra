@@ -21,7 +21,7 @@ records:
       required. Cloudflare proxy remains on for TLS and edge caching even when origin is updated.
   - type: AAAA
     name: "@"
-    content: "::placeholder"
+    content: "2001:db8::1"
     proxied: true
     ttl: 3600
     notes: Placeholder IPv6 apex origin. Mirrors the IPv4 note above.
