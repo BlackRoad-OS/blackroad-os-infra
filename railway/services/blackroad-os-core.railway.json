@@ -29,10 +29,6 @@
       "optional": true
     }
   ],
-  "healthcheck": {
-    "path": "/health",
-    "expectedStatus": 200
-  },
   "resources": {
     "cpu": "1x",
     "memory": "1GB"
