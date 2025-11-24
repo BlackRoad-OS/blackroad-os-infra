@@ -317,7 +317,7 @@ Projects:
 
 - `blackroad-web`
   - URL: `https://blackroad-web.vercel.app/`
-  - Repo: `github.com/blackboxprogramming/blackroad-prism-console` (linked integration)
+  - Repo: `github.com/blackboxprogramming/blackroad-prism-console` (linked integration; note: this project is deployed from the prism-console repo due to monorepo structure / legacy reasons. If you expect a dedicated repo, see maintainers for details.)
 - `portals`
   - URL: `https://blackroad.io/` (Vercel project connected to apex domain)
   - Repo: `blackboxprogramming/blackroad-prism-console`
