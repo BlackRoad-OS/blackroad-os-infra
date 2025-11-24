@@ -1,0 +1,97 @@
+name: terraform-apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Workspace to apply (dev/prod)"
+        required: false
+        default: "prod"
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - 'modules/**'
+      - '.github/workflows/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'README.md'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: "true"
+      REQUESTED_ENV: ${{ github.event.inputs.environment || 'prod' }}
+      TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+      WORKING_DIR: terraform/environments/${{ github.event.inputs.environment || 'prod' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Setup tfsec
+        uses: aquasecurity/setup-tfsec@v1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install checkov
+        run: pip install checkov
+
+      - name: Install Node toolchain
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm deps
+        run: npm ci
+
+      - name: Lint and format
+        run: bash scripts/fmt.sh
+
+      - name: Terraform init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        run: |
+          BUCKET=${TF_STATE_BUCKET:-""}
+          INIT_FLAGS="-backend-config=backend.tfvars"
+          if [ -n "$BUCKET" ]; then
+            INIT_FLAGS="$INIT_FLAGS -backend-config=\"bucket=$BUCKET\""
+          fi
+          terraform init $INIT_FLAGS
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Terraform apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        working-directory: ${{ env.WORKING_DIR }}
+
+      - name: Generate signature beacon
+        run: npx ts-node scripts/gen_sig_beacon.ts
+
+      - name: TODO commit beacon to archive
+        run: echo "TODO(infra-next): commit sig.beacon.json to archive repo via GH API"

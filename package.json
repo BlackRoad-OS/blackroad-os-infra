@@ -2,7 +2,8 @@
   "name": "blackroad-os-infra",
   "private": true,
   "scripts": {
-    "deploy": "ts-node ops/deploy.ts"
+    "gen:sig": "ts-node scripts/gen_sig_beacon.ts",
+    "lint:infra": "bash scripts/fmt.sh"
   },
   "dependencies": {
     "dotenv": "^16.4.5"

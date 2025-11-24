@@ -1,44 +1,62 @@
 # blackroad-os-infra
 
-`blackroad-os-infra` is the infrastructure and environment coordination repo for BlackRoad OS. It defines the service registry, environment maps, Railway mappings, DNS plans, and operational runbooks so humans and agents can see what runs where and how services connect.
+Infra-Gen-0 scaffold for a single-source Terraform repo that can recreate BlackRoad OS DNS, Railway services, and GitHub runners on demand.
 
-## Purpose
+## Layout
 
-- Capture a single source of truth for BlackRoad OS environments (local, development, staging, production).
-- Map services to Railway projects and Cloudflare DNS without storing secrets.
-- Provide runbooks for deployments, incidents, and Season progress.
-- Keep naming, domains, and health endpoints consistent across all `blackroad-os-*` repos.
+```
+/terraform              # providers + shared modules
+  main.tf
+  variables.tf
+  outputs.tf
+  versions.tf
+  /environments
+    dev/
+      backend.tfvars
+      terraform.tfvars
+    prod/
+      backend.tfvars
+      terraform.tfvars
+/modules
+  dns-cloudflare/
+  railway-service/
+/scripts
+  fmt.sh                # terraform fmt + lint wrapper
+  gen_sig_beacon.ts     # writes public/sig.beacon.json
+/docs
+  dns-playbook.md
+  railway-playbook.md
+  runners.md
+/.github/workflows
+  plan.yml
+  apply.yml
+/public
+  sig.beacon.json
+infra.env.example
+```
 
-## Key artifacts
+Docs are plain Markdown and ready to render with [`docsify`](https://docsify.js.org/): run `npx docsify serve docs` to preview locally.
 
-- `infra/services.yml` — Service registry with repos, base URLs, and health endpoints.
-- `registry/services.json` — JSON mirror of the service registry for automation/CLI consumption.
-- `infra/env/*.json` — Environment maps (domain roots, Railway project IDs, per-service base URLs).
-- `infra/railway/services.md` — Railway service mappings by environment.
-- `cloudflare/DNS_BLUEPRINT.md` — DNS plan for production, staging, and development.
-- `docs/DEPLOYMENT_RUNBOOK.md` — How to deploy safely via Railway and DNS.
-- `docs/INCIDENT_RUNBOOK.md` — Checklists for common outage scenarios.
-- `docs/SEASONS_INFRA_NOTES.md` — How infra aligns to the Season roadmap.
-- `docs/ENVIRONMENT_VARIABLES.md` — Canonical environment variable/secret names (no values).
+## Quickstart
 
-Legacy Terraform scaffolding remains under `modules/` and `envs/`; prefer the `infra/` directory for the current single-source-of-truth documents until automation is reintroduced.
+```bash
+# one-shot dev plan
+cd terraform/environments/dev
+terraform init -backend-config=backend.tfvars
+terraform plan -var-file=terraform.tfvars
+```
 
-## Relationship to other repos
+- Export `TF_STATE_BUCKET`, `CLOUDFLARE_API_TOKEN`, `RAILWAY_TOKEN`, and `GITHUB_TOKEN` before running Terraform.
+- Terraform workspaces mirror environment names (`dev`, `prod`).
+- CI posts plan output to PRs touching `terraform/**`; applies run on merge or manual dispatch.
 
-This repo documents how the sibling services are wired:
+## Providers
 
-- `blackroad-os-core` — domain types and primitives (library only)
-- `blackroad-os-operator` — agent runtime and jobs
-- `blackroad-os-api` — typed API gateway
-- `blackroad-os-prism-console` — operator console UI
-- `blackroad-os-web` — public-facing landing shell
-- `blackroad-os-docs` — canonical documentation site
-- `blackroad-os-home`, `blackroad-os-brand`, `blackroad-os-ideas`, `blackroad-os-demo`, `blackroad-os-research` — satellite experiences
+- Cloudflare: manages DNS CNAMEs for `web`, `research`, `chat`, `brand`, `prism`, `archive`.
+- Railway: provisions container services and sets baseline environment variables (`PORT`, `RAILWAY_ENVIRONMENT`).
+- GitHub: reserved for org runners and automation integrations.
+- TLS + Null: utility providers for future modules.
 
-All work participates in the "BlackRoad OS - Master Orchestration" project; keep service registry and runbooks in sync with changes across repos.
+## Signals
 
-## Guardrails
-
-- Do **not** store secrets or live tokens here.
-- Keep environment names consistent (`local`, `development`, `staging`, `production`).
-- Use the service registry and environment maps as the source for future Terraform/Pulumi generation and Cloudflare/Railway updates.
+`gen_sig_beacon.ts` writes `public/sig.beacon.json` with the current timestamp and agent metadata; `apply.yml` refreshes it before persisting to the archive repo (TODO).
