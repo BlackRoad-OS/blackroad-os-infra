@@ -2,7 +2,7 @@
 # Unified service definitions across all zones and environments
 
 version: "1.0"
-generated: "2025-01-01"
+generated: "2025-11-25"
 generator: "Multi-Zone Authority Sweep"
 
 # Zone Definitions
@@ -290,8 +290,8 @@ deprecated:
         fqdn: dashboard.blackroad.io
         target: blackroad-os-operator.pages.dev
         provider: cloudflare-pages
-    deprecation_date: "2025-01-01"
-    removal_date: "2025-02-01"
+    deprecation_date: "2025-11-25"
+    removal_date: "2025-12-25"
     reason: "Duplicate of operator subdomain"
 
 # Service Tiers
@@ -330,6 +330,7 @@ tiers:
       - studio
 
 # Summary Statistics
+# Note: These counts require manual updates when services are added or removed
 statistics:
   total_services: 17
   production_services: 14

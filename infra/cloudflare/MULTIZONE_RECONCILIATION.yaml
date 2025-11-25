@@ -303,7 +303,7 @@ services:
 # Detected Issues
 mismatches:
   - id: prism-naming
-    description: "prism.io → blackroad-os-prism-console.pages.dev but prism.systems → blackroad-prism-console-production.up.railway.app (missing 'os')"
+    description: "prism.systems → blackroad-prism-console-production.up.railway.app is missing 'os' prefix, inconsistent with other services like blackroad-os-api-production"
     severity: medium
     recommendation: "Rename Railway service to blackroad-os-prism-console-production"
 
