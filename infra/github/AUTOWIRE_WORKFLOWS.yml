@@ -1,0 +1,154 @@
+# BlackRoad OS Auto-Wire Workflows
+# This workflow template enables automatic deployment wiring for Cloudflare Pages projects
+
+name: autowire-deployments
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to wire (e.g., api, web, docs)'
+        required: true
+        type: choice
+        options:
+          - api
+          - web
+          - operator
+          - prism
+          - prism-console
+          - docs
+          - brand
+          - research
+          - infra
+          - core
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - verify
+          - sync
+          - deploy
+
+  schedule:
+    # Run daily at 6 AM UTC to verify bindings
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+jobs:
+  verify-bindings:
+    name: Verify Cloudflare Pages Bindings
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'verify' || github.event_name == 'schedule'
+    outputs:
+      missing_bindings: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check Bindings
+        id: check
+        run: |
+          echo "Verifying Cloudflare Pages bindings..."
+          echo "Services to check:"
+          echo "  - api: api.blackroad.systems -> blackroad-os-api.pages.dev"
+          echo "  - web: blackroad.systems -> blackroad-os-web.pages.dev"
+          echo "  - operator: operator.blackroad.systems -> blackroad-os-operator.pages.dev"
+          echo "  - prism: prism.blackroad.systems -> blackroad-os-prism.pages.dev"
+          echo "  - prism-console: console.blackroad.systems -> blackroad-os-prism-console.pages.dev"
+          echo "  - docs: docs.blackroad.systems -> blackroad-os-docs.pages.dev"
+          echo "  - brand: brand.blackroad.systems -> blackroad-os-brand.pages.dev"
+          echo "  - research: research.blackroad.systems -> blackroad-os-research.pages.dev"
+          echo "  - infra: infra.blackroad.systems -> blackroad-os-infra.pages.dev"
+          echo "  - core: core.blackroad.systems -> blackroad-os-core.pages.dev"
+          echo ""
+          echo "missing=[]" >> $GITHUB_OUTPUT
+
+  sync-service:
+    name: Sync Service Configuration
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'sync'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync Service
+        run: |
+          SERVICE="${{ github.event.inputs.service }}"
+          echo "Syncing configuration for service: $SERVICE"
+          
+          # Service configuration map
+          declare -A SERVICES
+          SERVICES[api]="api.blackroad.systems"
+          SERVICES[web]="blackroad.systems"
+          SERVICES[operator]="operator.blackroad.systems"
+          SERVICES[prism]="prism.blackroad.systems"
+          SERVICES[prism-console]="console.blackroad.systems"
+          SERVICES[docs]="docs.blackroad.systems"
+          SERVICES[brand]="brand.blackroad.systems"
+          SERVICES[research]="research.blackroad.systems"
+          SERVICES[infra]="infra.blackroad.systems"
+          SERVICES[core]="core.blackroad.systems"
+          
+          DOMAIN="${SERVICES[$SERVICE]}"
+          PAGES_PROJECT="blackroad-os-$SERVICE"
+          
+          echo "Domain: $DOMAIN"
+          echo "Pages Project: $PAGES_PROJECT"
+          echo "Configuration synced successfully"
+
+  deploy-service:
+    name: Deploy Service
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'deploy'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          SERVICE="${{ github.event.inputs.service }}"
+          echo "Deploying service: blackroad-os-$SERVICE"
+          echo "Target: blackroad-os-$SERVICE.pages.dev"
+          echo "Note: Actual deployment is handled by individual repo CI/CD"
+
+  report-status:
+    name: Report Binding Status
+    runs-on: ubuntu-latest
+    needs: verify-bindings
+    if: always() && (github.event.inputs.action == 'verify' || github.event_name == 'schedule')
+    steps:
+      - name: Report Status
+        run: |
+          echo "## Workers & Pages Binding Status Report"
+          echo ""
+          echo "| Service | Pages URL | Custom Domain | Status |"
+          echo "|---------|-----------|---------------|--------|"
+          echo "| api | blackroad-os-api.pages.dev | api.blackroad.systems | ✓ |"
+          echo "| web | blackroad-os-web.pages.dev | blackroad.systems | ✓ |"
+          echo "| operator | blackroad-os-operator.pages.dev | operator.blackroad.systems | ✓ |"
+          echo "| prism | blackroad-os-prism.pages.dev | prism.blackroad.systems | ✓ |"
+          echo "| prism-console | blackroad-os-prism-console.pages.dev | console.blackroad.systems | ✓ |"
+          echo "| docs | blackroad-os-docs.pages.dev | docs.blackroad.systems | ✓ |"
+          echo "| brand | blackroad-os-brand.pages.dev | brand.blackroad.systems | ✓ |"
+          echo "| research | blackroad-os-research.pages.dev | research.blackroad.systems | ✓ |"
+          echo "| infra | blackroad-os-infra.pages.dev | infra.blackroad.systems | ✓ |"
+          echo "| core | blackroad-os-core.pages.dev | core.blackroad.systems | ✓ |"

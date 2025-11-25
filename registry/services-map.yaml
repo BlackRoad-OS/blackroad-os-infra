@@ -1,0 +1,164 @@
+# BlackRoad OS Services Registry
+# This file is the source of truth for all Workers & Pages deployments
+
+version: "1.0"
+generated_at: "2025-11-25T00:00:00Z"
+domain_root: blackroad.systems
+
+deployments:
+  prism:
+    source: blackroad-os-prism
+    url: blackroad-os-prism.pages.dev
+  operator:
+    source: blackroad-os-operator
+    url: blackroad-os-operator.pages.dev
+  core:
+    source: blackroad-os-core
+    url: blackroad-os-core.pages.dev
+  api:
+    source: blackroad-os-api
+    url: blackroad-os-api.pages.dev
+  infra:
+    source: blackroad-os-infra
+    url: blackroad-os-infra.pages.dev
+  docs:
+    source: blackroad-os-docs
+    url: blackroad-os-docs.pages.dev
+  brand:
+    source: blackroad-os-brand
+    url: blackroad-os-brand.pages.dev
+  research:
+    source: blackroad-os-research
+    url: blackroad-os-research.pages.dev
+  prism-console:
+    source: blackroad-os-prism-console
+    url: blackroad-os-prism-console.pages.dev
+  web:
+    source: blackroad-os-web
+    url: blackroad-os-web.pages.dev
+
+services:
+  api:
+    pages: blackroad-os-api.pages.dev
+    custom: api.blackroad.systems
+    repo: blackroad-os-api
+    description: Backend API service
+    type: worker
+
+  web:
+    pages: blackroad-os-web.pages.dev
+    custom: blackroad.systems
+    repo: blackroad-os-web
+    description: Main web application
+    type: pages
+
+  operator:
+    pages: blackroad-os-operator.pages.dev
+    custom: operator.blackroad.systems
+    repo: blackroad-os-operator
+    description: Operator management console
+    type: pages
+
+  prism:
+    pages: blackroad-os-prism.pages.dev
+    custom: prism.blackroad.systems
+    repo: blackroad-os-prism
+    description: Prism analytics service
+    type: pages
+
+  prism-console:
+    pages: blackroad-os-prism-console.pages.dev
+    custom: console.blackroad.systems
+    repo: blackroad-os-prism-console
+    description: Prism console interface
+    type: pages
+
+  docs:
+    pages: blackroad-os-docs.pages.dev
+    custom: docs.blackroad.systems
+    repo: blackroad-os-docs
+    description: Documentation site
+    type: pages
+
+  brand:
+    pages: blackroad-os-brand.pages.dev
+    custom: brand.blackroad.systems
+    repo: blackroad-os-brand
+    description: Brand assets and guidelines
+    type: pages
+
+  research:
+    pages: blackroad-os-research.pages.dev
+    custom: research.blackroad.systems
+    repo: blackroad-os-research
+    description: Research portal
+    type: pages
+
+  infra:
+    pages: blackroad-os-infra.pages.dev
+    custom: infra.blackroad.systems
+    repo: blackroad-os-infra
+    description: Infrastructure dashboard
+    type: pages
+
+  core:
+    pages: blackroad-os-core.pages.dev
+    custom: core.blackroad.systems
+    repo: blackroad-os-core
+    description: Core services
+    type: worker
+
+dns_bindings:
+  - subdomain: "@"
+    target: blackroad-os-web.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: api
+    target: blackroad-os-api.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: operator
+    target: blackroad-os-operator.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: prism
+    target: blackroad-os-prism.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: console
+    target: blackroad-os-prism-console.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: docs
+    target: blackroad-os-docs.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: brand
+    target: blackroad-os-brand.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: research
+    target: blackroad-os-research.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: infra
+    target: blackroad-os-infra.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: core
+    target: blackroad-os-core.pages.dev
+    type: CNAME
+    proxied: true
+
+missing_domains:
+  apps_without_custom_domain: []
+  domains_without_app: []

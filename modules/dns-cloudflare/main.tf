@@ -6,6 +6,12 @@ locals {
     "brand",
     "prism",
     "archive",
+    "api",
+    "operator",
+    "core",
+    "infra",
+    "docs",
+    "console",
   ]
 }
 

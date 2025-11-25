@@ -4,7 +4,7 @@ This runbook tracks the CNAME layout for the BlackRoad OS edge. Use the `dns-clo
 
 ## Records
 
-- `web`, `research`, `chat`, `brand`, `prism`, `archive` → CNAME to the shared origin (default `infra.blackroad-os.net`).
+- `web`, `research`, `chat`, `brand`, `prism`, `archive`, `api`, `operator`, `core`, `infra`, `docs`, `console` → CNAME to the shared origin (default `infra.blackroad-os.net`).
 - Records are proxied by default to enable Cloudflare security and caching.
 
 ## Steps
