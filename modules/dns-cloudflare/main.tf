@@ -30,6 +30,12 @@ locals {
   # Subdomains using the shared origin (for backwards compatibility)
   legacy_subdomains = [
     "archive",
+    "api",
+    "operator",
+    "core",
+    "infra",
+    "docs",
+    "console",
   ]
 }
 

@@ -31,6 +31,8 @@ Active CNAME records managed by Terraform:
 | `chat` | nextjs-ai-chatbot.pages.dev | Application |
 | `studio` | lucidia.studio.pages.dev | Application |
 | `archive` | (shared origin) | Legacy |
+- `web`, `research`, `chat`, `brand`, `prism`, `archive`, `api`, `operator`, `core`, `infra`, `docs`, `console` → CNAME to the shared origin (default `infra.blackroad-os.net`).
+- Records are proxied by default to enable Cloudflare security and caching.
 
 ## Steps
 

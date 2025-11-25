@@ -1,0 +1,138 @@
+# BlackRoad OS Services Registry
+# This file is the source of truth for all Workers & Pages deployments
+
+version: "1.0"
+generated_at: "2025-11-25T00:00:00Z"
+domain_root: blackroad.systems
+
+# Services section: Complete definition of each service including
+# deployment URLs, custom domains, repository references, and metadata
+services:
+  api:
+    repo: blackroad-os-api
+    pages_url: blackroad-os-api.pages.dev
+    custom_domain: api.blackroad.systems
+    description: Backend API service
+    type: worker
+
+  web:
+    repo: blackroad-os-web
+    pages_url: blackroad-os-web.pages.dev
+    custom_domain: blackroad.systems
+    description: Main web application
+    type: pages
+
+  operator:
+    repo: blackroad-os-operator
+    pages_url: blackroad-os-operator.pages.dev
+    custom_domain: operator.blackroad.systems
+    description: Operator management console
+    type: pages
+
+  prism:
+    repo: blackroad-os-prism
+    pages_url: blackroad-os-prism.pages.dev
+    custom_domain: prism.blackroad.systems
+    description: Prism analytics service
+    type: pages
+
+  prism-console:
+    repo: blackroad-os-prism-console
+    pages_url: blackroad-os-prism-console.pages.dev
+    custom_domain: console.blackroad.systems
+    description: Prism console interface
+    type: pages
+
+  docs:
+    repo: blackroad-os-docs
+    pages_url: blackroad-os-docs.pages.dev
+    custom_domain: docs.blackroad.systems
+    description: Documentation site
+    type: pages
+
+  brand:
+    repo: blackroad-os-brand
+    pages_url: blackroad-os-brand.pages.dev
+    custom_domain: brand.blackroad.systems
+    description: Brand assets and guidelines
+    type: pages
+
+  research:
+    repo: blackroad-os-research
+    pages_url: blackroad-os-research.pages.dev
+    custom_domain: research.blackroad.systems
+    description: Research portal
+    type: pages
+
+  infra:
+    repo: blackroad-os-infra
+    pages_url: blackroad-os-infra.pages.dev
+    custom_domain: infra.blackroad.systems
+    description: Infrastructure dashboard
+    type: pages
+
+  core:
+    repo: blackroad-os-core
+    pages_url: blackroad-os-core.pages.dev
+    custom_domain: core.blackroad.systems
+    description: Core services
+    type: worker
+
+# DNS bindings: CNAME records required in Cloudflare DNS
+# Note: The @ subdomain (root domain) maps to the 'web' service
+# The repository is 'blackroad-os-web' but deploys to 'blackroad.systems' (no subdomain)
+dns_bindings:
+  - subdomain: "@"
+    target: blackroad-os-web.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: api
+    target: blackroad-os-api.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: operator
+    target: blackroad-os-operator.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: prism
+    target: blackroad-os-prism.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: console
+    target: blackroad-os-prism-console.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: docs
+    target: blackroad-os-docs.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: brand
+    target: blackroad-os-brand.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: research
+    target: blackroad-os-research.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: infra
+    target: blackroad-os-infra.pages.dev
+    type: CNAME
+    proxied: true
+
+  - subdomain: core
+    target: blackroad-os-core.pages.dev
+    type: CNAME
+    proxied: true
+
+# Tracking section for missing or mismatched bindings
+missing_domains:
+  apps_without_custom_domain: []
+  domains_without_app: []

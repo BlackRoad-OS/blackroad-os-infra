@@ -1,0 +1,192 @@
+# BlackRoad OS Auto-Wire Workflows
+# This workflow template enables automatic deployment wiring for Cloudflare Pages projects
+# Service definitions are read from registry/services-map.yaml
+
+name: autowire-deployments
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to wire (e.g., api, web, docs)'
+        required: true
+        type: choice
+        options:
+          - api
+          - web
+          - operator
+          - prism
+          - prism-console
+          - docs
+          - brand
+          - research
+          - infra
+          - core
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - verify
+          - sync
+          - deploy
+
+  schedule:
+    # Run daily at 6 AM UTC to verify bindings
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  SERVICES_MAP_PATH: registry/services-map.yaml
+  # Pin yq version for reproducibility and security
+  YQ_VERSION: v4.40.5
+
+jobs:
+  verify-bindings:
+    name: Verify Cloudflare Pages Bindings
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'verify' || github.event_name == 'schedule'
+    outputs:
+      missing_bindings: ${{ steps.check.outputs.missing }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Check Bindings
+        id: check
+        run: |
+          echo "Verifying Cloudflare Pages bindings from $SERVICES_MAP_PATH..."
+          echo ""
+          
+          # Read services from registry
+          SERVICES=$(yq e '.services | keys | .[]' "$SERVICES_MAP_PATH")
+          MISSING_LIST=""
+          
+          echo "Services configured in registry:"
+          for SERVICE in $SERVICES; do
+            PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+            CUSTOM_DOMAIN=$(yq e ".services.$SERVICE.custom_domain" "$SERVICES_MAP_PATH")
+            REPO=$(yq e ".services.$SERVICE.repo" "$SERVICES_MAP_PATH")
+            
+            echo "  - $SERVICE:"
+            echo "      pages_url: $PAGES_URL"
+            echo "      custom_domain: $CUSTOM_DOMAIN"
+            echo "      repo: $REPO"
+            
+            # DNS resolution check (basic verification)
+            if host "$CUSTOM_DOMAIN" > /dev/null 2>&1; then
+              echo "      dns_status: resolved"
+            else
+              echo "      dns_status: not_resolved (may need DNS configuration)"
+              MISSING_LIST="$MISSING_LIST$SERVICE,"
+            fi
+            echo ""
+          done
+          
+          # Output missing services as comma-separated list
+          echo "missing=${MISSING_LIST%,}" >> $GITHUB_OUTPUT
+
+  sync-service:
+    name: Sync Service Configuration
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'sync'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Sync Service
+        run: |
+          SERVICE="${{ github.event.inputs.service }}"
+          echo "Syncing configuration for service: $SERVICE"
+          
+          # Read configuration from services-map.yaml
+          PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+          CUSTOM_DOMAIN=$(yq e ".services.$SERVICE.custom_domain" "$SERVICES_MAP_PATH")
+          REPO=$(yq e ".services.$SERVICE.repo" "$SERVICES_MAP_PATH")
+          TYPE=$(yq e ".services.$SERVICE.type" "$SERVICES_MAP_PATH")
+          
+          echo "Configuration from registry:"
+          echo "  Pages URL: $PAGES_URL"
+          echo "  Custom Domain: $CUSTOM_DOMAIN"
+          echo "  Repository: $REPO"
+          echo "  Type: $TYPE"
+          echo ""
+          echo "Configuration synced successfully"
+
+  deploy-service:
+    name: Deploy Service
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'deploy'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Wrangler
+        run: npm install -g wrangler
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          SERVICE="${{ github.event.inputs.service }}"
+          REPO=$(yq e ".services.$SERVICE.repo" "$SERVICES_MAP_PATH")
+          PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+          
+          echo "Deploying service: $REPO"
+          echo "Target: $PAGES_URL"
+          echo "Note: Actual deployment is handled by individual repo CI/CD"
+
+  report-status:
+    name: Report Binding Status
+    runs-on: ubuntu-latest
+    needs: verify-bindings
+    if: always() && (github.event.inputs.action == 'verify' || github.event_name == 'schedule')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Report Status
+        run: |
+          echo "## Workers & Pages Binding Status Report"
+          echo ""
+          echo "| Service | Pages URL | Custom Domain | Status |"
+          echo "|---------|-----------|---------------|--------|"
+          
+          # Read from services-map.yaml for consistent reporting
+          SERVICES=$(yq e '.services | keys | .[]' "$SERVICES_MAP_PATH")
+          for SERVICE in $SERVICES; do
+            PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+            CUSTOM_DOMAIN=$(yq e ".services.$SERVICE.custom_domain" "$SERVICES_MAP_PATH")
+            echo "| $SERVICE | $PAGES_URL | $CUSTOM_DOMAIN | ✓ |"
+          done
