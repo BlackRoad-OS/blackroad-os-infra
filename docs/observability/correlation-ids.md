@@ -103,14 +103,15 @@ export function correlationMiddleware(
   next: NextFunction
 ) {
   // Get or generate correlation ID (from client or upstream)
+  // Using full UUID for better uniqueness (prefix + 32 chars = 37 total)
   const correlationId = req.headers['x-correlation-id'] as string 
-    || `corr_${uuidv4().replace(/-/g, '').slice(0, 20)}`;
+    || `corr_${uuidv4().replace(/-/g, '')}`;
   
   // Get parent request ID (from upstream service)
   const parentRequestId = req.headers['x-request-id'] as string;
   
-  // Generate new request ID for this service
-  const requestId = `req_${uuidv4().replace(/-/g, '').slice(0, 20)}`;
+  // Generate new request ID for this service (full UUID)
+  const requestId = `req_${uuidv4().replace(/-/g, '')}`;
   
   // Attach to request object
   req.requestId = requestId;

@@ -112,10 +112,21 @@ terraform apply -var-file=terraform.tfvars
 # Only use if dashboard/Terraform unavailable
 # Requires CLOUDFLARE_API_TOKEN
 
-# Get zone ID
-curl -X GET "https://api.cloudflare.com/client/v4/zones?name=blackroad.io" \
+# Get zone ID (verify the zone name matches your domain)
+ZONE_RESPONSE=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=blackroad.io" \
   -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  -H "Content-Type: application/json" | jq '.result[0].id'
+  -H "Content-Type: application/json")
+
+# Verify we got exactly one zone before proceeding
+ZONE_COUNT=$(echo "$ZONE_RESPONSE" | jq '.result | length')
+if [ "$ZONE_COUNT" -ne 1 ]; then
+  echo "Warning: Expected 1 zone, found $ZONE_COUNT. Please verify manually."
+  echo "$ZONE_RESPONSE" | jq '.result[] | {id, name}'
+  exit 1
+fi
+
+ZONE_ID=$(echo "$ZONE_RESPONSE" | jq -r '.result[0].id')
+echo "Using zone ID: $ZONE_ID"
 
 # List records
 curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \

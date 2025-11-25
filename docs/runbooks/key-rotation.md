@@ -107,7 +107,8 @@ This runbook documents the process for rotating secrets and API keys across Blac
 1. **Create new database user** (in database admin panel)
    ```sql
    -- Example for PostgreSQL
-   CREATE USER new_api_user WITH PASSWORD 'new_secure_password';
+   -- Replace SECURE_PASSWORD_HERE with a strong generated password
+   CREATE USER new_api_user WITH PASSWORD 'SECURE_PASSWORD_HERE';
    GRANT CONNECT ON DATABASE blackroad TO new_api_user;
    GRANT USAGE ON SCHEMA public TO new_api_user;
    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO new_api_user;
@@ -115,7 +116,7 @@ This runbook documents the process for rotating secrets and API keys across Blac
 
 2. **Construct new connection string**
    ```
-   postgresql://new_api_user:new_password@host:5432/blackroad?sslmode=require
+   postgresql://new_api_user:SECURE_PASSWORD_HERE@host:5432/blackroad?sslmode=require
    ```
 
 3. **Update in Railway**

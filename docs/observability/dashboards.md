@@ -18,8 +18,8 @@ Links to external monitoring dashboards and tools for BlackRoad OS infrastructur
 | Environment Variables | Configuration (no secrets visible) |
 
 **Quick Links**:
-- [blackroad-os project](https://railway.app/project/blackroad-os)
-- [Deployment history](https://railway.app/project/blackroad-os/deployments)
+- [Railway Dashboard](https://railway.app/dashboard) - Replace with your actual project URL
+- [Deployment history](https://railway.app/dashboard) - Navigate to your project → Deployments
 
 ---
 
