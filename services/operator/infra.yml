@@ -1,0 +1,96 @@
+# Infrastructure Blueprint: blackroad-os-operator
+
+Background operator service for BlackRoad OS.
+
+## Service Overview
+- **Service Name**: blackroad-os-operator
+- **Type**: Background Worker/Operator
+- **Language**: Python/Go (TBD)
+- **Repository**: https://github.com/BlackRoad-OS/blackroad-os-operator
+
+## Deployment Configuration
+
+### Local Environment
+```yaml
+platform: local
+entrypoint: "python main.py" # or "go run main.go"
+port: 8082
+dependencies:
+  - blackroad-os-core (required)
+```
+
+### Staging Environment
+```yaml
+platform: railway
+railway_project: "blackroad-os-operator-staging"
+port: 8082
+domain: "operator.staging.blackroad.io"
+healthcheck: "/health"
+auto_deploy: true
+branch: "main"
+```
+
+### Production Environment
+```yaml
+platform: railway
+railway_project: "blackroad-os-operator-prod"
+port: 8082
+domain: "operator.blackroad.io"
+healthcheck: "/health"
+auto_deploy: false
+branch: "main"
+```
+
+## Environment Variables
+
+### Required (All Environments)
+- `BR_OS_ENV` - Environment name: local/staging/prod
+- `BR_OS_OPERATOR_VERSION` - Deployed version string
+- `BR_OS_OPERATOR_COMMIT` - Git commit SHA
+- `PORT` - HTTP port for health checks (default: 8082)
+
+### Service Dependencies
+- `CORE_BASE_URL` - URL to blackroad-os-core service (stored in provider secrets manager)
+- `CORE_API_KEY` - API key for core service authentication (stored in provider secrets manager)
+
+### Worker Configuration
+- `WORKER_CONCURRENCY` - Number of concurrent workers (default: 5)
+- `WORKER_INTERVAL_SECONDS` - Polling interval in seconds (default: 60)
+- `WORKER_BATCH_SIZE` - Tasks per batch (default: 10)
+
+### Optional
+- `LOG_LEVEL` - Logging verbosity: debug/info/warn/error
+- `ENABLE_METRICS` - Enable Prometheus metrics (default: true)
+- `SENTRY_DSN` - Sentry error tracking DSN (stored in provider secrets manager)
+
+## Resource Requirements
+
+### Local
+- CPU: Best effort
+- Memory: 256MB minimum
+- Disk: Minimal
+
+### Staging
+- CPU: 0.5 vCPU
+- Memory: 512MB
+- Disk: 1GB
+- Instances: 1
+
+### Production
+- CPU: 1 vCPU
+- Memory: 1GB
+- Disk: 2GB
+- Instances: 2+ (for redundancy)
+
+## Health Checks
+- Endpoint: `GET /health`
+- Expected Response: 200 OK with JSON body including worker status
+- Interval: 30s
+- Timeout: 5s
+- Unhealthy Threshold: 3
+
+## Notes
+- Runs background tasks and scheduled jobs
+- Should handle graceful shutdown
+- Implements leader election for multi-instance deployments
+- Monitors queues and processes tasks asynchronously

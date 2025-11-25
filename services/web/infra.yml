@@ -1,0 +1,101 @@
+# Infrastructure Blueprint: blackroad-os-web
+
+Marketing and public-facing website for BlackRoad OS.
+
+## Service Overview
+- **Service Name**: blackroad-os-web
+- **Type**: Static/SSR Website
+- **Language**: Next.js (React/TypeScript)
+- **Repository**: https://github.com/BlackRoad-OS/blackroad-os-web
+
+## Deployment Configuration
+
+### Local Environment
+```yaml
+platform: local
+entrypoint: "npm run dev"
+port: 3000
+dependencies: []  # Standalone service
+```
+
+### Staging Environment
+```yaml
+platform: railway  # or vercel
+railway_project: "blackroad-os-web-staging"
+port: 3000
+domain: "staging.blackroad.io"
+healthcheck: "/health"
+auto_deploy: true
+branch: "main"
+```
+
+### Production Environment
+```yaml
+platform: railway  # or vercel
+railway_project: "blackroad-os-web-prod"
+port: 3000
+domain: "blackroad.io"
+healthcheck: "/health"
+auto_deploy: false
+branch: "main"
+```
+
+## Environment Variables
+
+### Required (All Environments)
+- `BR_OS_ENV` - Environment name: local/staging/prod
+- `BR_OS_WEB_VERSION` - Deployed version string
+- `BR_OS_WEB_COMMIT` - Git commit SHA
+- `NODE_ENV` - Node environment: development/production
+- `NEXT_PUBLIC_ENV` - Public environment name for client-side code
+
+### API Integration
+- `NEXT_PUBLIC_API_URL` - URL to blackroad-os-api service (public, safe to expose)
+- `API_KEY` - Server-side API key for authenticated requests (stored in provider secrets manager)
+
+### Optional
+- `NEXT_PUBLIC_ANALYTICS_ID` - Analytics tracking ID (e.g., Google Analytics)
+- `NEXT_PUBLIC_SENTRY_DSN` - Client-side Sentry DSN for error tracking
+- `REVALIDATE_SECONDS` - ISR revalidation interval (default: 60)
+
+## Resource Requirements
+
+### Local
+- CPU: Best effort
+- Memory: 512MB minimum
+- Disk: Minimal
+
+### Staging
+- CPU: 0.5 vCPU
+- Memory: 512MB
+- Disk: 1GB
+- Instances: 1
+
+### Production
+- CPU: 1 vCPU
+- Memory: 1GB
+- Disk: 2GB
+- Instances: 2+ (for high availability)
+- CDN: Cloudflare (caching and DDoS protection)
+
+## Health Checks
+- Endpoint: `GET /health`
+- Expected Response: 200 OK with JSON body
+- Interval: 30s
+- Timeout: 5s
+- Unhealthy Threshold: 3
+
+## Build Configuration
+```yaml
+build_command: "npm run build"
+start_command: "npm start"
+install_command: "npm ci"
+node_version: "20.x"
+```
+
+## Notes
+- Static and server-rendered pages
+- Heavy use of ISR (Incremental Static Regeneration)
+- CDN-friendly with proper cache headers
+- May include status dashboard at /status route
+- Public-facing so security hardening is critical

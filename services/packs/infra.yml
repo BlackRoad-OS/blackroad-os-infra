@@ -1,0 +1,127 @@
+# Infrastructure Blueprint: blackroad-os-packs
+
+Pack system services for BlackRoad OS.
+
+## Service Overview
+- **Service Name**: blackroad-os-packs
+- **Type**: Multiple sub-services (one per pack)
+- **Language**: Varies by pack
+- **Repository**: https://github.com/BlackRoad-OS/blackroad-os-packs
+
+## Packs Overview
+
+BlackRoad OS Packs are modular, domain-specific service bundles. Each pack may be deployed independently.
+
+### Pack Types
+- `pack-education` - Educational content and learning paths
+- `pack-infra-devops` - Infrastructure and DevOps utilities
+- `pack-research` - Research and experimentation tools
+- `pack-analytics` - Analytics and metrics
+- Additional packs can be added following the template
+
+## Deployment Strategy
+
+### Per-Pack Deployment
+Each pack can be deployed as:
+1. **Standalone service** - Own Railway project, own domain
+2. **Microservice** - Part of a larger monorepo deployment
+3. **Serverless function** - For lightweight packs
+4. **Static bundle** - For frontend-only packs
+
+### Local Environment
+```yaml
+platform: local
+entrypoint: "varies by pack (npm run dev / python main.py / etc.)"
+port_range: 9000-9999  # Each pack gets unique port
+dependencies:
+  - blackroad-os-core (optional, based on pack)
+  - blackroad-os-api (optional, based on pack)
+```
+
+### Staging Environment
+```yaml
+platform: railway  # or appropriate provider per pack
+railway_project: "blackroad-os-pack-{pack-name}-staging"
+domain: "{pack-name}.staging.blackroad.io"
+healthcheck: "/health"
+auto_deploy: true
+branch: "main"
+```
+
+### Production Environment
+```yaml
+platform: railway  # or appropriate provider per pack
+railway_project: "blackroad-os-pack-{pack-name}-prod"
+domain: "{pack-name}.blackroad.io"
+healthcheck: "/health"
+auto_deploy: false
+branch: "main"
+```
+
+## Environment Variables (Common)
+
+### Required (All Packs)
+- `BR_OS_ENV` - Environment name: local/staging/prod
+- `BR_OS_PACK_NAME` - Pack identifier (e.g., "education", "infra-devops")
+- `BR_OS_PACK_VERSION` - Pack version string
+- `BR_OS_PACK_COMMIT` - Git commit SHA
+- `PORT` - HTTP port
+
+### Optional (Common)
+- `CORE_BASE_URL` - If pack needs core access (stored in provider secrets manager)
+- `API_BASE_URL` - If pack needs API access
+- `LOG_LEVEL` - Logging verbosity
+- `ENABLE_METRICS` - Enable metrics export
+
+## Pack-Specific Configurations
+
+Each pack should have its own `services/packs/{pack-name}/infra.yml` file with detailed configuration.
+
+## Resource Requirements (Default)
+
+### Local
+- CPU: Best effort
+- Memory: 256MB minimum
+- Disk: Minimal
+
+### Staging
+- CPU: 0.25-0.5 vCPU (varies by pack)
+- Memory: 256-512MB
+- Disk: 512MB-1GB
+- Instances: 1
+
+### Production
+- CPU: 0.5-1 vCPU (varies by pack)
+- Memory: 512MB-1GB
+- Disk: 1-2GB
+- Instances: 1-2 (based on load)
+
+## Health Checks
+- Endpoint: `GET /health`
+- Expected Response: 200 OK with JSON body including pack name
+- Interval: 30s
+- Timeout: 5s
+- Unhealthy Threshold: 3
+
+## Development Guidelines
+
+### Creating a New Pack
+1. Create subdirectory: `services/packs/{pack-name}/`
+2. Add `infra.yml` with pack-specific configuration
+3. Document environment variables
+4. Specify resource requirements
+5. Add to Railway configuration
+6. Update DNS blueprint
+
+### Pack Independence
+- Packs should be loosely coupled
+- Avoid direct pack-to-pack communication
+- Use events/queues for async communication
+- Share data through core service if needed
+
+## Notes
+- Packs are the extension mechanism for BlackRoad OS
+- Each pack can use different tech stacks
+- Packs can be open-sourced independently
+- Consider serverless options for infrequently used packs
+- Pack registry may be maintained in core service

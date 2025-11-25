@@ -1,0 +1,63 @@
+# Railway Service Configuration: blackroad-os-operator
+
+[service]
+name = "blackroad-os-operator"
+description = "Background operator service for BlackRoad OS"
+
+[build]
+builder = "NIXPACKS"
+# Build command varies by language
+# Python: buildCommand = "pip install -r requirements.txt"
+# Go: buildCommand = "go build -o operator"
+# Node: buildCommand = "npm ci && npm run build"
+
+[deploy]
+# Start command varies by language
+# Python: startCommand = "python main.py"
+# Go: startCommand = "./operator"
+# Node: startCommand = "npm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[healthcheck]
+path = "/health"
+interval = 30
+timeout = 5
+
+[network]
+# Port is set via $PORT environment variable by Railway
+# Default: 8082
+
+# Environment-specific configuration
+# Actual values are set in Railway dashboard, not here
+
+[env]
+# Required - set in Railway dashboard
+# BR_OS_ENV = "staging" or "prod"
+# BR_OS_OPERATOR_VERSION = "0.1.0"
+# BR_OS_OPERATOR_COMMIT = "$RAILWAY_GIT_COMMIT_SHA"
+# PORT = "$PORT"
+
+# Service dependencies - set in Railway dashboard
+# CORE_BASE_URL = "https://blackroad-os-core-{env}.railway.app"
+# CORE_API_KEY = "[SECRET - stored in Railway]"
+
+# Worker configuration - set in Railway dashboard
+# WORKER_CONCURRENCY = "5"
+# WORKER_INTERVAL_SECONDS = "60"
+# WORKER_BATCH_SIZE = "10"
+
+# Optional - set in Railway dashboard if needed
+# LOG_LEVEL = "info"
+# ENABLE_METRICS = "true"
+# SENTRY_DSN = "[SECRET - stored in Railway]"
+
+[resources]
+# Staging: 0.5 vCPU, 512MB
+# Production: 1 vCPU, 1GB
+# Set in Railway dashboard
+
+[scaling]
+# Staging: 1 instance
+# Production: 2+ instances for redundancy
+# Configure in Railway dashboard

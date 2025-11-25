@@ -1,0 +1,38 @@
+# Central environment definitions for BlackRoad OS
+# This is the single source of truth for environment names and purposes
+
+environments:
+  - id: local
+    label: "Local"
+    description: "Developer machines / local Docker"
+    priority: 1
+    notes: "Used for local development and testing"
+    
+  - id: staging
+    label: "Staging"
+    description: "Pre-production testing environment"
+    priority: 2
+    notes: "For QA and integration testing before production deployment"
+    
+  - id: prod
+    label: "Production"
+    description: "Customer-facing, must be boring and stable"
+    priority: 3
+    notes: "Live production environment - changes require extra care"
+
+# Environment-specific configuration hints
+config_hints:
+  local:
+    deployment: "docker-compose or local processes"
+    database: "Local PostgreSQL or SQLite"
+    secrets_management: "Local .env files (never committed)"
+    
+  staging:
+    deployment: "Railway or cloud provider"
+    database: "Managed PostgreSQL"
+    secrets_management: "Railway environment variables or provider secrets"
+    
+  prod:
+    deployment: "Railway or cloud provider"
+    database: "Managed PostgreSQL with backups"
+    secrets_management: "Railway environment variables or provider secrets"

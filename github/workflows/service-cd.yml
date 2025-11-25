@@ -1,0 +1,156 @@
+name: Service CD
+
+# This is a template workflow for deploying BlackRoad OS services
+# Copy to service repo and customize as needed
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  SERVICE_NAME: blackroad-os-service  # CHANGE THIS to your service name
+  NODE_VERSION: '20.x'
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+      env:
+        NODE_ENV: production
+        BR_OS_ENV: staging
+    
+    - name: Deploy to Railway (Staging)
+      run: |
+        # Install Railway CLI
+        npm i -g @railway/cli
+        
+        # Deploy to Railway
+        railway up --service ${{ env.SERVICE_NAME }}-staging
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    
+    - name: Wait for deployment
+      run: sleep 30
+    
+    - name: Health check
+      run: |
+        curl -f https://${{ env.SERVICE_NAME }}-staging.railway.app/health || exit 1
+        echo "Staging deployment healthy!"
+    
+    - name: Notify deployment
+      if: success()
+      run: echo "✅ Deployed to staging successfully!"
+      # Add Slack/Discord notification here if needed
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment: production  # Requires manual approval
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+      env:
+        NODE_ENV: production
+        BR_OS_ENV: prod
+    
+    - name: Run tests (safety check)
+      run: npm test
+    
+    - name: Deploy to Railway (Production)
+      run: |
+        # Install Railway CLI
+        npm i -g @railway/cli
+        
+        # Deploy to Railway
+        railway up --service ${{ env.SERVICE_NAME }}-prod
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    
+    - name: Wait for deployment
+      run: sleep 60
+    
+    - name: Health check
+      run: |
+        curl -f https://${{ env.SERVICE_NAME }}-prod.railway.app/health || exit 1
+        echo "Production deployment healthy!"
+    
+    - name: Create release tag
+      if: success()
+      run: |
+        VERSION=$(date +%Y%m%d-%H%M%S)
+        git tag -a "v$VERSION" -m "Production release $VERSION"
+        git push origin "v$VERSION"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Notify deployment
+      if: success()
+      run: echo "🚀 Deployed to production successfully!"
+      # Add Slack/Discord notification here if needed
+    
+    - name: Rollback on failure
+      if: failure()
+      run: |
+        echo "⚠️ Production deployment failed! Manual intervention required."
+        # Add rollback logic or notification here
+
+  post-deploy-checks:
+    name: Post-Deploy Checks
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: always() && needs.deploy-staging.result == 'success'
+    
+    steps:
+    - name: Monitor staging
+      run: |
+        echo "Monitoring staging deployment..."
+        # Add monitoring checks here
+        # - Check error rates
+        # - Check response times
+        # - Check logs for errors
+    
+    - name: Integration tests
+      run: |
+        echo "Running integration tests..."
+        # Add integration test commands here

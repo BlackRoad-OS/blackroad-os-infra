@@ -2,6 +2,125 @@
 node_modules/
 
 # IDE/Editor
+# BlackRoad OS Infrastructure .gitignore
+
+# ==========================================
+# Secrets - NEVER COMMIT
+# ==========================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.secret
+*.crt
+secrets/
+secret.*
+
+# Terraform state files (may contain secrets)
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+
+# SSH keys
+id_rsa
+id_ed25519
+*.pub
+
+# Cloud provider credentials
+.aws/
+.gcp/
+.azure/
+
+# ==========================================
+# Dependencies
+# ==========================================
+node_modules/
+jspm_packages/
+.pnp
+.pnp.js
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+ENV/
+.venv
+
+# Go
+vendor/
+
+# ==========================================
+# Build Artifacts
+# ==========================================
+dist/
+build/
+out/
+*.js.map
+*.d.ts.map
+
+# ==========================================
+# Binaries - NEVER COMMIT
+# ==========================================
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.app
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Images and media
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.ico
+*.svg
+*.webp
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.mp3
+*.wav
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Documents
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Database dumps
+*.sql
+*.sqlite
+*.db
+*.dump
+
+# ==========================================
+# IDE and Editor Files
+# ==========================================
 .vscode/
 .idea/
 *.swp
@@ -36,3 +155,56 @@ npm-debug.log*
 dist/
 build/
 *.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Logs
+# ==========================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ==========================================
+# Testing
+# ==========================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ==========================================
+# Temporary Files
+# ==========================================
+tmp/
+temp/
+*.tmp
+.cache/
+
+# ==========================================
+# OS Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# Exceptions (DO commit these)
+# ==========================================
+!public/*.json
+!docs/**/*.png
+!docs/**/*.jpg
+!.gitkeep
+
+# ==========================================
+# Notes
+# ==========================================
+# This .gitignore enforces the no-secrets, no-binaries policy
+# If you need to add an exception, document why
