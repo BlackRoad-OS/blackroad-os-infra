@@ -18,7 +18,7 @@ output "legacy_subdomains" {
 
 # Backwards compatibility
 output "subdomains" {
-  description = "All CNAME records created (combined)."
+  description = "All CNAME records created (combined). Maintains backwards compatibility by combining both specific Pages targets and legacy shared-origin subdomains for existing consumers of this module."
   value = concat(
     [for name, _ in local.cname_records : "${name}.${var.domain_root}"],
     [for name in local.legacy_subdomains : "${name}.${var.domain_root}"]
