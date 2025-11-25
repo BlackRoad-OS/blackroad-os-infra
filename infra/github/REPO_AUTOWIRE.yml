@@ -1,0 +1,436 @@
+# GitHub Repository Auto-Wiring Configuration
+#
+# System Role: Cadillac-Infra-Core 💚
+# Mission: Standardized repository configuration for all BlackRoad OS repos.
+#
+# This file defines templates and configurations for auto-wiring GitHub repositories
+# with consistent CI/CD, code ownership, and project integration.
+
+---
+
+# Repository Definitions
+repositories:
+  - name: blackroad-os-api
+    description: Core REST/GraphQL API gateway for BlackRoad OS
+    visibility: private
+    default_branch: main
+    domain: api.blackroad.systems
+    environments:
+      - prod
+      - staging
+      - dev
+    features:
+      health_endpoint: true
+      version_endpoint: true
+      lint_workflow: true
+      build_workflow: true
+      deploy_workflow: true
+      codeowners: true
+      project_auto_add: true
+
+  - name: blackroad-os-operator
+    description: Admin and operator management console
+    visibility: private
+    default_branch: main
+    domain: operator.blackroad.systems
+    environments:
+      - prod
+      - staging
+    features:
+      health_endpoint: true
+      version_endpoint: true
+      lint_workflow: true
+      build_workflow: true
+      deploy_workflow: true
+      codeowners: true
+      project_auto_add: true
+
+  - name: blackroad-os-web
+    description: Primary web application and landing page
+    visibility: private
+    default_branch: main
+    domain: blackroad.systems
+    environments:
+      - prod
+      - staging
+      - dev
+    features:
+      health_endpoint: true
+      version_endpoint: true
+      lint_workflow: true
+      build_workflow: true
+      deploy_workflow: true
+      codeowners: true
+      project_auto_add: true
+
+  - name: blackroad-os-prism-console
+    description: Prism visualization and analytics console
+    visibility: private
+    default_branch: main
+    domain: prism.blackroad.systems
+    environments:
+      - prod
+      - staging
+    features:
+      health_endpoint: true
+      version_endpoint: true
+      lint_workflow: true
+      build_workflow: true
+      deploy_workflow: true
+      codeowners: true
+      project_auto_add: true
+
+  - name: blackroad-os-docs
+    description: Documentation portal
+    visibility: public
+    default_branch: main
+    domain: docs.blackroad.systems
+    environments:
+      - prod
+    features:
+      health_endpoint: false
+      version_endpoint: false
+      lint_workflow: true
+      build_workflow: true
+      deploy_workflow: true
+      codeowners: true
+      project_auto_add: true
+
+  - name: blackroad-os-archive
+    description: Historical data and artifact storage
+    visibility: private
+    default_branch: main
+    domain: archive.blackroad.systems
+    environments:
+      - prod
+    features:
+      health_endpoint: true
+      version_endpoint: true
+      lint_workflow: true
+      build_workflow: true
+      deploy_workflow: true
+      codeowners: true
+      project_auto_add: true
+
+  - name: blackroad-os-infra
+    description: Infrastructure as Code - Terraform, CI/CD, DNS, Railway
+    visibility: private
+    default_branch: main
+    domain: null
+    environments:
+      - prod
+      - dev
+    features:
+      health_endpoint: false
+      version_endpoint: false
+      lint_workflow: true
+      build_workflow: false
+      deploy_workflow: true
+      codeowners: true
+      project_auto_add: true
+
+---
+
+# Workflow Templates
+
+workflows:
+  lint:
+    name: lint
+    filename: lint.yml
+    triggers:
+      - pull_request
+    template: |
+      name: Lint
+
+      on:
+        pull_request:
+          branches: [main, staging, dev]
+
+      permissions:
+        contents: read
+
+      jobs:
+        lint:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
+                cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run linter
+              run: npm run lint
+
+  build:
+    name: build
+    filename: build.yml
+    triggers:
+      - pull_request
+      - push
+    template: |
+      name: Build
+
+      on:
+        pull_request:
+          branches: [main, staging, dev]
+        push:
+          branches: [main, staging, dev]
+
+      permissions:
+        contents: read
+        packages: write
+
+      jobs:
+        build:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
+                cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build
+              run: npm run build
+
+            - name: Run tests
+              run: npm test
+
+            - name: Login to GHCR
+              if: github.event_name == 'push'
+              uses: docker/login-action@v3
+              with:
+                registry: ghcr.io
+                username: ${{ github.actor }}
+                password: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Build and push Docker image
+              if: github.event_name == 'push'
+              uses: docker/build-push-action@v5
+              with:
+                context: .
+                push: true
+                tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+
+  deploy:
+    name: deploy
+    filename: deploy.yml
+    triggers:
+      - push
+      - workflow_dispatch
+    template: |
+      name: Deploy
+
+      on:
+        push:
+          branches:
+            - main
+            - staging
+            - dev
+        workflow_dispatch:
+          inputs:
+            environment:
+              description: 'Target environment'
+              required: true
+              default: 'prod'
+              type: choice
+              options:
+                - prod
+                - staging
+                - dev
+
+      permissions:
+        contents: read
+        deployments: write
+
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          environment:
+            name: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+          steps:
+            - uses: actions/checkout@v4
+
+            - name: Install Railway CLI
+              run: npm install -g @railway/cli
+
+            - name: Deploy to Railway
+              run: railway up --environment ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+
+---
+
+# CODEOWNERS Template
+
+codeowners:
+  template: |
+    # BlackRoad OS Code Owners
+    # See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+    # Default owners for everything
+    * @BlackRoad-OS/core-team
+
+    # Infrastructure and CI/CD
+    .github/ @BlackRoad-OS/infra-team
+    terraform/ @BlackRoad-OS/infra-team
+    infra/ @BlackRoad-OS/infra-team
+
+    # Documentation
+    docs/ @BlackRoad-OS/docs-team
+    *.md @BlackRoad-OS/docs-team
+
+    # Security-sensitive files
+    .env* @BlackRoad-OS/security-team
+    **/secrets/ @BlackRoad-OS/security-team
+
+---
+
+# Environment Variable Template
+
+env_template:
+  common:
+    - name: PORT
+      description: Service port
+      required: true
+      default: "3000"
+    - name: NODE_ENV
+      description: Node environment
+      required: true
+      values: [development, staging, production]
+    - name: RAILWAY_ENVIRONMENT
+      description: Railway environment name
+      required: true
+      values: [dev, staging, prod]
+    - name: LOG_LEVEL
+      description: Logging verbosity
+      required: false
+      default: "info"
+      values: [debug, info, warn, error]
+
+  secrets:
+    - name: DATABASE_URL
+      description: PostgreSQL connection string
+      secret: true
+      required: true
+    - name: REDIS_URL
+      description: Redis connection string
+      secret: true
+      required: false
+    - name: JWT_SECRET
+      description: JWT signing secret
+      secret: true
+      required: true
+    - name: API_KEY
+      description: External API key
+      secret: true
+      required: false
+
+---
+
+# Health Endpoint Template
+
+health_endpoint:
+  path: /health
+  method: GET
+  response:
+    status: "ok"
+    service: "{{ service_name }}"
+    version: "{{ version }}"
+    timestamp: "{{ iso8601 }}"
+    environment: "{{ env }}"
+
+---
+
+# Version Endpoint Template
+
+version_endpoint:
+  path: /version
+  method: GET
+  response:
+    service: "{{ service_name }}"
+    version: "{{ package.version }}"
+    commit: "{{ git.sha }}"
+    branch: "{{ git.branch }}"
+    build_time: "{{ build_timestamp }}"
+
+---
+
+# Project Auto-Add Configuration
+
+project_auto_add:
+  organization: BlackRoad-OS
+  project_board: "BlackRoad OS Development"
+  auto_add_rules:
+    - event: issues.opened
+      column: Backlog
+    - event: pull_request.opened
+      column: In Progress
+    - event: pull_request.merged
+      column: Done
+    - event: issues.closed
+      column: Done
+
+---
+
+# Branch Protection Rules
+
+branch_protection:
+  main:
+    required_reviews: 1
+    dismiss_stale_reviews: true
+    require_code_owner_reviews: true
+    require_status_checks:
+      - lint
+      - build
+    require_branches_up_to_date: true
+    enforce_admins: false
+    restrict_push_access: true
+
+  staging:
+    required_reviews: 1
+    dismiss_stale_reviews: false
+    require_code_owner_reviews: false
+    require_status_checks:
+      - lint
+      - build
+    require_branches_up_to_date: false
+    enforce_admins: false
+    restrict_push_access: false
+
+  dev:
+    required_reviews: 0
+    dismiss_stale_reviews: false
+    require_code_owner_reviews: false
+    require_status_checks: []
+    require_branches_up_to_date: false
+    enforce_admins: false
+    restrict_push_access: false
+
+---
+
+# Validation Checklist
+
+validation:
+  - check: All repositories have default branch set to 'main'
+    query: repositories[*].default_branch == 'main'
+  - check: All service repos have health endpoints
+    query: repositories[?features.health_endpoint].domain != null
+  - check: All repos have CODEOWNERS configured
+    query: repositories[*].features.codeowners == true
+  - check: All repos have project auto-add enabled
+    query: repositories[*].features.project_auto_add == true
+  - check: All service repos have at least prod environment
+    query: repositories[*].environments contains 'prod'

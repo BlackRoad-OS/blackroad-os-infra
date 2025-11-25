@@ -1,0 +1,487 @@
+# BlackRoad OS Services Registry
+#
+# System Role: Cadillac-Infra-Core 💚
+# Mission: Single source of truth for all BlackRoad OS services, domains, and infrastructure.
+#
+# This registry consolidates:
+# - All managed domains (Cloudflare)
+# - All deployed services (Railway)
+# - All repository mappings (GitHub)
+# - All environment configurations
+
+---
+
+# Organization Metadata
+organization:
+  name: BlackRoad-OS
+  github_org: BlackRoad-OS
+  primary_domain: blackroad.systems
+  contact: infra@blackroad.systems
+
+---
+
+# Domain Registry (Cloudflare)
+domains:
+  # Primary Hub
+  - domain: blackroad.systems
+    role: primary
+    cloudflare_zone: true
+    services:
+      - web
+      - api
+      - operator
+      - prism
+      - docs
+      - static
+    environments:
+      - prod
+      - staging
+      - dev
+
+  # Quantum Brand Family
+  - domain: blackroadquantum.com
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+      - api
+    environments:
+      - prod
+
+  - domain: blackroadquantum.net
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+    environments:
+      - prod
+
+  - domain: blackroadquantum.info
+    role: docs
+    cloudflare_zone: true
+    services:
+      - docs
+    environments:
+      - prod
+
+  - domain: blackroadquantum.shop
+    role: commerce
+    cloudflare_zone: true
+    services: []
+    environments: []
+    status: reserved
+
+  - domain: blackroadquantum.store
+    role: commerce
+    cloudflare_zone: true
+    services: []
+    environments: []
+    status: reserved
+
+  # BlackRoad Core Domains
+  - domain: blackroadai.com
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+      - api
+    environments:
+      - prod
+
+  - domain: blackroad.io
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+      - api
+    environments:
+      - prod
+
+  - domain: blackroad.me
+    role: personal
+    cloudflare_zone: true
+    services:
+      - web
+    environments:
+      - prod
+
+  - domain: blackroad.network
+    role: infrastructure
+    cloudflare_zone: true
+    services:
+      - web
+      - api
+    environments:
+      - prod
+
+  - domain: blackroadqi.com
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+    environments:
+      - prod
+
+  - domain: blackroadinc.us
+    role: corporate
+    cloudflare_zone: true
+    services: []
+    environments: []
+    status: reserved
+
+  # Alice QI Brand
+  - domain: aliceqi.com
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+      - api
+    environments:
+      - prod
+
+  # Lucidia Brand Family
+  - domain: lucidia.earth
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+      - api
+    environments:
+      - prod
+
+  - domain: lucidiaqi.com
+    role: brand
+    cloudflare_zone: true
+    services:
+      - web
+    environments:
+      - prod
+
+  - domain: lucidia.studio
+    role: creative
+    cloudflare_zone: true
+    services:
+      - web
+    environments:
+      - prod
+
+---
+
+# Services Registry (Railway)
+services:
+  api:
+    name: blackroad-os-api
+    description: Core REST/GraphQL API gateway
+    repo: blackroad-os-api
+    image: ghcr.io/blackroad-os/blackroad-os-api:latest
+    port: 8080
+    health_endpoint: /health
+    version_endpoint: /version
+    domains:
+      prod: api.blackroad.systems
+      staging: api.staging.blackroad.systems
+      dev: api.dev.blackroad.systems
+    environments:
+      - name: prod
+        auto_deploy: true
+        branch: main
+      - name: staging
+        auto_deploy: true
+        branch: staging
+      - name: dev
+        auto_deploy: true
+        branch: dev
+    env_vars:
+      PORT: "8080"
+      NODE_ENV: "{{ environment }}"
+      RAILWAY_ENVIRONMENT: "{{ environment }}"
+      DATABASE_URL: "[SECRET - stored in Railway]"
+      REDIS_URL: "[SECRET - stored in Railway]"
+      JWT_SECRET: "[SECRET - stored in Railway]"
+
+  operator:
+    name: blackroad-os-operator
+    description: Admin and operator management console
+    repo: blackroad-os-operator
+    image: ghcr.io/blackroad-os/blackroad-os-operator:latest
+    port: 3000
+    health_endpoint: /health
+    version_endpoint: /api/version
+    domains:
+      prod: operator.blackroad.systems
+      staging: operator.staging.blackroad.systems
+    environments:
+      - name: prod
+        auto_deploy: true
+        branch: main
+      - name: staging
+        auto_deploy: true
+        branch: staging
+    env_vars:
+      PORT: "3000"
+      NODE_ENV: "{{ environment }}"
+      RAILWAY_ENVIRONMENT: "{{ environment }}"
+      API_URL: "https://api.blackroad.systems"
+      AUTH_SECRET: "[SECRET - stored in Railway]"
+
+  web:
+    name: blackroad-os-web
+    description: Primary web application and landing page
+    repo: blackroad-os-web
+    image: ghcr.io/blackroad-os/blackroad-os-web:latest
+    port: 3000
+    health_endpoint: /api/health
+    version_endpoint: /api/version
+    domains:
+      prod: blackroad.systems
+      staging: staging.blackroad.systems
+      dev: dev.blackroad.systems
+    environments:
+      - name: prod
+        auto_deploy: true
+        branch: main
+      - name: staging
+        auto_deploy: true
+        branch: staging
+      - name: dev
+        auto_deploy: true
+        branch: dev
+    env_vars:
+      PORT: "3000"
+      NODE_ENV: "{{ environment }}"
+      RAILWAY_ENVIRONMENT: "{{ environment }}"
+      NEXT_PUBLIC_API_URL: "https://api.blackroad.systems"
+
+  prism:
+    name: blackroad-os-prism-console
+    description: Prism visualization and analytics console
+    repo: blackroad-os-prism-console
+    image: ghcr.io/blackroad-os/blackroad-os-prism-console:latest
+    port: 3000
+    health_endpoint: /health
+    version_endpoint: /api/version
+    domains:
+      prod: prism.blackroad.systems
+      staging: prism.staging.blackroad.systems
+    environments:
+      - name: prod
+        auto_deploy: true
+        branch: main
+      - name: staging
+        auto_deploy: true
+        branch: staging
+    env_vars:
+      PORT: "3000"
+      NODE_ENV: "{{ environment }}"
+      RAILWAY_ENVIRONMENT: "{{ environment }}"
+      API_URL: "https://api.blackroad.systems"
+
+  docs:
+    name: blackroad-os-docs
+    description: Documentation portal
+    repo: blackroad-os-docs
+    image: ghcr.io/blackroad-os/blackroad-os-docs:latest
+    port: 3000
+    health_endpoint: /
+    version_endpoint: null
+    domains:
+      prod: docs.blackroad.systems
+    environments:
+      - name: prod
+        auto_deploy: true
+        branch: main
+    env_vars:
+      PORT: "3000"
+      NODE_ENV: production
+      RAILWAY_ENVIRONMENT: prod
+
+  archive:
+    name: blackroad-os-archive
+    description: Historical data and artifact storage
+    repo: blackroad-os-archive
+    image: ghcr.io/blackroad-os/blackroad-os-archive:latest
+    port: 8080
+    health_endpoint: /health
+    version_endpoint: /version
+    domains:
+      prod: archive.blackroad.systems
+    environments:
+      - name: prod
+        auto_deploy: true
+        branch: main
+    env_vars:
+      PORT: "8080"
+      NODE_ENV: production
+      RAILWAY_ENVIRONMENT: prod
+      STORAGE_BUCKET: "[SECRET - stored in Railway]"
+
+---
+
+# Repository Registry (GitHub)
+repositories:
+  - name: blackroad-os-api
+    service: api
+    description: Core REST/GraphQL API gateway for BlackRoad OS
+    visibility: private
+    default_branch: main
+    topics:
+      - blackroad-os
+      - api
+      - nodejs
+      - typescript
+
+  - name: blackroad-os-operator
+    service: operator
+    description: Admin and operator management console
+    visibility: private
+    default_branch: main
+    topics:
+      - blackroad-os
+      - operator
+      - admin
+      - dashboard
+
+  - name: blackroad-os-web
+    service: web
+    description: Primary web application and landing page
+    visibility: private
+    default_branch: main
+    topics:
+      - blackroad-os
+      - web
+      - nextjs
+      - react
+
+  - name: blackroad-os-prism-console
+    service: prism
+    description: Prism visualization and analytics console
+    visibility: private
+    default_branch: main
+    topics:
+      - blackroad-os
+      - prism
+      - analytics
+      - visualization
+
+  - name: blackroad-os-docs
+    service: docs
+    description: Documentation portal
+    visibility: public
+    default_branch: main
+    topics:
+      - blackroad-os
+      - documentation
+      - docsify
+
+  - name: blackroad-os-archive
+    service: archive
+    description: Historical data and artifact storage
+    visibility: private
+    default_branch: main
+    topics:
+      - blackroad-os
+      - archive
+      - storage
+
+  - name: blackroad-os-infra
+    service: null
+    description: Infrastructure as Code - Terraform, CI/CD, DNS, Railway
+    visibility: private
+    default_branch: main
+    topics:
+      - blackroad-os
+      - infrastructure
+      - terraform
+      - iac
+
+---
+
+# Environment Definitions
+environments:
+  prod:
+    name: Production
+    description: Customer-facing production environment
+    railway_env: prod
+    domain_suffix: ""
+    auto_deploy_branch: main
+    approval_required: true
+
+  staging:
+    name: Staging
+    description: Pre-production testing environment
+    railway_env: staging
+    domain_suffix: staging
+    auto_deploy_branch: staging
+    approval_required: false
+
+  dev:
+    name: Development
+    description: Development and integration testing
+    railway_env: dev
+    domain_suffix: dev
+    auto_deploy_branch: dev
+    approval_required: false
+
+---
+
+# Validation Rules
+validation:
+  rules:
+    - name: No missing DNS entries
+      description: All service domains must have corresponding DNS records
+      check: |
+        for each service in services:
+          for each env in service.environments:
+            assert dns_record_exists(service.domains[env.name])
+
+    - name: All repos mapped to domain
+      description: Service repositories must have associated domains
+      check: |
+        for each repo in repositories:
+          if repo.service != null:
+            assert services[repo.service].domains.prod != null
+
+    - name: All environments have deployment target
+      description: Each environment must have Railway deployment configured
+      check: |
+        for each service in services:
+          for each env in service.environments:
+            assert railway_service_exists(service.name, env.name)
+
+    - name: All microservices have health endpoints
+      description: Services must expose health check endpoints
+      check: |
+        for each service in services:
+          if service.name != 'blackroad-os-docs':
+            assert service.health_endpoint != null
+
+    - name: Project auto-add covers all repos
+      description: All repositories should be auto-added to project board
+      check: |
+        for each repo in repositories:
+          assert project_auto_add_enabled(repo.name)
+
+---
+
+# Architecture Summary
+architecture:
+  edge: Cloudflare
+  compute: Railway
+  source: GitHub
+  registry: GitHub Container Registry (ghcr.io)
+  secrets: Railway Environment Variables
+  state: S3 (Terraform Backend)
+
+  flow: |
+    Developer → GitHub PR → CI (lint/build/test) → Merge
+    Merge → GitHub Actions → Docker Build → GHCR Push
+    GHCR Push → Railway Auto-Deploy → Service Update
+    Cloudflare DNS → Railway Service → User Response
+
+---
+
+# Last Updated
+metadata:
+  version: "1.0.0"
+  last_updated: "auto-generated"
+  generator: "Cadillac-Infra-Core"
