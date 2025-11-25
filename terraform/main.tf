@@ -29,19 +29,9 @@ module "dns" {
   origin      = local.origin_host
 }
 
-module "railway_service" {
-  source               = "../modules/railway-service"
-  project_id           = var.railway_project_id
-  service_name         = "blackroad-web"
-  environment          = local.environment
-  port                 = 8080
-  image                = "ghcr.io/${var.gh_org}/blackroad-os-web:latest"
-  auto_deploy          = true
-  environment_overrides = {
-    RAILWAY_ENVIRONMENT = local.environment
-    PORT                = 8080
-  }
-}
+# NOTE: This root main.tf is a reference example.
+# Use terraform/environments/dev or terraform/environments/prod for actual deployments.
+# Service definitions are in each environment's services.tf file.
 
 # TODO(infra-next): Add VPC peering and shared networking fabric.
 # TODO(infra-next): Manage managed Postgres with automated migrations.

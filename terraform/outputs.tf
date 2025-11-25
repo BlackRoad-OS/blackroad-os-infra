@@ -12,3 +12,8 @@ output "dns_records" {
   description = "Subdomains created for the environment."
   value       = module.dns.subdomains
 }
+
+# NOTE: The root terraform/ directory is a reference template.
+# For actual deployments with Railway services, use:
+#   terraform/environments/dev/
+#   terraform/environments/prod/
