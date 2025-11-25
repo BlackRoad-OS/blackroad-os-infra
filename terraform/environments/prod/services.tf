@@ -1,4 +1,4 @@
-# Railway service definitions for the dev environment.
+# Railway service definitions for the prod environment.
 # Each service corresponds to a BlackRoad OS application.
 #
 # IMPORTANT: Before deploying, ensure:
@@ -17,6 +17,8 @@ locals {
 
   # Service definitions for all BlackRoad OS services
   # Each service specifies: name, port, image, and any additional env vars
+  # NOTE: Port is the internal container port. Multiple services can use the same
+  # port (e.g., 3000) because each runs in its own isolated container on Railway.
   services = {
     # API Gateway - Routes requests to backend services
     api-gateway = {

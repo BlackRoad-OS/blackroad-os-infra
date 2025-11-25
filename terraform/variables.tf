@@ -12,3 +12,9 @@ variable "gh_org" {
   description = "GitHub organization that owns the repositories and runners."
   type        = string
 }
+
+variable "auto_deploy_enabled" {
+  description = "Whether Railway services should auto-deploy on git push. Disable for manual deployments."
+  type        = bool
+  default     = false
+}
