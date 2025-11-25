@@ -2,66 +2,22 @@
 
 This document maps Cloudflare Workers & Pages deployments to their custom domains and source repositories.
 
+> **Source of Truth**: For the authoritative service definitions, see [`/registry/services-map.yaml`](/registry/services-map.yaml).
+
 ## Deployments
 
 | Service          | Source Repository           | Pages URL                             | Custom Domain                  |
 |------------------|----------------------------|---------------------------------------|--------------------------------|
-| prism            | blackroad-os-prism          | blackroad-os-prism.pages.dev          | prism.blackroad.systems        |
-| operator         | blackroad-os-operator       | blackroad-os-operator.pages.dev       | operator.blackroad.systems     |
-| core             | blackroad-os-core           | blackroad-os-core.pages.dev           | core.blackroad.systems         |
 | api              | blackroad-os-api            | blackroad-os-api.pages.dev            | api.blackroad.systems          |
-| infra            | blackroad-os-infra          | blackroad-os-infra.pages.dev          | infra.blackroad.systems        |
+| web              | blackroad-os-web            | blackroad-os-web.pages.dev            | blackroad.systems              |
+| operator         | blackroad-os-operator       | blackroad-os-operator.pages.dev       | operator.blackroad.systems     |
+| prism            | blackroad-os-prism          | blackroad-os-prism.pages.dev          | prism.blackroad.systems        |
+| prism-console    | blackroad-os-prism-console  | blackroad-os-prism-console.pages.dev  | console.blackroad.systems      |
 | docs             | blackroad-os-docs           | blackroad-os-docs.pages.dev           | docs.blackroad.systems         |
 | brand            | blackroad-os-brand          | blackroad-os-brand.pages.dev          | brand.blackroad.systems        |
 | research         | blackroad-os-research       | blackroad-os-research.pages.dev       | research.blackroad.systems     |
-| prism-console    | blackroad-os-prism-console  | blackroad-os-prism-console.pages.dev  | console.blackroad.systems      |
-| web              | blackroad-os-web            | blackroad-os-web.pages.dev            | blackroad.systems              |
-
-## Services Map
-
-```yaml
-services:
-  api:
-    pages: blackroad-os-api.pages.dev
-    custom: api.blackroad.systems
-    repo: blackroad-os-api
-  web:
-    pages: blackroad-os-web.pages.dev
-    custom: blackroad.systems
-    repo: blackroad-os-web
-  operator:
-    pages: blackroad-os-operator.pages.dev
-    custom: operator.blackroad.systems
-    repo: blackroad-os-operator
-  prism:
-    pages: blackroad-os-prism.pages.dev
-    custom: prism.blackroad.systems
-    repo: blackroad-os-prism
-  prism-console:
-    pages: blackroad-os-prism-console.pages.dev
-    custom: console.blackroad.systems
-    repo: blackroad-os-prism-console
-  docs:
-    pages: blackroad-os-docs.pages.dev
-    custom: docs.blackroad.systems
-    repo: blackroad-os-docs
-  brand:
-    pages: blackroad-os-brand.pages.dev
-    custom: brand.blackroad.systems
-    repo: blackroad-os-brand
-  research:
-    pages: blackroad-os-research.pages.dev
-    custom: research.blackroad.systems
-    repo: blackroad-os-research
-  infra:
-    pages: blackroad-os-infra.pages.dev
-    custom: infra.blackroad.systems
-    repo: blackroad-os-infra
-  core:
-    pages: blackroad-os-core.pages.dev
-    custom: core.blackroad.systems
-    repo: blackroad-os-core
-```
+| infra            | blackroad-os-infra          | blackroad-os-infra.pages.dev          | infra.blackroad.systems        |
+| core             | blackroad-os-core           | blackroad-os-core.pages.dev           | core.blackroad.systems         |
 
 ## DNS Configuration
 

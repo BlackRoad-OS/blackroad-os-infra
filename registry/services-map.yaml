@@ -5,109 +5,80 @@ version: "1.0"
 generated_at: "2025-11-25T00:00:00Z"
 domain_root: blackroad.systems
 
-deployments:
-  prism:
-    source: blackroad-os-prism
-    url: blackroad-os-prism.pages.dev
-  operator:
-    source: blackroad-os-operator
-    url: blackroad-os-operator.pages.dev
-  core:
-    source: blackroad-os-core
-    url: blackroad-os-core.pages.dev
-  api:
-    source: blackroad-os-api
-    url: blackroad-os-api.pages.dev
-  infra:
-    source: blackroad-os-infra
-    url: blackroad-os-infra.pages.dev
-  docs:
-    source: blackroad-os-docs
-    url: blackroad-os-docs.pages.dev
-  brand:
-    source: blackroad-os-brand
-    url: blackroad-os-brand.pages.dev
-  research:
-    source: blackroad-os-research
-    url: blackroad-os-research.pages.dev
-  prism-console:
-    source: blackroad-os-prism-console
-    url: blackroad-os-prism-console.pages.dev
-  web:
-    source: blackroad-os-web
-    url: blackroad-os-web.pages.dev
-
+# Services section: Complete definition of each service including
+# deployment URLs, custom domains, repository references, and metadata
 services:
   api:
-    pages: blackroad-os-api.pages.dev
-    custom: api.blackroad.systems
     repo: blackroad-os-api
+    pages_url: blackroad-os-api.pages.dev
+    custom_domain: api.blackroad.systems
     description: Backend API service
     type: worker
 
   web:
-    pages: blackroad-os-web.pages.dev
-    custom: blackroad.systems
     repo: blackroad-os-web
+    pages_url: blackroad-os-web.pages.dev
+    custom_domain: blackroad.systems
     description: Main web application
     type: pages
 
   operator:
-    pages: blackroad-os-operator.pages.dev
-    custom: operator.blackroad.systems
     repo: blackroad-os-operator
+    pages_url: blackroad-os-operator.pages.dev
+    custom_domain: operator.blackroad.systems
     description: Operator management console
     type: pages
 
   prism:
-    pages: blackroad-os-prism.pages.dev
-    custom: prism.blackroad.systems
     repo: blackroad-os-prism
+    pages_url: blackroad-os-prism.pages.dev
+    custom_domain: prism.blackroad.systems
     description: Prism analytics service
     type: pages
 
   prism-console:
-    pages: blackroad-os-prism-console.pages.dev
-    custom: console.blackroad.systems
     repo: blackroad-os-prism-console
+    pages_url: blackroad-os-prism-console.pages.dev
+    custom_domain: console.blackroad.systems
     description: Prism console interface
     type: pages
 
   docs:
-    pages: blackroad-os-docs.pages.dev
-    custom: docs.blackroad.systems
     repo: blackroad-os-docs
+    pages_url: blackroad-os-docs.pages.dev
+    custom_domain: docs.blackroad.systems
     description: Documentation site
     type: pages
 
   brand:
-    pages: blackroad-os-brand.pages.dev
-    custom: brand.blackroad.systems
     repo: blackroad-os-brand
+    pages_url: blackroad-os-brand.pages.dev
+    custom_domain: brand.blackroad.systems
     description: Brand assets and guidelines
     type: pages
 
   research:
-    pages: blackroad-os-research.pages.dev
-    custom: research.blackroad.systems
     repo: blackroad-os-research
+    pages_url: blackroad-os-research.pages.dev
+    custom_domain: research.blackroad.systems
     description: Research portal
     type: pages
 
   infra:
-    pages: blackroad-os-infra.pages.dev
-    custom: infra.blackroad.systems
     repo: blackroad-os-infra
+    pages_url: blackroad-os-infra.pages.dev
+    custom_domain: infra.blackroad.systems
     description: Infrastructure dashboard
     type: pages
 
   core:
-    pages: blackroad-os-core.pages.dev
-    custom: core.blackroad.systems
     repo: blackroad-os-core
+    pages_url: blackroad-os-core.pages.dev
+    custom_domain: core.blackroad.systems
     description: Core services
     type: worker
 
+# DNS bindings: CNAME records required in Cloudflare DNS
 dns_bindings:
   - subdomain: "@"
     target: blackroad-os-web.pages.dev
@@ -159,6 +130,7 @@ dns_bindings:
     type: CNAME
     proxied: true
 
+# Tracking section for missing or mismatched bindings
 missing_domains:
   apps_without_custom_domain: []
   domains_without_app: []

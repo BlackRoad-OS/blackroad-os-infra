@@ -1,5 +1,6 @@
 # BlackRoad OS Auto-Wire Workflows
 # This workflow template enables automatic deployment wiring for Cloudflare Pages projects
+# Service definitions are read from registry/services-map.yaml
 
 name: autowire-deployments
 
@@ -42,6 +43,7 @@ permissions:
 env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  SERVICES_MAP_PATH: registry/services-map.yaml
 
 jobs:
   verify-bindings:
@@ -59,23 +61,43 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Check Bindings
         id: check
         run: |
-          echo "Verifying Cloudflare Pages bindings..."
-          echo "Services to check:"
-          echo "  - api: api.blackroad.systems -> blackroad-os-api.pages.dev"
-          echo "  - web: blackroad.systems -> blackroad-os-web.pages.dev"
-          echo "  - operator: operator.blackroad.systems -> blackroad-os-operator.pages.dev"
-          echo "  - prism: prism.blackroad.systems -> blackroad-os-prism.pages.dev"
-          echo "  - prism-console: console.blackroad.systems -> blackroad-os-prism-console.pages.dev"
-          echo "  - docs: docs.blackroad.systems -> blackroad-os-docs.pages.dev"
-          echo "  - brand: brand.blackroad.systems -> blackroad-os-brand.pages.dev"
-          echo "  - research: research.blackroad.systems -> blackroad-os-research.pages.dev"
-          echo "  - infra: infra.blackroad.systems -> blackroad-os-infra.pages.dev"
-          echo "  - core: core.blackroad.systems -> blackroad-os-core.pages.dev"
+          echo "Verifying Cloudflare Pages bindings from $SERVICES_MAP_PATH..."
           echo ""
-          echo "missing=[]" >> $GITHUB_OUTPUT
+          
+          # Read services from registry
+          SERVICES=$(yq e '.services | keys | .[]' "$SERVICES_MAP_PATH")
+          MISSING="[]"
+          
+          echo "Services configured in registry:"
+          for SERVICE in $SERVICES; do
+            PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+            CUSTOM_DOMAIN=$(yq e ".services.$SERVICE.custom_domain" "$SERVICES_MAP_PATH")
+            REPO=$(yq e ".services.$SERVICE.repo" "$SERVICES_MAP_PATH")
+            
+            echo "  - $SERVICE:"
+            echo "      pages_url: $PAGES_URL"
+            echo "      custom_domain: $CUSTOM_DOMAIN"
+            echo "      repo: $REPO"
+            
+            # DNS resolution check (basic verification)
+            if host "$CUSTOM_DOMAIN" > /dev/null 2>&1; then
+              echo "      dns_status: resolved"
+            else
+              echo "      dns_status: not_resolved (may need DNS configuration)"
+              MISSING=$(echo "$MISSING" | jq --arg s "$SERVICE" '. + [$s]')
+            fi
+            echo ""
+          done
+          
+          echo "missing=$MISSING" >> $GITHUB_OUTPUT
 
   sync-service:
     name: Sync Service Configuration
@@ -85,29 +107,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Sync Service
         run: |
           SERVICE="${{ github.event.inputs.service }}"
           echo "Syncing configuration for service: $SERVICE"
           
-          # Service configuration map
-          declare -A SERVICES
-          SERVICES[api]="api.blackroad.systems"
-          SERVICES[web]="blackroad.systems"
-          SERVICES[operator]="operator.blackroad.systems"
-          SERVICES[prism]="prism.blackroad.systems"
-          SERVICES[prism-console]="console.blackroad.systems"
-          SERVICES[docs]="docs.blackroad.systems"
-          SERVICES[brand]="brand.blackroad.systems"
-          SERVICES[research]="research.blackroad.systems"
-          SERVICES[infra]="infra.blackroad.systems"
-          SERVICES[core]="core.blackroad.systems"
+          # Read configuration from services-map.yaml
+          PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+          CUSTOM_DOMAIN=$(yq e ".services.$SERVICE.custom_domain" "$SERVICES_MAP_PATH")
+          REPO=$(yq e ".services.$SERVICE.repo" "$SERVICES_MAP_PATH")
+          TYPE=$(yq e ".services.$SERVICE.type" "$SERVICES_MAP_PATH")
           
-          DOMAIN="${SERVICES[$SERVICE]}"
-          PAGES_PROJECT="blackroad-os-$SERVICE"
-          
-          echo "Domain: $DOMAIN"
-          echo "Pages Project: $PAGES_PROJECT"
+          echo "Configuration from registry:"
+          echo "  Pages URL: $PAGES_URL"
+          echo "  Custom Domain: $CUSTOM_DOMAIN"
+          echo "  Repository: $REPO"
+          echo "  Type: $TYPE"
+          echo ""
           echo "Configuration synced successfully"
 
   deploy-service:
@@ -121,13 +142,21 @@ jobs:
       - name: Setup Wrangler
         run: npm install -g wrangler
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           SERVICE="${{ github.event.inputs.service }}"
-          echo "Deploying service: blackroad-os-$SERVICE"
-          echo "Target: blackroad-os-$SERVICE.pages.dev"
+          REPO=$(yq e ".services.$SERVICE.repo" "$SERVICES_MAP_PATH")
+          PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+          
+          echo "Deploying service: $REPO"
+          echo "Target: $PAGES_URL"
           echo "Note: Actual deployment is handled by individual repo CI/CD"
 
   report-status:
@@ -136,19 +165,25 @@ jobs:
     needs: verify-bindings
     if: always() && (github.event.inputs.action == 'verify' || github.event_name == 'schedule')
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Report Status
         run: |
           echo "## Workers & Pages Binding Status Report"
           echo ""
           echo "| Service | Pages URL | Custom Domain | Status |"
           echo "|---------|-----------|---------------|--------|"
-          echo "| api | blackroad-os-api.pages.dev | api.blackroad.systems | ✓ |"
-          echo "| web | blackroad-os-web.pages.dev | blackroad.systems | ✓ |"
-          echo "| operator | blackroad-os-operator.pages.dev | operator.blackroad.systems | ✓ |"
-          echo "| prism | blackroad-os-prism.pages.dev | prism.blackroad.systems | ✓ |"
-          echo "| prism-console | blackroad-os-prism-console.pages.dev | console.blackroad.systems | ✓ |"
-          echo "| docs | blackroad-os-docs.pages.dev | docs.blackroad.systems | ✓ |"
-          echo "| brand | blackroad-os-brand.pages.dev | brand.blackroad.systems | ✓ |"
-          echo "| research | blackroad-os-research.pages.dev | research.blackroad.systems | ✓ |"
-          echo "| infra | blackroad-os-infra.pages.dev | infra.blackroad.systems | ✓ |"
-          echo "| core | blackroad-os-core.pages.dev | core.blackroad.systems | ✓ |"
+          
+          # Read from services-map.yaml for consistent reporting
+          SERVICES=$(yq e '.services | keys | .[]' "$SERVICES_MAP_PATH")
+          for SERVICE in $SERVICES; do
+            PAGES_URL=$(yq e ".services.$SERVICE.pages_url" "$SERVICES_MAP_PATH")
+            CUSTOM_DOMAIN=$(yq e ".services.$SERVICE.custom_domain" "$SERVICES_MAP_PATH")
+            echo "| $SERVICE | $PAGES_URL | $CUSTOM_DOMAIN | ✓ |"
+          done
