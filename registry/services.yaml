@@ -1,0 +1,225 @@
+# BlackRoad OS Services Registry
+# Authoritative mapping of services to their DNS and deployment targets
+# Generated: 2025-11-25
+
+version: "1.0.0"
+domain: blackroad.io
+
+# Active Services
+services:
+  # Core Platform
+  web:
+    subdomain: web.blackroad.io
+    target: blackroad-os-web.pages.dev
+    platform: cloudflare-pages
+    category: core
+    description: Main web application
+    status: active
+
+  api:
+    subdomain: api.blackroad.io
+    target: blackroad-os-api.pages.dev
+    platform: cloudflare-pages
+    category: core
+    description: API service endpoint
+    status: active
+
+  core:
+    subdomain: core.blackroad.io
+    target: blackroad-os-core.pages.dev
+    platform: cloudflare-pages
+    category: core
+    description: Core services
+    status: active
+
+  # Operations
+  operator:
+    subdomain: operator.blackroad.io
+    target: blackroad-os-operator.pages.dev
+    platform: cloudflare-pages
+    category: operations
+    description: Operator dashboard
+    status: active
+
+  console:
+    subdomain: console.blackroad.io
+    target: blackroad-os-prism-console.pages.dev
+    platform: cloudflare-pages
+    category: operations
+    description: Prism console interface
+    status: active
+
+  infra:
+    subdomain: infra.blackroad.io
+    target: blackroad-os-infra.pages.dev
+    platform: cloudflare-pages
+    category: operations
+    description: Infrastructure dashboard
+    status: active
+
+  # Documentation & Research
+  docs:
+    subdomain: docs.blackroad.io
+    target: blackroad-os-docs.pages.dev
+    platform: cloudflare-pages
+    category: documentation
+    description: Documentation portal
+    status: active
+
+  research:
+    subdomain: research.blackroad.io
+    target: blackroad-os-research.pages.dev
+    platform: cloudflare-pages
+    category: research
+    description: Research portal
+    status: active
+
+  # Brand & Marketing
+  brand:
+    subdomain: brand.blackroad.io
+    target: blackroad-os-brand.pages.dev
+    platform: cloudflare-pages
+    category: marketing
+    description: Brand assets and guidelines
+    status: active
+
+  ideas:
+    subdomain: ideas.blackroad.io
+    target: blackroad-os-ideas.pages.dev
+    platform: cloudflare-pages
+    category: product
+    description: Ideas and feedback portal
+    status: active
+
+  demo:
+    subdomain: demo.blackroad.io
+    target: blackroad-os-demo.pages.dev
+    platform: cloudflare-pages
+    category: marketing
+    description: Demo environment
+    status: active
+
+  # Applications
+  chat:
+    subdomain: chat.blackroad.io
+    target: nextjs-ai-chatbot.pages.dev
+    platform: cloudflare-pages
+    category: application
+    description: AI chat interface
+    status: active
+
+  studio:
+    subdomain: studio.blackroad.io
+    target: lucidia.studio.pages.dev
+    platform: cloudflare-pages
+    category: application
+    description: Studio environment
+    status: active
+
+# Pending Services (not yet deployed)
+pending:
+  login:
+    subdomain: login.blackroad.io
+    target: null
+    platform: null
+    category: auth
+    description: Authentication landing page
+    status: pending
+
+  auth:
+    subdomain: auth.blackroad.io
+    target: null
+    platform: null
+    category: auth
+    description: Auth service endpoint (OAuth/OIDC)
+    status: pending
+
+  gateway:
+    subdomain: gateway.blackroad.io
+    target: null
+    platform: null
+    category: infrastructure
+    description: API gateway
+    status: pending
+
+  status:
+    subdomain: status.blackroad.io
+    target: null
+    platform: null
+    category: operations
+    description: Public status page
+    status: pending
+
+  monitoring:
+    subdomain: monitoring.blackroad.io
+    target: null
+    platform: null
+    category: operations
+    description: Monitoring dashboard
+    status: pending
+
+  assets:
+    subdomain: assets.blackroad.io
+    target: null
+    platform: null
+    category: infrastructure
+    description: Static assets CDN
+    status: pending
+
+# Deprecated Services (removed during reconciliation)
+deprecated:
+  prism:
+    subdomain: prism.blackroad.io
+    replaced_by: console
+    reason: Duplicate entry
+    removed_date: "2025-11-25"
+
+  dashboard:
+    subdomain: dashboard.blackroad.io
+    replaced_by: operator
+    reason: Duplicate entry
+    removed_date: "2025-11-25"
+
+# Categories
+categories:
+  core:
+    description: Core platform services
+    priority: critical
+
+  operations:
+    description: Internal operations and management
+    priority: high
+
+  documentation:
+    description: Documentation and guides
+    priority: medium
+
+  research:
+    description: Research and development
+    priority: medium
+
+  marketing:
+    description: Marketing and brand
+    priority: medium
+
+  product:
+    description: Product development
+    priority: medium
+
+  application:
+    description: User-facing applications
+    priority: high
+
+  auth:
+    description: Authentication and authorization
+    priority: critical
+
+  infrastructure:
+    description: Infrastructure services
+    priority: critical
+
+# Metadata
+metadata:
+  last_updated: "2025-11-25"
+  source_of_truth: true
+  generated_by: blackroad-os-infra

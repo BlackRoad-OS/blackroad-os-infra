@@ -1,0 +1,178 @@
+# DNS Blueprint Final
+# Authoritative DNS configuration for blackroad.io
+# Generated: 2025-11-25
+#
+# This file represents the desired state after reconciliation.
+# Use this as the source of truth for Terraform/IaC automation.
+
+domain: blackroad.io
+cloudflare_zone: blackroad.io
+
+# DNS Records Configuration
+records:
+  # Apex and WWW
+  - name: "@"
+    type: CNAME
+    target: blackroad-os-web.pages.dev
+    proxied: true
+    comment: "Apex domain - main web application"
+
+  - name: www
+    type: CNAME
+    target: blackroad.io
+    proxied: true
+    comment: "WWW redirect to apex"
+
+  # Core Services
+  - name: api
+    type: CNAME
+    target: blackroad-os-api.pages.dev
+    proxied: true
+    comment: "API service endpoint"
+
+  - name: web
+    type: CNAME
+    target: blackroad-os-web.pages.dev
+    proxied: true
+    comment: "Main web application"
+
+  - name: core
+    type: CNAME
+    target: blackroad-os-core.pages.dev
+    proxied: true
+    comment: "Core services"
+
+  # Developer & Operations
+  - name: docs
+    type: CNAME
+    target: blackroad-os-docs.pages.dev
+    proxied: true
+    comment: "Documentation portal"
+
+  - name: operator
+    type: CNAME
+    target: blackroad-os-operator.pages.dev
+    proxied: true
+    comment: "Operator dashboard"
+
+  - name: console
+    type: CNAME
+    target: blackroad-os-prism-console.pages.dev
+    proxied: true
+    comment: "Prism console interface"
+
+  - name: infra
+    type: CNAME
+    target: blackroad-os-infra.pages.dev
+    proxied: true
+    comment: "Infrastructure dashboard"
+
+  # Product & Research
+  - name: research
+    type: CNAME
+    target: blackroad-os-research.pages.dev
+    proxied: true
+    comment: "Research portal"
+
+  - name: brand
+    type: CNAME
+    target: blackroad-os-brand.pages.dev
+    proxied: true
+    comment: "Brand assets and guidelines"
+
+  - name: ideas
+    type: CNAME
+    target: blackroad-os-ideas.pages.dev
+    proxied: true
+    comment: "Ideas and feedback portal"
+
+  - name: demo
+    type: CNAME
+    target: blackroad-os-demo.pages.dev
+    proxied: true
+    comment: "Demo environment"
+
+  # Applications
+  - name: chat
+    type: CNAME
+    target: nextjs-ai-chatbot.pages.dev
+    proxied: true
+    comment: "AI chat interface"
+
+  - name: studio
+    type: CNAME
+    target: lucidia.studio.pages.dev
+    proxied: true
+    comment: "Studio environment"
+
+  # Future Services (placeholders)
+  - name: login
+    type: CNAME
+    target: "<placeholder>"
+    proxied: true
+    comment: "Authentication landing - pending deployment"
+    status: pending
+
+  - name: auth
+    type: CNAME
+    target: "<placeholder>"
+    proxied: true
+    comment: "Auth service endpoint - pending deployment"
+    status: pending
+
+  - name: gateway
+    type: CNAME
+    target: "<placeholder>"
+    proxied: true
+    comment: "API gateway - pending deployment"
+    status: pending
+
+  - name: status
+    type: CNAME
+    target: "<placeholder>"
+    proxied: true
+    comment: "Status page - pending deployment"
+    status: pending
+
+  - name: monitoring
+    type: CNAME
+    target: "<placeholder>"
+    proxied: true
+    comment: "Monitoring dashboard - pending deployment"
+    status: pending
+
+  - name: assets
+    type: CNAME
+    target: "<placeholder>"
+    proxied: true
+    comment: "Static assets CDN - pending deployment"
+    status: pending
+
+# Records removed during reconciliation
+removed:
+  - name: prism
+    reason: "Duplicate of console"
+    original_target: blackroad-os-prism-console.pages.dev
+
+  - name: dashboard
+    reason: "Duplicate of operator"
+    original_target: blackroad-os-operator.pages.dev
+
+# Legacy records being migrated
+legacy:
+  - name: "@"
+    type: A
+    original_value: 174.138.44.45
+    note: "Legacy DigitalOcean droplet - migrated to Pages"
+
+  - name: www
+    type: A
+    original_value: 174.138.44.45
+    note: "Legacy DigitalOcean droplet - migrated to CNAME"
+
+# Metadata
+metadata:
+  version: "1.0.0"
+  generated_by: "blackroad-os-infra DNS Reconciliation"
+  last_updated: "2025-11-25"
+  source_of_truth: true
