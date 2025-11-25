@@ -35,6 +35,11 @@ When mismatches are detected, use these templates for corrections:
 
 ### DNS Entry Template
 
+Replace the placeholders as follows:
+- `SERVICE_NAME`: The service key from services-map.yaml (e.g., `api`, `docs`, `prism_console`)
+- `SUBDOMAIN`: The subdomain portion of the custom domain (e.g., `api`, `docs`, `console`)
+- `SERVICE`: The service name matching the repository suffix (e.g., `api`, `docs`, `prism-console`)
+
 ```hcl
 resource "cloudflare_record" "SERVICE_NAME" {
   zone_id = data.cloudflare_zone.blackroad_systems.id

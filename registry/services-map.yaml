@@ -79,6 +79,8 @@ services:
     type: worker
 
 # DNS bindings: CNAME records required in Cloudflare DNS
+# Note: The @ subdomain (root domain) maps to the 'web' service
+# The repository is 'blackroad-os-web' but deploys to 'blackroad.systems' (no subdomain)
 dns_bindings:
   - subdomain: "@"
     target: blackroad-os-web.pages.dev

@@ -44,6 +44,8 @@ env:
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   SERVICES_MAP_PATH: registry/services-map.yaml
+  # Pin yq version for reproducibility and security
+  YQ_VERSION: v4.40.5
 
 jobs:
   verify-bindings:
@@ -63,7 +65,7 @@ jobs:
 
       - name: Install yq
         run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
           sudo chmod +x /usr/local/bin/yq
 
       - name: Check Bindings
@@ -74,7 +76,7 @@ jobs:
           
           # Read services from registry
           SERVICES=$(yq e '.services | keys | .[]' "$SERVICES_MAP_PATH")
-          MISSING="[]"
+          MISSING_LIST=""
           
           echo "Services configured in registry:"
           for SERVICE in $SERVICES; do
@@ -92,12 +94,13 @@ jobs:
               echo "      dns_status: resolved"
             else
               echo "      dns_status: not_resolved (may need DNS configuration)"
-              MISSING=$(echo "$MISSING" | jq --arg s "$SERVICE" '. + [$s]')
+              MISSING_LIST="$MISSING_LIST$SERVICE,"
             fi
             echo ""
           done
           
-          echo "missing=$MISSING" >> $GITHUB_OUTPUT
+          # Output missing services as comma-separated list
+          echo "missing=${MISSING_LIST%,}" >> $GITHUB_OUTPUT
 
   sync-service:
     name: Sync Service Configuration
@@ -109,7 +112,7 @@ jobs:
 
       - name: Install yq
         run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
           sudo chmod +x /usr/local/bin/yq
 
       - name: Sync Service
@@ -144,7 +147,7 @@ jobs:
 
       - name: Install yq
         run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
           sudo chmod +x /usr/local/bin/yq
 
       - name: Deploy to Cloudflare Pages
@@ -170,7 +173,7 @@ jobs:
 
       - name: Install yq
         run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64"
           sudo chmod +x /usr/local/bin/yq
 
       - name: Report Status
