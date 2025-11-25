@@ -1,0 +1,342 @@
+# BlackRoad OS Services Registry
+# Unified service definitions across all zones and environments
+
+version: "1.0"
+generated: "2025-01-01"
+generator: "Multi-Zone Authority Sweep"
+
+# Zone Definitions
+zones:
+  blackroad.io:
+    provider: cloudflare
+    backend: pages
+    environment: development
+    purpose: "Preview and development deployments"
+  blackroad.systems:
+    provider: cloudflare
+    backend: railway
+    environment: production
+    purpose: "Production deployments"
+
+# Service Definitions
+services:
+  # Core Services
+  web:
+    name: "BlackRoad OS Web"
+    description: "Primary web application and landing page"
+    repository: "blackroad-os/blackroad-os-web"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: web.blackroad.systems
+        target: blackroad-os-web-production-a2ee.up.railway.app
+        provider: railway
+      development:
+        fqdn: web.blackroad.io
+        target: blackroad-os-web.pages.dev
+        provider: cloudflare-pages
+    health_check: /api/health
+    tier: critical
+
+  api:
+    name: "BlackRoad OS API"
+    description: "Core REST API service"
+    repository: "blackroad-os/blackroad-os-api"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: api.blackroad.systems
+        target: blackroad-os-api-production-ff5a.up.railway.app
+        provider: railway
+      development:
+        fqdn: api.blackroad.io
+        target: blackroad-os-api.pages.dev
+        provider: cloudflare-pages
+    health_check: /health
+    tier: critical
+
+  core:
+    name: "BlackRoad OS Core"
+    description: "Core platform services and utilities"
+    repository: "blackroad-os/blackroad-os-core"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: core.blackroad.systems
+        target: blackroad-os-core-production.up.railway.app
+        provider: railway
+      development:
+        fqdn: core.blackroad.io
+        target: blackroad-os-core.pages.dev
+        provider: cloudflare-pages
+    health_check: /status
+    tier: critical
+
+  # Operator & Console Services
+  operator:
+    name: "BlackRoad OS Operator"
+    description: "Operator dashboard and control plane"
+    repository: "blackroad-os/blackroad-os-operator"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: operator.blackroad.systems
+        target: blackroad-os-operator-production-021e.up.railway.app
+        provider: railway
+      development:
+        fqdn: operator.blackroad.io
+        target: blackroad-os-operator.pages.dev
+        provider: cloudflare-pages
+    aliases:
+      - dashboard.blackroad.io
+    health_check: /api/health
+    tier: high
+
+  prism:
+    name: "BlackRoad Prism Console"
+    description: "Prism console interface"
+    repository: "blackroad-os/blackroad-os-prism-console"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: prism.blackroad.systems
+        target: blackroad-prism-console-production.up.railway.app
+        provider: railway
+        note: "Missing 'os' prefix in Railway service name"
+      development:
+        fqdn: prism.blackroad.io
+        target: blackroad-os-prism-console.pages.dev
+        provider: cloudflare-pages
+    health_check: /health
+    tier: high
+    issues:
+      - type: naming_mismatch
+        description: "Railway service missing 'os' prefix"
+
+  console:
+    name: "BlackRoad Console"
+    description: "Alternative console endpoint (same as prism)"
+    repository: "blackroad-os/blackroad-os-prism-console"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: console.blackroad.systems
+        target: blackroad-os-prism-console-production-3118.up.railway.app
+        provider: railway
+      development:
+        fqdn: console.blackroad.io
+        target: blackroad-os-prism-console.pages.dev
+        provider: cloudflare-pages
+    note: "Shares same backend as prism"
+    tier: high
+
+  # Documentation & Content Services
+  docs:
+    name: "BlackRoad OS Documentation"
+    description: "Documentation portal"
+    repository: "blackroad-os/blackroad-os-docs"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: docs.blackroad.systems
+        target: blackroad-os-docs-production-d8de.up.railway.app
+        provider: railway
+      development:
+        fqdn: docs.blackroad.io
+        target: blackroad-os-docs.pages.dev
+        provider: cloudflare-pages
+    health_check: /
+    tier: medium
+
+  research:
+    name: "BlackRoad OS Research"
+    description: "Research and experimental features"
+    repository: "blackroad-os/blackroad-os-research"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: research.blackroad.systems
+        target: blackroad-os-research-production.up.railway.app
+        provider: railway
+      development:
+        fqdn: research.blackroad.io
+        target: blackroad-os-research.pages.dev
+        provider: cloudflare-pages
+    tier: low
+
+  ideas:
+    name: "BlackRoad OS Ideas"
+    description: "Ideas and feature request portal"
+    repository: "blackroad-os/blackroad-os-ideas"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: ideas.blackroad.systems
+        target: blackroad-os-ideas-production.up.railway.app
+        provider: railway
+      development:
+        fqdn: ideas.blackroad.io
+        target: blackroad-os-ideas.pages.dev
+        provider: cloudflare-pages
+    tier: low
+
+  # Brand & Marketing Services
+  brand:
+    name: "BlackRoad OS Brand"
+    description: "Brand assets and guidelines"
+    repository: "blackroad-os/blackroad-os-brand"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: brand.blackroad.systems
+        target: blackroad-os-brand-production.up.railway.app
+        provider: railway
+      development:
+        fqdn: brand.blackroad.io
+        target: blackroad-os-brand.pages.dev
+        provider: cloudflare-pages
+    tier: medium
+
+  # Infrastructure Services
+  infra:
+    name: "BlackRoad OS Infra"
+    description: "Infrastructure management portal"
+    repository: "blackroad-os/blackroad-os-infra"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: infra.blackroad.systems
+        target: blackroad-os-infra-production.up.railway.app
+        provider: railway
+      development:
+        fqdn: infra.blackroad.io
+        target: blackroad-os-infra.pages.dev
+        provider: cloudflare-pages
+    tier: high
+
+  router:
+    name: "BlackRoad Router"
+    description: "Internal routing service"
+    repository: "blackroad-os/blackroad-router"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: router.blackroad.systems
+        target: h7o1fsvl.up.railway.app
+        provider: railway
+    tier: critical
+    internal: true
+
+  # External & Specialized Services
+  chat:
+    name: "BlackRoad AI Chat"
+    description: "AI-powered chat interface"
+    repository: "external/nextjs-ai-chatbot"
+    canonical_domain: blackroad.io
+    endpoints:
+      development:
+        fqdn: chat.blackroad.io
+        target: nextjs-ai-chatbot.pages.dev
+        provider: cloudflare-pages
+    note: "External Vercel/Pages app - not yet deployed to Railway"
+    tier: medium
+
+  demo:
+    name: "BlackRoad OS Demo"
+    description: "Demo and showcase environment"
+    repository: "blackroad-os/blackroad-os-demo"
+    canonical_domain: blackroad.io
+    endpoints:
+      development:
+        fqdn: demo.blackroad.io
+        target: blackroad-os-demo.pages.dev
+        provider: cloudflare-pages
+    tier: low
+
+  studio:
+    name: "Lucidia Studio"
+    description: "External creative studio integration"
+    repository: "external/lucidia-studio"
+    canonical_domain: blackroad.io
+    endpoints:
+      development:
+        fqdn: studio.blackroad.io
+        target: lucidia.studio.pages.dev
+        provider: cloudflare-pages
+    note: "External ecosystem - Lucidia"
+    tier: low
+    external: true
+
+  app:
+    name: "BlackRoad App"
+    description: "Generic application endpoint"
+    repository: "blackroad-os/blackroad-app"
+    canonical_domain: blackroad.systems
+    endpoints:
+      production:
+        fqdn: app.blackroad.systems
+        target: qj64zcxg.up.railway.app
+        provider: railway
+    tier: medium
+
+# Deprecated/Aliased Services
+deprecated:
+  dashboard:
+    name: "Dashboard (Deprecated)"
+    description: "Deprecated alias for operator"
+    redirect_to: operator
+    endpoints:
+      development:
+        fqdn: dashboard.blackroad.io
+        target: blackroad-os-operator.pages.dev
+        provider: cloudflare-pages
+    deprecation_date: "2025-01-01"
+    removal_date: "2025-02-01"
+    reason: "Duplicate of operator subdomain"
+
+# Service Tiers
+tiers:
+  critical:
+    description: "Mission-critical services - immediate incident response"
+    sla: "99.9%"
+    services:
+      - web
+      - api
+      - core
+      - router
+  high:
+    description: "High-priority services - 4-hour response"
+    sla: "99.5%"
+    services:
+      - operator
+      - prism
+      - console
+      - infra
+  medium:
+    description: "Standard services - 24-hour response"
+    sla: "99.0%"
+    services:
+      - docs
+      - brand
+      - chat
+      - app
+  low:
+    description: "Low-priority services - best effort"
+    sla: "95.0%"
+    services:
+      - research
+      - ideas
+      - demo
+      - studio
+
+# Summary Statistics
+statistics:
+  total_services: 17
+  production_services: 14
+  development_only_services: 3
+  external_services: 2
+  deprecated_services: 1
+  zones: 2
+  providers:
+    railway: 14
+    cloudflare-pages: 16

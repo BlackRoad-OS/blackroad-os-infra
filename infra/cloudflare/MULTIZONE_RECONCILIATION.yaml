@@ -1,0 +1,363 @@
+# Multi-Zone Reconciliation Configuration
+# BlackRoad OS DNS Blueprint for blackroad.io and blackroad.systems
+
+zones:
+  primary:
+    domain: blackroad.systems
+    provider: railway
+    purpose: production
+  secondary:
+    domain: blackroad.io
+    provider: cloudflare-pages
+    purpose: development
+
+# Zone A: blackroad.io (Cloudflare Pages)
+zone_io:
+  a_records:
+    - name: "@"
+      target: "174.138.44.45"
+      status: legacy
+      action: update
+      note: "Old droplet IP - needs migration to Railway"
+    - name: www
+      target: "174.138.44.45"
+      status: legacy
+      action: update
+      note: "Should redirect to apex"
+
+  cname_records:
+    - name: api
+      target: blackroad-os-api.pages.dev
+      proxied: true
+    - name: brand
+      target: blackroad-os-brand.pages.dev
+      proxied: true
+    - name: chat
+      target: nextjs-ai-chatbot.pages.dev
+      proxied: true
+    - name: console
+      target: blackroad-os-prism-console.pages.dev
+      proxied: true
+    - name: core
+      target: blackroad-os-core.pages.dev
+      proxied: true
+    - name: dashboard
+      target: blackroad-os-operator.pages.dev
+      proxied: true
+      status: duplicate
+      note: "Duplicate of operator"
+    - name: demo
+      target: blackroad-os-demo.pages.dev
+      proxied: true
+    - name: docs
+      target: blackroad-os-docs.pages.dev
+      proxied: true
+    - name: ideas
+      target: blackroad-os-ideas.pages.dev
+      proxied: true
+    - name: infra
+      target: blackroad-os-infra.pages.dev
+      proxied: true
+    - name: operator
+      target: blackroad-os-operator.pages.dev
+      proxied: true
+    - name: prism
+      target: blackroad-os-prism-console.pages.dev
+      proxied: true
+    - name: research
+      target: blackroad-os-research.pages.dev
+      proxied: true
+    - name: studio
+      target: lucidia.studio.pages.dev
+      proxied: true
+      note: "External ecosystem - Lucidia"
+    - name: web
+      target: blackroad-os-web.pages.dev
+      proxied: true
+
+# Zone B: blackroad.systems (Railway)
+zone_systems:
+  cname_records:
+    - name: "@"
+      target: jwb6j4o5.up.railway.app
+      status: inconsistent
+      action: update
+      note: "Should point to blackroad-os-web-production"
+    - name: api
+      target: blackroad-os-api-production-ff5a.up.railway.app
+      proxied: true
+    - name: app
+      target: qj64zcxg.up.railway.app
+      proxied: true
+      note: "Generic app endpoint"
+    - name: brand
+      target: blackroad-os-brand-production.up.railway.app
+      proxied: true
+    - name: console
+      target: blackroad-os-prism-console-production-3118.up.railway.app
+      proxied: true
+    - name: core
+      target: blackroad-os-core-production.up.railway.app
+      proxied: true
+    - name: docs
+      target: blackroad-os-docs-production-d8de.up.railway.app
+      proxied: true
+    - name: ideas
+      target: blackroad-os-ideas-production.up.railway.app
+      proxied: true
+    - name: infra
+      target: blackroad-os-infra-production.up.railway.app
+      proxied: true
+    - name: operator
+      target: blackroad-os-operator-production-021e.up.railway.app
+      proxied: true
+    - name: os
+      target: blackroad.systems
+      status: loop
+      action: remove
+      note: "Self-referential loop - should be removed"
+    - name: prism
+      target: blackroad-prism-console-production.up.railway.app
+      proxied: true
+      status: mismatch
+      note: "Missing 'os' prefix compared to console"
+    - name: research
+      target: blackroad-os-research-production.up.railway.app
+      proxied: true
+    - name: router
+      target: h7o1fsvl.up.railway.app
+      proxied: true
+      note: "Internal routing service"
+    - name: web
+      target: blackroad-os-web-production-a2ee.up.railway.app
+      proxied: true
+    - name: www
+      target: blackroad.systems
+      status: loop
+      action: keep
+      note: "Redirect to apex - acceptable"
+
+# Cross-Zone Service Mappings
+services:
+  api:
+    io:
+      fqdn: api.blackroad.io
+      target: blackroad-os-api.pages.dev
+    systems:
+      fqdn: api.blackroad.systems
+      target: blackroad-os-api-production-ff5a.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  app:
+    io: null
+    systems:
+      fqdn: app.blackroad.systems
+      target: qj64zcxg.up.railway.app
+    canonical: blackroad.systems
+    status: systems-only
+
+  brand:
+    io:
+      fqdn: brand.blackroad.io
+      target: blackroad-os-brand.pages.dev
+    systems:
+      fqdn: brand.blackroad.systems
+      target: blackroad-os-brand-production.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  chat:
+    io:
+      fqdn: chat.blackroad.io
+      target: nextjs-ai-chatbot.pages.dev
+    systems: null
+    canonical: blackroad.io
+    status: io-only
+
+  console:
+    io:
+      fqdn: console.blackroad.io
+      target: blackroad-os-prism-console.pages.dev
+    systems:
+      fqdn: console.blackroad.systems
+      target: blackroad-os-prism-console-production-3118.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  core:
+    io:
+      fqdn: core.blackroad.io
+      target: blackroad-os-core.pages.dev
+    systems:
+      fqdn: core.blackroad.systems
+      target: blackroad-os-core-production.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  dashboard:
+    io:
+      fqdn: dashboard.blackroad.io
+      target: blackroad-os-operator.pages.dev
+    systems: null
+    canonical: blackroad.io
+    status: duplicate
+    note: "Duplicate of operator - consider deprecation"
+
+  demo:
+    io:
+      fqdn: demo.blackroad.io
+      target: blackroad-os-demo.pages.dev
+    systems: null
+    canonical: blackroad.io
+    status: io-only
+
+  docs:
+    io:
+      fqdn: docs.blackroad.io
+      target: blackroad-os-docs.pages.dev
+    systems:
+      fqdn: docs.blackroad.systems
+      target: blackroad-os-docs-production-d8de.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  ideas:
+    io:
+      fqdn: ideas.blackroad.io
+      target: blackroad-os-ideas.pages.dev
+    systems:
+      fqdn: ideas.blackroad.systems
+      target: blackroad-os-ideas-production.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  infra:
+    io:
+      fqdn: infra.blackroad.io
+      target: blackroad-os-infra.pages.dev
+    systems:
+      fqdn: infra.blackroad.systems
+      target: blackroad-os-infra-production.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  operator:
+    io:
+      fqdn: operator.blackroad.io
+      target: blackroad-os-operator.pages.dev
+    systems:
+      fqdn: operator.blackroad.systems
+      target: blackroad-os-operator-production-021e.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  prism:
+    io:
+      fqdn: prism.blackroad.io
+      target: blackroad-os-prism-console.pages.dev
+    systems:
+      fqdn: prism.blackroad.systems
+      target: blackroad-prism-console-production.up.railway.app
+    canonical: blackroad.systems
+    status: mismatch
+    note: "Railway target missing 'os' prefix"
+
+  research:
+    io:
+      fqdn: research.blackroad.io
+      target: blackroad-os-research.pages.dev
+    systems:
+      fqdn: research.blackroad.systems
+      target: blackroad-os-research-production.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+  router:
+    io: null
+    systems:
+      fqdn: router.blackroad.systems
+      target: h7o1fsvl.up.railway.app
+    canonical: blackroad.systems
+    status: systems-only
+
+  studio:
+    io:
+      fqdn: studio.blackroad.io
+      target: lucidia.studio.pages.dev
+    systems: null
+    canonical: blackroad.io
+    status: io-only
+    note: "External ecosystem - Lucidia Studio"
+
+  web:
+    io:
+      fqdn: web.blackroad.io
+      target: blackroad-os-web.pages.dev
+    systems:
+      fqdn: web.blackroad.systems
+      target: blackroad-os-web-production-a2ee.up.railway.app
+    canonical: blackroad.systems
+    status: consistent
+
+# Detected Issues
+mismatches:
+  - id: prism-naming
+    description: "prism.io → blackroad-os-prism-console.pages.dev but prism.systems → blackroad-prism-console-production.up.railway.app (missing 'os')"
+    severity: medium
+    recommendation: "Rename Railway service to blackroad-os-prism-console-production"
+
+  - id: dashboard-duplicate
+    description: "dashboard.blackroad.io duplicates operator.blackroad.io"
+    severity: low
+    recommendation: "Deprecate dashboard subdomain and redirect to operator"
+
+  - id: io-apex-legacy
+    description: "blackroad.io apex still points to old droplet IP (174.138.44.45)"
+    severity: high
+    recommendation: "Update apex to point to blackroad-os-web.pages.dev or CNAME flatten"
+
+  - id: systems-apex-random
+    description: "blackroad.systems apex → random Railway app (jwb6j4o5)"
+    severity: high
+    recommendation: "Update apex to point to blackroad-os-web-production"
+
+  - id: os-subdomain-loop
+    description: "os.blackroad.systems loops to blackroad.systems"
+    severity: medium
+    recommendation: "Remove os subdomain record"
+
+  - id: www-systems-loop
+    description: "www.blackroad.systems loops to apex"
+    severity: low
+    recommendation: "Keep for redirect compatibility"
+
+# Corrected Routing Blueprint
+corrected_routing:
+  primary_zone: blackroad.systems
+  secondary_zone: blackroad.io
+
+  apex:
+    target: blackroad-os-web-production-a2ee.up.railway.app
+    note: "Primary web application"
+
+  www:
+    target: "@"
+    note: "Redirect to apex"
+
+  subdomains:
+    api: blackroad-os-api-production-ff5a.up.railway.app
+    web: blackroad-os-web-production-a2ee.up.railway.app
+    operator: blackroad-os-operator-production-021e.up.railway.app
+    core: blackroad-os-core-production.up.railway.app
+    infra: blackroad-os-infra-production.up.railway.app
+    docs: blackroad-os-docs-production-d8de.up.railway.app
+    brand: blackroad-os-brand-production.up.railway.app
+    research: blackroad-os-research-production.up.railway.app
+    prism: blackroad-os-prism-console-production-3118.up.railway.app
+    console: blackroad-os-prism-console-production-3118.up.railway.app
+    ideas: blackroad-os-ideas-production.up.railway.app
+    router: h7o1fsvl.up.railway.app
+    studio: lucidia.studio.pages.dev
+    chat: nextjs-ai-chatbot.pages.dev
+    demo: blackroad-os-demo.pages.dev
