@@ -2,13 +2,18 @@
   "name": "blackroad-os-infra",
   "private": true,
   "scripts": {
-    "gen:sig": "ts-node scripts/gen_sig_beacon.ts",
-    "lint:infra": "bash scripts/fmt.sh"
+    "validate:dns": "ts-node scripts/validate_dns.ts",
+    "validate:railway": "ts-node scripts/validate_railway.ts",
+    "generate:sig": "ts-node scripts/generate_sig_examples.ts",
+    "build:types": "tsc --noEmit"
   },
   "dependencies": {
-    "dotenv": "^16.4.5"
+    "ajv": "^8.17.1",
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.12.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
   }

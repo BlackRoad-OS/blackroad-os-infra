@@ -1,0 +1,40 @@
+{
+  "name": "blackroad-os-prism-console",
+  "serviceType": "web",
+  "build": {
+    "type": "nixpacks",
+    "path": "."
+  },
+  "envVars": [
+    {
+      "name": "BR_SERVICE_NAME",
+      "description": "Service identifier for Prism console telemetry."
+    },
+    {
+      "name": "BR_ENV",
+      "description": "Deployment environment (dev/stage/prod)."
+    },
+    {
+      "name": "BR_BEACON_ENDPOINT",
+      "description": "SIG beacon ingestion endpoint."
+    },
+    {
+      "name": "PORT",
+      "description": "Port the console listens on."
+    },
+    {
+      "name": "NEXT_PUBLIC_CORE_API",
+      "description": "URL of the core API powering the console.",
+      "optional": true
+    }
+  ],
+  "healthcheck": {
+    "path": "/health",
+    "expectedStatus": 200
+  },
+  "resources": {
+    "cpu": "shared-1x",
+    "memory": "512MB"
+  },
+  "notes": "Console UI backed by Pages today; template supports authenticated flows on Railway."
+}

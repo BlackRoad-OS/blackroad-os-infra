@@ -1,0 +1,22 @@
+# Cloudflare DNS blueprint for the systems domain used for backstage and automation endpoints.
+zone: blackroad.systems
+description: Secondary domain reserved for internal operators, previews, and automation endpoints.
+records:
+  - type: A
+    name: "@"
+    content: systems-placeholder.blackroad.io
+    proxied: false
+    ttl: 3600
+    notes: Apex keeps proxy off to allow direct origin reachability for VPN or bastion entry.
+  - type: CNAME
+    name: ops
+    content: blackroad-os-operator.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Operator console blueprint via Pages; replace with Railway hostname when control-plane services move to compute.
+  - type: CNAME
+    name: api
+    content: blackroad-os-api.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Internal API preview routed through Pages for static mocks; production will point to Railway or Kubernetes ingress.

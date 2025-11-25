@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackroad.io/schemas/sig.beacon.spec.json",
+  "title": "SIG Beacon Specification",
+  "description": "Health beacon payload emitted by BlackRoad OS services and collected by the operator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["service", "version", "env", "status", "url", "last_checked_at", "meta"],
+  "properties": {
+    "service": {
+      "type": "string",
+      "description": "Service name (e.g., blackroad-os-web)."
+    },
+    "version": {
+      "type": "string",
+      "description": "Version string (semver + git hash), e.g., 2025.11.23+githash."
+    },
+    "env": {
+      "type": "string",
+      "enum": ["dev", "stage", "prod"],
+      "description": "Deployment environment."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["healthy", "degraded", "unhealthy"],
+      "description": "Overall health reported by the service."
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Healthcheck endpoint used to verify status."
+    },
+    "last_checked_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp the healthcheck was executed."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["region", "agent_id", "ps_sha_infinity"],
+      "properties": {
+        "region": {
+          "type": "string",
+          "description": "Region or POP issuing the check."
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Identifier for the steward or agent publishing the beacon."
+        },
+        "ps_sha_infinity": {
+          "type": "string",
+          "description": "Policy steward signature hash (pssha∞:br:<agent>:<hash>)."
+        },
+        "latency_ms": {
+          "type": "number",
+          "description": "Optional latency measurement for the healthcheck."
+        }
+      }
+    }
+  },
+  "example": {
+    "service": "blackroad-os-web",
+    "version": "2025.11.23+githash",
+    "env": "prod",
+    "status": "healthy",
+    "url": "https://web.blackroad.io/health",
+    "last_checked_at": "2025-11-23T22:05:42Z",
+    "meta": {
+      "region": "us-central",
+      "agent_id": "infra-steward-01",
+      "ps_sha_infinity": "pssha∞:br:infra-steward-01:<HASH>"
+    }
+  }
+}

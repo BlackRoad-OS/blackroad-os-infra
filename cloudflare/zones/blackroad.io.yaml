@@ -1,0 +1,69 @@
+# Cloudflare DNS blueprint for blackroad.io
+# Routes public traffic through Cloudflare proxy; application traffic lands on Cloudflare Pages
+# for web properties and Railway for compute-backed APIs (documented in service notes).
+zone: blackroad.io
+description: Primary BlackRoad OS domain. Pages serves web properties; Railway backs API/operator traffic.
+core_subdomains:
+  - web
+  - prism
+  - research
+  - brand
+  - archive
+  - chat
+records:
+  - type: A
+    name: "@"
+    content: origin.placeholder.blackroad.io
+    proxied: true
+    ttl: 3600
+    notes: |
+      Placeholder apex origin. Replace with the ingress or load balancer address when Railway- or Kubernetes-backed origins are
+      required. Cloudflare proxy remains on for TLS and edge caching even when origin is updated.
+  - type: AAAA
+    name: "@"
+    content: "2001:db8::1"
+    proxied: true
+    ttl: 3600
+    notes: Placeholder IPv6 apex origin. Mirrors the IPv4 note above.
+  - type: CNAME
+    name: www
+    content: blackroad-os-web.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Cloudflare Pages serves the public web at www; Railway fallback can re-point this CNAME to a service hostname.
+  - type: CNAME
+    name: web
+    content: blackroad-os-web.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Primary web property published via Pages. Keep proxy on for WAF, caching, and routing flexibility.
+  - type: CNAME
+    name: prism
+    content: blackroad-os-prism-console.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Prism console UI from Pages; switch to Railway hostname when authenticated experiences move to compute-backed hosting.
+  - type: CNAME
+    name: research
+    content: blackroad-os-research.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Research microsite on Pages.
+  - type: CNAME
+    name: brand
+    content: blackroad-os-brand.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Brand assets and guidelines site on Pages.
+  - type: CNAME
+    name: archive
+    content: blackroad-os-archive.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Archive of legacy releases on Pages.
+  - type: CNAME
+    name: chat
+    content: nextjs-ai-chatbot.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Chat experience hosted via Cloudflare Pages demo; move to Railway when conversational API becomes stateful.
