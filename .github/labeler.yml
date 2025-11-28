@@ -1,0 +1,30 @@
+# Auto-label PRs based on changed files
+
+'area:dns':
+  - 'dns/**/*'
+
+'area:railway':
+  - 'environments/**/*railway*'
+  - '**/*railway*.{json,yaml,yml,toml}'
+
+'area:cloudflare':
+  - 'dns/**/*'
+  - '**/*cloudflare*'
+
+'area:environments':
+  - 'environments/**/*'
+
+'area:runbooks':
+  - 'runbooks/**/*'
+
+'area:docs':
+  - 'docs/**/*'
+  - '**/*.md'
+
+'type:docs':
+  - '**/*.md'
+
+'type:infra-change':
+  - 'dns/**/*'
+  - 'environments/**/*'
+  - '**/*.{yaml,yml,json,toml}'

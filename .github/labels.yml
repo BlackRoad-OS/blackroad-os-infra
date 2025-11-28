@@ -1,0 +1,67 @@
+# Infrastructure Labels
+- name: 'team:infra'
+  color: '0E8A16'
+  description: 'Infrastructure and DevOps team'
+
+- name: 'area:dns'
+  color: 'D4C5F9'
+  description: 'DNS configuration and management'
+
+- name: 'area:railway'
+  color: 'D4C5F9'
+  description: 'Railway deployment configuration'
+
+- name: 'area:cloudflare'
+  color: 'D4C5F9'
+  description: 'Cloudflare configuration'
+
+- name: 'area:environments'
+  color: 'D4C5F9'
+  description: 'Environment configuration (dev/staging/prod)'
+
+- name: 'area:runbooks'
+  color: 'D4C5F9'
+  description: 'Operational runbooks and guides'
+
+- name: 'area:docs'
+  color: 'D4C5F9'
+  description: 'Documentation changes'
+
+# Type Labels
+- name: 'type:infra-change'
+  color: 'FBCA04'
+  description: 'Infrastructure configuration change'
+
+- name: 'type:runbook'
+  color: 'FBCA04'
+  description: 'Runbook addition or update'
+
+- name: 'type:docs'
+  color: 'FBCA04'
+  description: 'Documentation update'
+
+# Risk Labels
+- name: 'risk:high'
+  color: 'D93F0B'
+  description: 'High-risk change requiring careful review'
+
+- name: 'risk:medium'
+  color: 'FBCA04'
+  description: 'Medium-risk change'
+
+- name: 'risk:low'
+  color: '0E8A16'
+  description: 'Low-risk change'
+
+# Status Labels
+- name: 'status:needs-review'
+  color: 'F9D0C4'
+  description: 'Needs review from infra team'
+
+- name: 'status:blocked'
+  color: 'D93F0B'
+  description: 'Blocked by external dependency'
+
+- name: 'status:in-progress'
+  color: 'C2E0C6'
+  description: 'Work in progress'

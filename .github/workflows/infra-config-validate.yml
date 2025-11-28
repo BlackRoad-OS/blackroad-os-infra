@@ -1,0 +1,37 @@
+name: Config Validation
+
+on:
+  pull_request:
+    paths:
+      - '**.json'
+      - '**.yaml'
+      - '**.yml'
+      - '**.toml'
+      - 'dns/**'
+      - 'environments/**'
+  push:
+    branches: [main]
+
+jobs:
+  config-validation:
+    name: Validate Configuration Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate YAML/JSON configs
+        run: npm run test:configs
+
+      - name: Validate repository structure
+        run: npm run test:structure
