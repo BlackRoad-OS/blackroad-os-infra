@@ -22,7 +22,7 @@ jobs:
       WORKING_DIR: terraform/environments/dev
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@f43a3398dc5d8737c2dbc7bf8ad6b50918d7a3d4
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
