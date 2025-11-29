@@ -5,17 +5,15 @@
     "validate:dns": "ts-node scripts/validate_dns.ts",
     "validate:railway": "ts-node scripts/validate_railway.ts",
     "generate:sig": "ts-node scripts/generate_sig_examples.ts",
-    "build:types": "tsc --noEmit"
-  },
-  "dependencies": {
-    "ajv": "^8.17.1",
-    "js-yaml": "^4.1.0"
+    "build:types": "tsc --noEmit",
     "gen:sig": "ts-node scripts/gen_sig_beacon.ts",
     "lint:infra": "bash scripts/fmt.sh",
     "validate": "ts-node scripts/validate-infra.ts"
   },
   "dependencies": {
+    "ajv": "^8.17.1",
     "dotenv": "^16.4.5",
+    "js-yaml": "^4.1.0",
     "yaml": "^2.3.4"
   },
   "devDependencies": {

@@ -1,17 +1,34 @@
-# blackroad-os-infra 🌐🛠️
+# blackroad-os-infra ☁️🛠️
 
-Control tower for BlackRoad OS infrastructure blueprints. DNS, Railway templates, and SIG schemas live here as the source of truth for every service and pack.
+> **Infra Brain** – infrastructure-as-code, DNS, Cloudflare, Railway envs, and deployment runbooks for BlackRoad OS.
 
-- Cloudflare DNS blueprints: `cloudflare/`
-- Railway service templates: `railway/`
-- SIG schemas and examples: `sig/` and `docs/examples/`
-- Validation + generation scripts: `scripts/`
-- Docs: `docs/`
-## Quick Links
+📋 **[View the Full Repo Charter →](REPO_CHARTER.md)**
 
-- 🚨 **[Railway Troubleshooting Guide](docs/railway-troubleshooting.md)** - Fix deployment failures
-- 📘 [Railway Playbook](docs/railway-playbook.md) - Standard deployment procedures
+---
+
+## 🚀 Quick Links
+
+### 📓 Runbooks & Playbooks
+- 🚨 **[Incident Playbooks](docs/runbooks/)** - Site down, DNS misroute, bad deploy
+- 🔑 [Key Rotation](docs/runbooks/key-rotation.md) - Secret rotation procedures
+- 🚂 [Railway Playbook](docs/railway-playbook.md) - Deployment procedures
 - 🌐 [DNS Playbook](docs/dns-playbook.md) - DNS configuration
+- 🔧 [Railway Troubleshooting](docs/railway-troubleshooting.md) - Fix deployment failures
+
+### 📊 Observability
+- 📝 [Logging Conventions](docs/observability/logging.md) - Structured logging patterns
+- 🧬 [Correlation IDs](docs/observability/correlation-ids.md) - Request tracing
+- ❤️‍🩹 [Health Endpoints](docs/observability/health-endpoints.md) - Health check standards
+- 🔗 [Dashboards](docs/observability/dashboards.md) - Monitoring links
+
+### 🧩 Registries & Blueprints
+- 📋 [Service Registry](registry/services.yaml) - All services mapping
+- 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
+- 🧭 [Environments](environments/environments.yml) - Environment definitions
+- 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+
+---
+
 **Infrastructure-as-Code repository for BlackRoad OS**
 
 Single source of truth for infrastructure definitions, environment configurations, deployment settings, and DNS mappings across the BlackRoad OS ecosystem.
