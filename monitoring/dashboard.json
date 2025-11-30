@@ -1,0 +1,133 @@
+{
+  "name": "BlackRoad OS Dashboard",
+  "version": "1.0.0",
+  "description": "Monitoring dashboard configuration for BlackRoad OS",
+  "refresh_interval": 30,
+  "panels": [
+    {
+      "id": "overview",
+      "title": "System Overview",
+      "type": "status_grid",
+      "position": { "row": 1, "col": 1, "width": 12, "height": 2 },
+      "services": [
+        { "name": "API Gateway", "endpoint": "https://api.blackroad.systems/health", "critical": true },
+        { "name": "Core", "endpoint": "https://core.blackroad.systems/health", "critical": true },
+        { "name": "Web App", "endpoint": "https://app.blackroad.io/", "critical": true },
+        { "name": "Beacon", "endpoint": "https://beacon.blackroad.systems/health", "critical": true },
+        { "name": "Agents", "endpoint": "https://agents.blackroad.systems/health", "critical": true }
+      ]
+    },
+    {
+      "id": "services-blackroad-io",
+      "title": "blackroad.io Services",
+      "type": "service_list",
+      "position": { "row": 3, "col": 1, "width": 6, "height": 4 },
+      "services": [
+        { "name": "app", "url": "https://app.blackroad.io/", "subdomain": "app.blackroad.io" },
+        { "name": "home", "url": "https://home.blackroad.io/", "subdomain": "home.blackroad.io" },
+        { "name": "os", "url": "https://os.blackroad.io/", "subdomain": "os.blackroad.io" },
+        { "name": "creator", "url": "https://creator.blackroad.io/", "subdomain": "creator.blackroad.io" },
+        { "name": "api", "url": "https://api.blackroad.io/health", "subdomain": "api.blackroad.io" }
+      ]
+    },
+    {
+      "id": "services-blackroad-systems",
+      "title": "blackroad.systems Services",
+      "type": "service_list",
+      "position": { "row": 3, "col": 7, "width": 6, "height": 4 },
+      "services": [
+        { "name": "api-gateway", "url": "https://api.blackroad.systems/health", "subdomain": "api.blackroad.systems" },
+        { "name": "core", "url": "https://core.blackroad.systems/health", "subdomain": "core.blackroad.systems" },
+        { "name": "infra", "url": "https://infra.blackroad.systems/health", "subdomain": "infra.blackroad.systems" },
+        { "name": "console", "url": "https://console.blackroad.systems/health", "subdomain": "console.blackroad.systems" },
+        { "name": "docs", "url": "https://docs.blackroad.systems/", "subdomain": "docs.blackroad.systems" },
+        { "name": "prism", "url": "https://prism.blackroad.systems/", "subdomain": "prism.blackroad.systems" },
+        { "name": "beacon", "url": "https://beacon.blackroad.systems/health", "subdomain": "beacon.blackroad.systems" },
+        { "name": "research", "url": "https://research.blackroad.systems/health", "subdomain": "research.blackroad.systems" },
+        { "name": "demo", "url": "https://demo.blackroad.systems/", "subdomain": "demo.blackroad.systems" },
+        { "name": "archive", "url": "https://archive.blackroad.systems/health", "subdomain": "archive.blackroad.systems" },
+        { "name": "agents", "url": "https://agents.blackroad.systems/health", "subdomain": "agents.blackroad.systems" }
+      ]
+    },
+    {
+      "id": "packs",
+      "title": "OS Packs",
+      "type": "service_list",
+      "position": { "row": 7, "col": 1, "width": 6, "height": 3 },
+      "services": [
+        { "name": "finance", "url": "https://finance.blackroad.systems/health", "subdomain": "finance.blackroad.systems" },
+        { "name": "legal", "url": "https://legal.blackroad.systems/health", "subdomain": "legal.blackroad.systems" },
+        { "name": "lab", "url": "https://lab.blackroad.systems/health", "subdomain": "lab.blackroad.systems" },
+        { "name": "devops", "url": "https://devops.blackroad.systems/health", "subdomain": "devops.blackroad.systems" }
+      ]
+    },
+    {
+      "id": "metrics",
+      "title": "Response Times",
+      "type": "latency_chart",
+      "position": { "row": 7, "col": 7, "width": 6, "height": 3 },
+      "timeRange": "1h",
+      "endpoints": [
+        "https://api.blackroad.systems/health",
+        "https://core.blackroad.systems/health",
+        "https://app.blackroad.io/"
+      ]
+    },
+    {
+      "id": "alerts",
+      "title": "Recent Alerts",
+      "type": "alert_feed",
+      "position": { "row": 10, "col": 1, "width": 12, "height": 2 },
+      "maxItems": 10
+    }
+  ],
+  "alerts": {
+    "channels": [
+      {
+        "type": "webhook",
+        "url": "${ALERT_WEBHOOK_URL}",
+        "events": ["critical_down", "recovery"]
+      },
+      {
+        "type": "email",
+        "to": ["infrastructure@blackroad.io"],
+        "events": ["critical_down"]
+      }
+    ],
+    "rules": [
+      {
+        "name": "Critical Service Down",
+        "condition": "status != 200 && critical == true",
+        "severity": "critical",
+        "cooldown": 300
+      },
+      {
+        "name": "High Latency",
+        "condition": "latency > 5000",
+        "severity": "warning",
+        "cooldown": 600
+      },
+      {
+        "name": "Service Recovery",
+        "condition": "status == 200 && previous_status != 200",
+        "severity": "info",
+        "cooldown": 0
+      }
+    ]
+  },
+  "themes": {
+    "dark": {
+      "background": "#0b1220",
+      "text": "#ffffff",
+      "accent": "#FF9D00",
+      "success": "#22c55e",
+      "warning": "#eab308",
+      "error": "#ef4444",
+      "brand": {
+        "primary": "#FF9D00",
+        "secondary": "#FF6B00",
+        "tertiary": "#FF0066"
+      }
+    }
+  }
+}

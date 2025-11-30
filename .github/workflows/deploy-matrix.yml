@@ -1,0 +1,110 @@
+name: Deploy All Services (Matrix)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      services:
+        description: 'Services to deploy (comma-separated or "all")'
+        required: true
+        default: 'all'
+        type: string
+      parallel:
+        description: 'Deploy in parallel'
+        required: true
+        default: true
+        type: boolean
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════
+  # PREPARE: Determine which services to deploy
+  # ═══════════════════════════════════════════════════════════════
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set deployment matrix
+        id: set-matrix
+        run: |
+          if [ "${{ inputs.services }}" = "all" ]; then
+            # All services
+            MATRIX='{"service":["blackroad-os","blackroad-os-api","blackroad-os-api-gateway","blackroad-os-agents","blackroad-os-archive","blackroad-os-beacon","blackroad-os-brand","blackroad-os-core","blackroad-os-demo","blackroad-os-docs","blackroad-os-home","blackroad-os-ideas","blackroad-os-infra","blackroad-os-master","blackroad-os-operator","blackroad-os-pack-creator-studio","blackroad-os-pack-education","blackroad-os-pack-finance","blackroad-os-pack-infra-devops","blackroad-os-pack-legal","blackroad-os-pack-research-lab","blackroad-os-prism-console","blackroad-os-research","blackroad-os-web"]}'
+          else
+            # Specific services
+            SERVICES=$(echo "${{ inputs.services }}" | tr ',' '\n' | jq -R . | jq -s .)
+            MATRIX="{\"service\":$SERVICES}"
+          fi
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "Deployment matrix: $MATRIX"
+
+  # ═══════════════════════════════════════════════════════════════
+  # DEPLOY: Matrix deployment (parallel or sequential)
+  # ═══════════════════════════════════════════════════════════════
+  deploy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ inputs.parallel && 10 || 1 }}
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout ${{ matrix.service }}
+        uses: actions/checkout@v4
+        with:
+          repository: BlackRoad-OS/${{ matrix.service }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy ${{ matrix.service }}
+        run: |
+          echo "🚀 Deploying ${{ matrix.service }} to ${{ inputs.environment }}..."
+          railway up --service ${{ matrix.service }} --environment ${{ inputs.environment }} --detach
+          echo "✅ Deployment initiated for ${{ matrix.service }}"
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ ${{ matrix.service }} deployed successfully"
+          else
+            echo "❌ ${{ matrix.service }} deployment failed"
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # SUMMARY: Post-deployment report
+  # ═══════════════════════════════════════════════════════════════
+  summary:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "═══════════════════════════════════════════════════"
+          echo "  BLACKROAD OS DEPLOYMENT SUMMARY"
+          echo "═══════════════════════════════════════════════════"
+          echo ""
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Parallel:    ${{ inputs.parallel }}"
+          echo "Services:    ${{ inputs.services }}"
+          echo ""
+          echo "Monitor at: https://railway.app/project/BlackRoad-OS"
+          echo "═══════════════════════════════════════════════════"

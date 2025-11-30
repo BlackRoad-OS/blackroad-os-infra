@@ -1,0 +1,250 @@
+# BlackRoad OS Alert Configuration
+# =================================
+
+version: "1.0"
+
+# Global settings
+global:
+  check_interval: 60  # seconds
+  timeout: 10         # seconds
+  retries: 3
+  retry_delay: 5
+
+# Alert channels
+channels:
+  slack:
+    type: webhook
+    url: ${SLACK_WEBHOOK_URL}
+    template: |
+      {
+        "text": "🚨 *BlackRoad OS Alert*",
+        "attachments": [{
+          "color": "{{ severity_color }}",
+          "fields": [
+            { "title": "Service", "value": "{{ service }}", "short": true },
+            { "title": "Status", "value": "{{ status }}", "short": true },
+            { "title": "Message", "value": "{{ message }}" },
+            { "title": "Time", "value": "{{ timestamp }}" }
+          ]
+        }]
+      }
+
+  discord:
+    type: webhook
+    url: ${DISCORD_WEBHOOK_URL}
+    template: |
+      {
+        "embeds": [{
+          "title": "🚨 BlackRoad OS Alert",
+          "color": {{ severity_color_int }},
+          "fields": [
+            { "name": "Service", "value": "{{ service }}", "inline": true },
+            { "name": "Status", "value": "{{ status }}", "inline": true },
+            { "name": "Message", "value": "{{ message }}" }
+          ],
+          "timestamp": "{{ timestamp }}"
+        }]
+      }
+
+  email:
+    type: smtp
+    from: alerts@blackroad.systems
+    to:
+      - infrastructure@blackroad.io
+      - alexa@blackroad.io
+    subject: "[{{ severity | upper }}] BlackRoad OS: {{ service }} {{ status }}"
+
+  pagerduty:
+    type: pagerduty
+    routing_key: ${PAGERDUTY_ROUTING_KEY}
+    severity_map:
+      critical: critical
+      warning: warning
+      info: info
+
+# Service groups
+groups:
+  critical:
+    description: "Core services that must be online"
+    services:
+      - api-gateway
+      - core
+      - beacon
+      - agents
+    channels:
+      - slack
+      - pagerduty
+      - email
+
+  important:
+    description: "Important services"
+    services:
+      - web
+      - api
+      - prism
+      - operator
+    channels:
+      - slack
+      - email
+
+  standard:
+    description: "Standard services"
+    services:
+      - docs
+      - home
+      - demo
+      - archive
+      - research
+    channels:
+      - slack
+
+  packs:
+    description: "OS Packs"
+    services:
+      - finance
+      - legal
+      - creator
+      - lab
+      - devops
+      - education
+    channels:
+      - slack
+
+# Health check endpoints
+endpoints:
+  # blackroad.io
+  - name: web
+    url: https://app.blackroad.io/
+    group: important
+    expected_status: 200
+
+  - name: home
+    url: https://home.blackroad.io/
+    group: standard
+    expected_status: 200
+
+  - name: api
+    url: https://api.blackroad.io/health
+    group: important
+    expected_status: 200
+    expected_body:
+      status: ok
+
+  # blackroad.systems
+  - name: api-gateway
+    url: https://api.blackroad.systems/health
+    group: critical
+    expected_status: 200
+    expected_body:
+      status: ok
+
+  - name: core
+    url: https://core.blackroad.systems/health
+    group: critical
+    expected_status: 200
+
+  - name: beacon
+    url: https://beacon.blackroad.systems/health
+    group: critical
+    expected_status: 200
+
+  - name: agents
+    url: https://agents.blackroad.systems/health
+    group: critical
+    expected_status: 200
+
+  - name: prism
+    url: https://prism.blackroad.systems/
+    group: important
+    expected_status: 200
+
+  - name: docs
+    url: https://docs.blackroad.systems/
+    group: standard
+    expected_status: 200
+
+  - name: demo
+    url: https://demo.blackroad.systems/
+    group: standard
+    expected_status: 200
+
+  - name: archive
+    url: https://archive.blackroad.systems/health
+    group: standard
+    expected_status: 200
+
+  - name: research
+    url: https://research.blackroad.systems/health
+    group: standard
+    expected_status: 200
+
+  # Packs
+  - name: finance
+    url: https://finance.blackroad.systems/health
+    group: packs
+    expected_status: 200
+
+  - name: legal
+    url: https://legal.blackroad.systems/health
+    group: packs
+    expected_status: 200
+
+  - name: creator
+    url: https://creator.blackroad.io/
+    group: packs
+    expected_status: 200
+
+  - name: lab
+    url: https://lab.blackroad.systems/health
+    group: packs
+    expected_status: 200
+
+  - name: devops
+    url: https://devops.blackroad.systems/health
+    group: packs
+    expected_status: 200
+
+# Alert rules
+rules:
+  - name: service_down
+    description: "Service is not responding"
+    condition: "status == 0 || status >= 500"
+    severity: critical
+    message: "{{ service }} is DOWN ({{ status }})"
+    cooldown: 300  # 5 minutes
+
+  - name: service_error
+    description: "Service returning errors"
+    condition: "status >= 400 && status < 500"
+    severity: warning
+    message: "{{ service }} returning {{ status }}"
+    cooldown: 600  # 10 minutes
+
+  - name: high_latency
+    description: "Service response time is high"
+    condition: "latency > 5000"
+    severity: warning
+    message: "{{ service }} latency is {{ latency }}ms"
+    cooldown: 900  # 15 minutes
+
+  - name: recovery
+    description: "Service has recovered"
+    condition: "status == 200 && previous_status != 200"
+    severity: info
+    message: "{{ service }} has recovered"
+    cooldown: 0
+
+# Maintenance windows
+maintenance:
+  - name: weekly_maintenance
+    schedule: "0 6 * * 0"  # Sunday 6 AM UTC
+    duration: 3600         # 1 hour
+    services: all
+    silence_alerts: true
+
+  - name: deploy_window
+    schedule: "0 14 * * 1-5"  # Weekdays 2 PM UTC
+    duration: 1800            # 30 minutes
+    services: all
+    silence_alerts: false
+    reduced_severity: true

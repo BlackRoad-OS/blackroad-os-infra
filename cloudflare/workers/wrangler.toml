@@ -1,0 +1,43 @@
+# BlackRoad OS Edge Router
+# Cloudflare Worker Configuration
+
+name = "blackroad-os-router"
+main = "router.js"
+compatibility_date = "2024-01-01"
+
+# Account configuration (set via environment or wrangler login)
+# account_id = "your-account-id"
+
+# Production routes
+routes = [
+  { pattern = "*.blackroad.io/*", zone_name = "blackroad.io" },
+  { pattern = "*.blackroad.systems/*", zone_name = "blackroad.systems" },
+]
+
+# Environment-specific configuration
+[env.production]
+name = "blackroad-os-router-prod"
+routes = [
+  { pattern = "*.blackroad.io/*", zone_name = "blackroad.io" },
+  { pattern = "*.blackroad.systems/*", zone_name = "blackroad.systems" },
+]
+
+[env.staging]
+name = "blackroad-os-router-staging"
+routes = [
+  { pattern = "*.staging.blackroad.io/*", zone_name = "blackroad.io" },
+  { pattern = "*.staging.blackroad.systems/*", zone_name = "blackroad.systems" },
+]
+
+# Variables (secrets should be set via wrangler secret)
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+
+# Observability
+[observability]
+enabled = true
+
+# Triggers (cron for health checks)
+[triggers]
+crons = ["*/5 * * * *"]  # Every 5 minutes

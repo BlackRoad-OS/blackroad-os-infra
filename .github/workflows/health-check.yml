@@ -1,0 +1,82 @@
+name: Health Check All Services
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all BlackRoad OS endpoints
+        id: health
+        run: |
+          echo "═══════════════════════════════════════════════════"
+          echo "  BLACKROAD OS HEALTH CHECK"
+          echo "  $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "═══════════════════════════════════════════════════"
+          echo ""
+
+          FAILED=0
+          PASSED=0
+
+          check_health() {
+            local name=$1
+            local url=$2
+            local response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$url" 2>/dev/null)
+
+            if [ "$response" = "200" ]; then
+              echo "✅ $name ($response)"
+              ((PASSED++))
+            elif [ "$response" = "000" ]; then
+              echo "❌ $name (UNREACHABLE)"
+              ((FAILED++))
+            else
+              echo "⚠️  $name ($response)"
+              ((FAILED++))
+            fi
+          }
+
+          echo "=== blackroad.io ==="
+          check_health "app.blackroad.io" "https://app.blackroad.io/"
+          check_health "home.blackroad.io" "https://home.blackroad.io/"
+          check_health "os.blackroad.io" "https://os.blackroad.io/"
+          check_health "creator.blackroad.io" "https://creator.blackroad.io/"
+          check_health "api.blackroad.io" "https://api.blackroad.io/health"
+
+          echo ""
+          echo "=== blackroad.systems ==="
+          check_health "api.blackroad.systems" "https://api.blackroad.systems/health"
+          check_health "core.blackroad.systems" "https://core.blackroad.systems/health"
+          check_health "infra.blackroad.systems" "https://infra.blackroad.systems/health"
+          check_health "console.blackroad.systems" "https://console.blackroad.systems/health"
+          check_health "docs.blackroad.systems" "https://docs.blackroad.systems/"
+          check_health "prism.blackroad.systems" "https://prism.blackroad.systems/"
+          check_health "beacon.blackroad.systems" "https://beacon.blackroad.systems/health"
+          check_health "research.blackroad.systems" "https://research.blackroad.systems/health"
+          check_health "demo.blackroad.systems" "https://demo.blackroad.systems/"
+          check_health "archive.blackroad.systems" "https://archive.blackroad.systems/health"
+          check_health "agents.blackroad.systems" "https://agents.blackroad.systems/health"
+
+          echo ""
+          echo "═══════════════════════════════════════════════════"
+          echo "  SUMMARY: $PASSED passed, $FAILED failed"
+          echo "═══════════════════════════════════════════════════"
+
+          # Set output for notifications
+          echo "passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+          # Fail workflow if any health checks failed
+          if [ $FAILED -gt 0 ]; then
+            exit 1
+          fi
+
+      - name: Send alert on failure
+        if: failure()
+        run: |
+          echo "🚨 ALERT: Some BlackRoad OS services are unhealthy!"
+          echo "Check the logs above for details."
+          # Add webhook/email notification here
