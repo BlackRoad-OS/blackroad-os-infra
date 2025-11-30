@@ -1,0 +1,145 @@
+# BlackRoad OS Cloudflare Tunnel Configuration
+# This file defines the subdomain routing for all BlackRoad services
+#
+# REPAIR INSTRUCTIONS:
+# 1. Generate new tunnel token: cloudflared tunnel create blackroad-os
+# 2. Add token to Railway: TUNNEL_TOKEN=<new_token>
+# 3. Redeploy cloudflared service on Railway
+# 4. Run: cloudflared tunnel route dns blackroad-os <subdomain>
+
+tunnel: blackroad-os
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  # ============================================
+  # PRIMARY OS SURFACES (blackroad.io)
+  # ============================================
+
+  # Main web UI
+  - hostname: app.blackroad.io
+    service: http://blackroad-os-web:3000
+    originRequest:
+      noTLSVerify: true
+
+  # Landing / home page
+  - hostname: home.blackroad.io
+    service: http://blackroad-os-home:3000
+    originRequest:
+      noTLSVerify: true
+
+  # Root OS index
+  - hostname: os.blackroad.io
+    service: http://blackroad-os:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Creator tools
+  - hostname: creator.blackroad.io
+    service: http://blackroad-os-pack-creator-studio:3000
+    originRequest:
+      noTLSVerify: true
+
+  # ============================================
+  # SYSTEMS / INTERNAL (blackroad.systems)
+  # ============================================
+
+  # Core API surface
+  - hostname: api.blackroad.io
+    service: http://blackroad-os-api:8080
+    originRequest:
+      noTLSVerify: true
+
+  # API Gateway / auth / routing
+  - hostname: api.blackroad.systems
+    service: http://blackroad-os-api-gateway:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Internal core engine
+  - hostname: core.blackroad.systems
+    service: http://blackroad-os-core:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Infra controllers / IaC
+  - hostname: infra.blackroad.systems
+    service: http://blackroad-os-infra:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Master control panel
+  - hostname: console.blackroad.systems
+    service: http://blackroad-os-master:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Documentation
+  - hostname: docs.blackroad.systems
+    service: http://blackroad-os-docs:3000
+    originRequest:
+      noTLSVerify: true
+
+  # Browser OS (Prism Console)
+  - hostname: prism.blackroad.systems
+    service: http://blackroad-prism-console:3000
+    originRequest:
+      noTLSVerify: true
+
+  # Identity + heartbeat
+  - hostname: beacon.blackroad.systems
+    service: http://blackroad-os-beacon:8080
+    originRequest:
+      noTLSVerify: true
+
+  # R&D
+  - hostname: research.blackroad.systems
+    service: http://blackroad-os-research:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Labs
+  - hostname: lab.blackroad.systems
+    service: http://blackroad-os-pack-research-lab:8080
+    originRequest:
+      noTLSVerify: true
+
+  # DevOps tooling
+  - hostname: devops.blackroad.systems
+    service: http://blackroad-os-pack-infra-devops:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Legal pack
+  - hostname: legal.blackroad.systems
+    service: http://blackroad-os-pack-legal:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Finance pack
+  - hostname: finance.blackroad.systems
+    service: http://blackroad-os-pack-finance:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Public demo
+  - hostname: demo.blackroad.systems
+    service: http://blackroad-os-demo:3000
+    originRequest:
+      noTLSVerify: true
+
+  # Permanent archive
+  - hostname: archive.blackroad.systems
+    service: http://blackroad-os-archive:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Agents
+  - hostname: agents.blackroad.systems
+    service: http://blackroad-os-agents:8080
+    originRequest:
+      noTLSVerify: true
+
+  # ============================================
+  # CATCH-ALL (404 for unmatched)
+  # ============================================
+  - service: http_status:404

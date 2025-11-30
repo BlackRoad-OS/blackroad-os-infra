@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "generated": "2024-11-29",
+  "domains": {
+    "blackroad.io": {
+      "description": "Primary OS domain - public-facing surfaces",
+      "subdomains": {
+        "app": {
+          "repo": "blackroad-os-web",
+          "service": "blackroad-os-web",
+          "port": 3000,
+          "purpose": "Main web UI"
+        },
+        "home": {
+          "repo": "blackroad-os-home",
+          "service": "blackroad-os-home",
+          "port": 3000,
+          "purpose": "Landing page"
+        },
+        "os": {
+          "repo": "blackroad-os",
+          "service": "blackroad-os",
+          "port": 8080,
+          "purpose": "Root OS index"
+        },
+        "creator": {
+          "repo": "blackroad-os-pack-creator-studio",
+          "service": "blackroad-os-pack-creator-studio",
+          "port": 3000,
+          "purpose": "Creator tools"
+        },
+        "api": {
+          "repo": "blackroad-os-api",
+          "service": "blackroad-os-api",
+          "port": 8080,
+          "purpose": "Core API surface"
+        }
+      }
+    },
+    "blackroad.systems": {
+      "description": "Internal systems domain - infrastructure and services",
+      "subdomains": {
+        "api": {
+          "repo": "blackroad-os-api-gateway",
+          "service": "blackroad-os-api-gateway",
+          "port": 8080,
+          "purpose": "Gateway / auth / routing"
+        },
+        "core": {
+          "repo": "blackroad-os-core",
+          "service": "blackroad-os-core",
+          "port": 8080,
+          "purpose": "Internal core engine"
+        },
+        "infra": {
+          "repo": "blackroad-os-infra",
+          "service": "blackroad-os-infra",
+          "port": 8080,
+          "purpose": "Infra controllers / IaC"
+        },
+        "console": {
+          "repo": "blackroad-os-master",
+          "service": "blackroad-os-master",
+          "port": 8080,
+          "purpose": "Master control panel"
+        },
+        "docs": {
+          "repo": "blackroad-os-docs",
+          "service": "blackroad-os-docs",
+          "port": 3000,
+          "purpose": "Documentation"
+        },
+        "prism": {
+          "repo": "blackroad-os-prism-console",
+          "service": "blackroad-prism-console",
+          "port": 3000,
+          "purpose": "Browser OS"
+        },
+        "beacon": {
+          "repo": "blackroad-os-beacon",
+          "service": "blackroad-os-beacon",
+          "port": 8080,
+          "purpose": "Identity + heartbeat"
+        },
+        "research": {
+          "repo": "blackroad-os-research",
+          "service": "blackroad-os-research",
+          "port": 8080,
+          "purpose": "R&D"
+        },
+        "lab": {
+          "repo": "blackroad-os-pack-research-lab",
+          "service": "blackroad-os-pack-research-lab",
+          "port": 8080,
+          "purpose": "Labs"
+        },
+        "devops": {
+          "repo": "blackroad-os-pack-infra-devops",
+          "service": "blackroad-os-pack-infra-devops",
+          "port": 8080,
+          "purpose": "DevOps tooling"
+        },
+        "legal": {
+          "repo": "blackroad-os-pack-legal",
+          "service": "blackroad-os-pack-legal",
+          "port": 8080,
+          "purpose": "Legal pack"
+        },
+        "finance": {
+          "repo": "blackroad-os-pack-finance",
+          "service": "blackroad-os-pack-finance",
+          "port": 8080,
+          "purpose": "Finance pack"
+        },
+        "demo": {
+          "repo": "blackroad-os-demo",
+          "service": "blackroad-os-demo",
+          "port": 3000,
+          "purpose": "Public demo"
+        },
+        "archive": {
+          "repo": "blackroad-os-archive",
+          "service": "blackroad-os-archive",
+          "port": 8080,
+          "purpose": "Permanent archive"
+        },
+        "agents": {
+          "repo": "blackroad-os-agents",
+          "service": "blackroad-os-agents",
+          "port": 8080,
+          "purpose": "Agent orchestration"
+        }
+      }
+    }
+  },
+  "railway": {
+    "project": "BlackRoad OS",
+    "environment": "production"
+  },
+  "cloudflare": {
+    "tunnel_name": "blackroad-os",
+    "config_path": "/etc/cloudflared/config.yml"
+  }
+}

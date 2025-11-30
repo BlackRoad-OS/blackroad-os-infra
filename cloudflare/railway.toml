@@ -1,0 +1,11 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "cloudflare/Dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "always"
+
+[variables]
+# TUNNEL_TOKEN must be set manually in Railway dashboard
+# Generate with: cloudflared tunnel create blackroad-os
