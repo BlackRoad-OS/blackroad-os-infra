@@ -1,0 +1,216 @@
+name: "🏥 BlackRoad OS Health Dashboard"
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Every 10 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  SERVICES: |
+    agents.blackroad.io
+    beacon.blackroad.io
+    gateway.blackroad.io
+    home.blackroad.io
+    demo.blackroad.io
+    core.blackroad.io
+    operator.blackroad.io
+    prism.blackroad.io
+    console.blackroad.io
+    research.blackroad.io
+    docs.blackroad.io
+    brand.blackroad.io
+    api.blackroad.io
+    app.blackroad.io
+    blackroad.io
+
+jobs:
+  health-check:
+    name: Check All Services
+    runs-on: ubuntu-latest
+    outputs:
+      status_json: ${{ steps.check.outputs.status_json }}
+      all_healthy: ${{ steps.check.outputs.all_healthy }}
+      failed_services: ${{ steps.check.outputs.failed_services }}
+
+    steps:
+      - name: Check all services
+        id: check
+        run: |
+          SERVICES="agents.blackroad.io beacon.blackroad.io gateway.blackroad.io home.blackroad.io demo.blackroad.io core.blackroad.io operator.blackroad.io prism.blackroad.io console.blackroad.io research.blackroad.io docs.blackroad.io brand.blackroad.io api.blackroad.io app.blackroad.io blackroad.io"
+
+          STATUS_JSON="{"
+          FAILED=""
+          ALL_HEALTHY="true"
+
+          for service in $SERVICES; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$service" --connect-timeout 10 --max-time 15 2>/dev/null || echo "000")
+            RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" "https://$service" --connect-timeout 10 --max-time 15 2>/dev/null || echo "0")
+
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
+              STATUS="healthy"
+            elif [ "$HTTP_CODE" = "000" ]; then
+              STATUS="unreachable"
+              ALL_HEALTHY="false"
+              FAILED="$FAILED $service"
+            else
+              STATUS="degraded"
+              ALL_HEALTHY="false"
+              FAILED="$FAILED $service"
+            fi
+
+            STATUS_JSON="$STATUS_JSON\"$service\":{\"status\":\"$STATUS\",\"code\":$HTTP_CODE,\"response_time\":$RESPONSE_TIME},"
+          done
+
+          STATUS_JSON="${STATUS_JSON%,}}"
+
+          echo "status_json=$STATUS_JSON" >> $GITHUB_OUTPUT
+          echo "all_healthy=$ALL_HEALTHY" >> $GITHUB_OUTPUT
+          echo "failed_services=$FAILED" >> $GITHUB_OUTPUT
+
+      - name: Generate status badge
+        run: |
+          if [ "${{ steps.check.outputs.all_healthy }}" = "true" ]; then
+            echo "All services healthy ✅"
+          else
+            echo "Some services degraded: ${{ steps.check.outputs.failed_services }}"
+          fi
+
+  update-status-page:
+    name: Update Status Page
+    runs-on: ubuntu-latest
+    needs: health-check
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update status file
+        run: |
+          mkdir -p status
+          cat > status/current.json << 'EOF'
+          {
+            "timestamp": "${{ github.event.repository.updated_at }}",
+            "checked_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "all_healthy": ${{ needs.health-check.outputs.all_healthy }},
+            "services": ${{ needs.health-check.outputs.status_json }}
+          }
+          EOF
+
+      - name: Generate status markdown
+        run: |
+          cat > status/STATUS.md << 'STATUSEOF'
+          # BlackRoad OS Service Status
+
+          Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Current Status
+
+          | Service | Status | Response Time |
+          |---------|--------|---------------|
+          STATUSEOF
+
+          # Parse and add each service
+          echo '${{ needs.health-check.outputs.status_json }}' | jq -r 'to_entries[] | "| \(.key) | \(if .value.status == "healthy" then "✅ Healthy" elif .value.status == "degraded" then "⚠️ Degraded" else "❌ Down" end) | \(.value.response_time)s |"' >> status/STATUS.md || true
+
+      - name: Commit status update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add status/
+          git diff --staged --quiet || git commit -m "Update service status [skip ci]"
+          git push || true
+
+  create-incident:
+    name: Create Incident Issue
+    runs-on: ubuntu-latest
+    needs: health-check
+    if: needs.health-check.outputs.all_healthy == 'false'
+
+    steps:
+      - name: Check for existing incident
+        id: check-incident
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'incident,auto-created'
+            });
+
+            const existingIncident = issues.data.find(i =>
+              i.title.includes('Service Health Incident') &&
+              Date.now() - new Date(i.created_at).getTime() < 3600000 // Within last hour
+            );
+
+            return { exists: !!existingIncident, number: existingIncident?.number };
+
+      - name: Create incident issue
+        if: steps.check-incident.outputs.result && !fromJSON(steps.check-incident.outputs.result).exists
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failedServices = '${{ needs.health-check.outputs.failed_services }}'.trim().split(' ').filter(s => s);
+
+            const body = `## 🚨 Service Health Incident
+
+            **Detected at:** ${new Date().toISOString()}
+
+            ### Affected Services
+            ${failedServices.map(s => `- ❌ \`${s}\``).join('\n')}
+
+            ### Status Details
+            \`\`\`json
+            ${{ needs.health-check.outputs.status_json }}
+            \`\`\`
+
+            ### Actions Required
+            - [ ] Investigate root cause
+            - [ ] Check Railway deployment logs
+            - [ ] Verify DNS configuration
+            - [ ] Check for any recent deployments
+            - [ ] Update this issue with findings
+
+            ---
+            *This issue was automatically created by the Health Dashboard workflow.*
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Service Health Incident - ${failedServices.length} service(s) affected`,
+              body: body,
+              labels: ['incident', 'auto-created', 'urgent']
+            });
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [health-check, create-incident]
+    if: always() && needs.health-check.outputs.all_healthy == 'false'
+
+    steps:
+      - name: Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": "🚨 BlackRoad OS Service Alert",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*🚨 Service Health Alert*\n\nSome services are experiencing issues:\n${{ needs.health-check.outputs.failed_services }}"
+                  }
+                }
+              ]
+            }' || true

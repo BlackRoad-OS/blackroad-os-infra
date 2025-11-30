@@ -1,0 +1,182 @@
+name: "📊 Agent Metrics Collector"
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  collect-metrics:
+    name: Collect Agent Metrics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Collect workflow metrics from all repos
+        id: metrics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const repos = [
+              'blackroad-os-agents',
+              'blackroad-os-beacon',
+              'blackroad-os-api-gateway',
+              'blackroad-os-core',
+              'blackroad-os-operator',
+              'blackroad-os-prism-console',
+              'blackroad-os-web',
+              'blackroad-os-docs',
+              'blackroad-os-infra',
+              'blackroad-os-home',
+              'blackroad-os-demo'
+            ];
+
+            const agentWorkflows = [
+              'agent-code-review.yml',
+              'agent-security-audit.yml',
+              'agent-documentation.yml',
+              'agent-test-coverage.yml',
+              'agent-performance.yml'
+            ];
+
+            let metrics = {
+              timestamp: new Date().toISOString(),
+              repos: {},
+              summary: {
+                total_runs: 0,
+                successful_runs: 0,
+                failed_runs: 0,
+                avg_duration_seconds: 0
+              }
+            };
+
+            let totalDuration = 0;
+            let durationCount = 0;
+
+            for (const repo of repos) {
+              metrics.repos[repo] = { agents: {} };
+
+              for (const workflow of agentWorkflows) {
+                try {
+                  const runs = await github.rest.actions.listWorkflowRuns({
+                    owner: 'BlackRoad-OS',
+                    repo: repo,
+                    workflow_id: workflow,
+                    per_page: 10
+                  });
+
+                  const recentRuns = runs.data.workflow_runs || [];
+                  const successCount = recentRuns.filter(r => r.conclusion === 'success').length;
+                  const failCount = recentRuns.filter(r => r.conclusion === 'failure').length;
+
+                  // Calculate average duration
+                  for (const run of recentRuns) {
+                    if (run.updated_at && run.created_at) {
+                      const duration = (new Date(run.updated_at) - new Date(run.created_at)) / 1000;
+                      totalDuration += duration;
+                      durationCount++;
+                    }
+                  }
+
+                  metrics.repos[repo].agents[workflow] = {
+                    total_runs: recentRuns.length,
+                    success: successCount,
+                    failure: failCount,
+                    success_rate: recentRuns.length > 0 ? Math.round((successCount / recentRuns.length) * 100) : 0
+                  };
+
+                  metrics.summary.total_runs += recentRuns.length;
+                  metrics.summary.successful_runs += successCount;
+                  metrics.summary.failed_runs += failCount;
+
+                } catch (e) {
+                  metrics.repos[repo].agents[workflow] = { error: 'Not found or no runs' };
+                }
+              }
+            }
+
+            metrics.summary.avg_duration_seconds = durationCount > 0 ? Math.round(totalDuration / durationCount) : 0;
+            metrics.summary.overall_success_rate = metrics.summary.total_runs > 0
+              ? Math.round((metrics.summary.successful_runs / metrics.summary.total_runs) * 100)
+              : 0;
+
+            return metrics;
+
+      - name: Save metrics
+        run: |
+          mkdir -p metrics
+          echo '${{ steps.metrics.outputs.result }}' | jq '.' > metrics/agent-metrics.json
+
+          # Append to history
+          DATE=$(date +%Y-%m-%d)
+          echo '${{ steps.metrics.outputs.result }}' | jq '.' >> metrics/history/$DATE.json 2>/dev/null || mkdir -p metrics/history && echo '${{ steps.metrics.outputs.result }}' | jq '.' > metrics/history/$DATE.json
+
+      - name: Generate metrics report
+        run: |
+          cat > metrics/METRICS.md << 'EOF'
+          # BlackRoad OS Agent Metrics
+
+          Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Summary
+
+          EOF
+
+          echo '${{ steps.metrics.outputs.result }}' | jq -r '
+            "| Metric | Value |",
+            "|--------|-------|",
+            "| Total Runs | \(.summary.total_runs) |",
+            "| Successful | \(.summary.successful_runs) |",
+            "| Failed | \(.summary.failed_runs) |",
+            "| Success Rate | \(.summary.overall_success_rate)% |",
+            "| Avg Duration | \(.summary.avg_duration_seconds)s |"
+          ' >> metrics/METRICS.md
+
+      - name: Commit metrics
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add metrics/
+          git diff --staged --quiet || git commit -m "Update agent metrics [skip ci]"
+          git push || true
+
+  alert-on-failures:
+    name: Alert on High Failure Rate
+    runs-on: ubuntu-latest
+    needs: collect-metrics
+
+    steps:
+      - name: Check failure rate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const metrics = ${{ steps.metrics.outputs.result || '{}' }};
+            const failureRate = 100 - (metrics.summary?.overall_success_rate || 100);
+
+            if (failureRate > 20) {
+              // Create an issue if failure rate is above 20%
+              const issues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                labels: 'agent-health'
+              });
+
+              const existingIssue = issues.data.find(i => i.title.includes('Agent Health Alert'));
+
+              if (!existingIssue) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `⚠️ Agent Health Alert - ${failureRate}% failure rate`,
+                  body: `## Agent Health Warning\n\nThe overall agent failure rate is **${failureRate}%**.\n\nPlease investigate the failing workflows.\n\n### Metrics\n\`\`\`json\n${JSON.stringify(metrics.summary, null, 2)}\n\`\`\``,
+                  labels: ['agent-health', 'auto-created']
+                });
+              }
+            }

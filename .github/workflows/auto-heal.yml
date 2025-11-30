@@ -1,0 +1,149 @@
+name: "🔧 Auto-Heal Services"
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to heal (or "all" for all services)'
+        required: true
+        default: 'all'
+  schedule:
+    - cron: '0 */4 * * *'  # Every 4 hours
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  detect-unhealthy:
+    name: Detect Unhealthy Services
+    runs-on: ubuntu-latest
+    outputs:
+      unhealthy: ${{ steps.check.outputs.unhealthy }}
+
+    steps:
+      - name: Check service health
+        id: check
+        run: |
+          SERVICES="agents beacon api-gateway home demo"
+          UNHEALTHY=""
+
+          for service in $SERVICES; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$service.blackroad.io" --connect-timeout 10 2>/dev/null || echo "000")
+
+            if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "301" ] && [ "$HTTP_CODE" != "302" ]; then
+              UNHEALTHY="$UNHEALTHY $service"
+              echo "❌ $service is unhealthy (HTTP $HTTP_CODE)"
+            else
+              echo "✅ $service is healthy"
+            fi
+          done
+
+          echo "unhealthy=$UNHEALTHY" >> $GITHUB_OUTPUT
+
+  heal-services:
+    name: Heal Unhealthy Services
+    runs-on: ubuntu-latest
+    needs: detect-unhealthy
+    if: needs.detect-unhealthy.outputs.unhealthy != '' || github.event.inputs.service != ''
+
+    steps:
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Determine services to heal
+        id: services
+        run: |
+          if [ "${{ github.event.inputs.service }}" = "all" ]; then
+            SERVICES="agents beacon api-gateway home demo"
+          elif [ -n "${{ github.event.inputs.service }}" ]; then
+            SERVICES="${{ github.event.inputs.service }}"
+          else
+            SERVICES="${{ needs.detect-unhealthy.outputs.unhealthy }}"
+          fi
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
+      - name: Redeploy unhealthy services
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          SERVICES="${{ steps.services.outputs.services }}"
+
+          for service in $SERVICES; do
+            echo "🔧 Attempting to heal $service..."
+
+            # Trigger redeploy via Railway
+            railway redeploy --service "$service" --yes 2>&1 || echo "Could not redeploy $service"
+
+            echo "✅ Triggered redeploy for $service"
+          done
+
+      - name: Wait for deployments
+        run: |
+          echo "Waiting 60 seconds for deployments to stabilize..."
+          sleep 60
+
+      - name: Verify healing
+        id: verify
+        run: |
+          SERVICES="${{ steps.services.outputs.services }}"
+          STILL_UNHEALTHY=""
+
+          for service in $SERVICES; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://$service.blackroad.io" --connect-timeout 10 2>/dev/null || echo "000")
+
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
+              echo "✅ $service healed successfully"
+            else
+              echo "❌ $service still unhealthy (HTTP $HTTP_CODE)"
+              STILL_UNHEALTHY="$STILL_UNHEALTHY $service"
+            fi
+          done
+
+          echo "still_unhealthy=$STILL_UNHEALTHY" >> $GITHUB_OUTPUT
+
+      - name: Report results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healedServices = '${{ steps.services.outputs.services }}'.trim().split(' ').filter(s => s);
+            const stillUnhealthy = '${{ steps.verify.outputs.still_unhealthy }}'.trim().split(' ').filter(s => s);
+            const healed = healedServices.filter(s => !stillUnhealthy.includes(s));
+
+            let body = `## 🔧 Auto-Heal Report\n\n`;
+            body += `**Time:** ${new Date().toISOString()}\n\n`;
+
+            if (healed.length > 0) {
+              body += `### ✅ Successfully Healed\n`;
+              healed.forEach(s => body += `- ${s}\n`);
+              body += '\n';
+            }
+
+            if (stillUnhealthy.length > 0) {
+              body += `### ❌ Still Unhealthy (Manual intervention required)\n`;
+              stillUnhealthy.forEach(s => body += `- ${s}\n`);
+              body += '\n';
+
+              // Create issue for manual intervention
+              const issues = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                labels: 'auto-heal-failed'
+              });
+
+              if (!issues.data.find(i => i.title.includes('Auto-Heal Failed'))) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `🚨 Auto-Heal Failed - Manual intervention required`,
+                  body: body,
+                  labels: ['auto-heal-failed', 'urgent']
+                });
+              }
+            }
+
+            console.log(body);
