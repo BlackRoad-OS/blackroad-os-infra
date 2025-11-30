@@ -38,18 +38,34 @@ The BlackRoad Pi Mesh connects Raspberry Pi, Jetson, and other Linux edge device
     └────────────┘  └────────────┘  └────────────┘
 ```
 
+## Operator URLs
+
+| Environment | URL |
+|-------------|-----|
+| **Local (Mac)** | `ws://alexas-macbook-pro-2.local:8000/ws/agent` |
+| **Railway (Production)** | `wss://blackroad-os-operator.up.railway.app/ws/agent` |
+| **Custom** | `wss://<your-operator>.up.railway.app/ws/agent` |
+
 ## Quick Start
 
-### One-Line Installation
+### One-Line Installation (Canonical)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/BlackRoad-OS/blackroad-pi-ops/main/install-pi-agent.sh | sudo bash
+# For local Mac operator
+sudo BLACKROAD_OPERATOR_URL="ws://alexas-macbook-pro-2.local:8000/ws/agent" \
+bash -c "$(curl -sSL https://raw.githubusercontent.com/BlackRoad-OS/blackroad-pi-ops/main/install-pi-agent.sh)"
 ```
 
-### With Custom Operator URL
+### Production (Railway)
 
 ```bash
-BLACKROAD_OPERATOR_URL="wss://your-operator.railway.app/ws/agent" \
+sudo BLACKROAD_OPERATOR_URL="wss://blackroad-os-operator.up.railway.app/ws/agent" \
+bash -c "$(curl -sSL https://raw.githubusercontent.com/BlackRoad-OS/blackroad-pi-ops/main/install-pi-agent.sh)"
+```
+
+### Legacy One-Line (Uses Default URL)
+
+```bash
 curl -sSL https://raw.githubusercontent.com/BlackRoad-OS/blackroad-pi-ops/main/install-pi-agent.sh | sudo bash
 ```
 
