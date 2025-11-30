@@ -1,0 +1,18 @@
+# =============================================================================
+# BlackRoad OS - Production Terraform Variables
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in your values
+# NEVER commit terraform.tfvars to version control!
+# =============================================================================
+
+# Railway Configuration
+railway_token      = "your-railway-token"
+railway_project_id = "your-railway-project-id"
+
+# Cloudflare Configuration
+cloudflare_api_token       = "your-cloudflare-api-token"
+cloudflare_zone_id_io      = "zone-id-for-blackroad-io"
+cloudflare_zone_id_systems = "zone-id-for-blackroad-systems"
+
+# Cloudflare Tunnel
+tunnel_cname = "blackroad-os.cfargotunnel.com"
