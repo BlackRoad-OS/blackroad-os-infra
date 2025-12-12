@@ -8,6 +8,9 @@
 
 ## 🚀 Quick Links
 
+### 📚 Canonical Guides
+- 📖 [Infrastructure Bible](docs/INFRASTRUCTURE_BIBLE.md) - End-to-end architecture, setup, and operations
+
 ### 📓 Runbooks & Playbooks
 - 🚨 **[Incident Playbooks](docs/runbooks/)** - Site down, DNS misroute, bad deploy
 - 🔑 [Key Rotation](docs/runbooks/key-rotation.md) - Secret rotation procedures
