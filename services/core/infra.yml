@@ -1,0 +1,90 @@
+# Infrastructure Blueprint: blackroad-os-core
+
+Core runtime service providing the primary OS APIs, identity, and workspace logic.
+
+## Service Overview
+- **Service Name**: blackroad-os-core
+- **Type**: Core runtime API/UI
+- **Language**: Node.js/TypeScript
+- **Repository**: https://github.com/BlackRoad-OS/blackroad-os-core
+
+## Deployment Configuration
+
+### Local Environment
+```yaml
+platform: local
+entrypoint: "pnpm dev"
+port: 9000
+dependencies:
+  - postgres (required)
+  - redis (optional)
+```
+
+### Staging Environment
+```yaml
+platform: railway
+railway_project: "blackroad-os-core-staging"
+port: 9000
+domain: "core.staging.blackroad.io"
+healthcheck: "/health"
+auto_deploy: true
+branch: "main"
+```
+
+### Production Environment
+```yaml
+platform: railway
+railway_project: "blackroad-os-core-prod"
+port: 9000
+domain: "core.blackroad.systems"
+healthcheck: "/health"
+auto_deploy: false  # manual approval
+branch: "main"
+```
+
+## Environment Variables
+
+### Required (All Environments)
+- `BR_OS_ENV` - Environment name: local/staging/prod
+- `BR_OS_CORE_VERSION` - Deployed version string
+- `BR_OS_CORE_COMMIT` - Git commit SHA
+- `PORT` - HTTP port (default: 9000)
+- `DATABASE_URL` - Primary Postgres connection string
+
+### Optional
+- `REDIS_URL` - Redis connection string for caching/sessions
+- `SESSION_SECRET` - Session/auth secret (stored in provider secrets manager)
+- `LOG_LEVEL` - Logging verbosity: debug/info/warn/error
+- `ENABLE_METRICS` - Enable metrics export (default: true)
+- `ALLOWED_ORIGINS` - Comma-separated CORS origins
+
+## Resource Requirements
+
+### Local
+- CPU: Best effort
+- Memory: 512MB minimum
+- Disk: Minimal
+
+### Staging
+- CPU: 1 vCPU
+- Memory: 1GB
+- Disk: 2GB
+- Instances: 1
+
+### Production
+- CPU: 1-2 vCPU
+- Memory: 2-4GB
+- Disk: 4GB+
+- Instances: 2+ (HA)
+
+## Health Checks
+- Endpoint: `GET /health`
+- Expected Response: 200 OK with JSON body
+- Interval: 30s
+- Timeout: 5s
+- Unhealthy Threshold: 3
+
+## Notes
+- Central orchestrator for auth, state, and workspace data.
+- Should enforce strict request logging and correlation IDs.
+- Downstream services (api/operator/packs) depend on this service being healthy.

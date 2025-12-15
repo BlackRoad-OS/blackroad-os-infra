@@ -29,7 +29,7 @@ interface EnvironmentsConfig {
 
 const REPO_ROOT = path.join(__dirname, '..');
 const REQUIRED_ENVS = ['local', 'staging', 'prod'];
-const CORE_SERVICES = ['api', 'operator', 'web', 'prism-console'];
+const CORE_SERVICES = ['core', 'api', 'operator', 'web', 'prism-console'];
 
 let hasErrors = false;
 

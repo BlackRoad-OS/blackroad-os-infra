@@ -1,0 +1,57 @@
+# Railway Service Configuration: blackroad-os-core
+
+[service]
+name = "blackroad-os-core"
+description = "Core runtime service providing primary OS APIs and workspace state"
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm install --frozen-lockfile && pnpm build"
+
+[deploy]
+startCommand = "pnpm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[healthcheck]
+path = "/health"
+interval = 30
+timeout = 5
+
+[network]
+# Port is set via $PORT environment variable by Railway
+# Default: 9000
+
+# Environment-specific configuration
+# Actual values are set in Railway dashboard, not here
+
+[env]
+# Required - set in Railway dashboard
+# BR_OS_ENV = "staging" or "prod"
+# BR_OS_CORE_VERSION = "0.1.0"
+# BR_OS_CORE_COMMIT = "$RAILWAY_GIT_COMMIT_SHA"
+# NODE_ENV = "production"
+# PORT = "$PORT"
+# DATABASE_URL = "[Postgres connection string]"
+
+# Optional - set in Railway dashboard if needed
+# REDIS_URL = "[Redis URL for cache/session]"
+# SESSION_SECRET = "[Secret for sessions/auth]"
+# ALLOWED_ORIGINS = "https://app.blackroad.io,https://console.blackroad.io"
+# LOG_LEVEL = "info"
+# ENABLE_METRICS = "true"
+
+[resources]
+# Staging: 1 vCPU, 1GB
+# Production: 1-2 vCPU, 2-4GB
+# Set in Railway dashboard
+
+[scaling]
+# Staging: 1 instance
+# Production: 2+ instances for high availability
+# Configure in Railway dashboard
+
+[notes]
+# Primary service for auth, workspace orchestration, and stateful operations
+# Ensure migrations run before deploy
+# Repository: https://github.com/BlackRoad-OS/blackroad-os-core
