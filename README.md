@@ -15,6 +15,12 @@
 - 🌐 [DNS Playbook](docs/dns-playbook.md) - DNS configuration
 - 🔧 [Railway Troubleshooting](docs/railway-troubleshooting.md) - Fix deployment failures
 
+### ☁️ Cloudflare Documentation
+- 📖 **[Cloudflare Complete Guide](docs/CLOUDFLARE_COMPLETE_GUIDE.md)** - Complete how-to for all operations
+- 🌐 [Cloudflare Zones Reference](docs/CLOUDFLARE_ZONES_REFERENCE.md) - Zone IDs, DNS records, Pages projects
+- 📚 [Cloudflare Index](docs/CLOUDFLARE_INDEX.md) - Master documentation index
+- ⚡ [Quick Reference](cloudflare/CLOUDFLARE_QUICK_REFERENCE.md) - Common commands cheat sheet
+
 ### 📊 Observability
 - 📝 [Logging Conventions](docs/observability/logging.md) - Structured logging patterns
 - 🧬 [Correlation IDs](docs/observability/correlation-ids.md) - Request tracing
