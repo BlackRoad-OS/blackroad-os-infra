@@ -8,6 +8,12 @@
 
 ## 🚀 Quick Links
 
+### 🤖 Agents
+- 🌍 **[Gaia Agent](agents/gaia/README.md)** - Live Truth Manifest & cryptographic verification
+- 🛡️ [Security Audit Agent](.github/workflows/agent-security-audit.yml) - Automated security scanning
+- 📊 [Metrics Agent](.github/workflows/agent-metrics.yml) - Performance monitoring
+- 🔍 [Code Review Agent](.github/workflows/agent-code-review.yml) - Automated PR reviews
+
 ### 📓 Runbooks & Playbooks
 - 🚨 **[Incident Playbooks](docs/runbooks/)** - Site down, DNS misroute, bad deploy
 - 🔑 [Key Rotation](docs/runbooks/key-rotation.md) - Secret rotation procedures
@@ -59,6 +65,14 @@ This repository defines and maintains:
 
 Run validations locally before opening a PR:
 ```
+/agents                 # BlackRoad OS Agent Framework
+  /gaia                 # Gaia - Live Truth Manifest agent
+    hash_generator.py   # SHA-256 hash generation utility
+    live_truth_manifest.json  # Cryptographic component hashes
+    README.md           # Gaia agent documentation
+  /src
+    orchestrator.ts     # Central agent coordination system
+
 /environments           # Environment definitions
   environments.yml      # Central manifest (local, staging, prod)
   /local               # Local development environment docs
@@ -235,6 +249,45 @@ npm run lint:infra
 # Preview documentation
 npx docsify serve docs
 ```
+
+## 🌍 Gaia Agent - Live Truth Manifest
+
+BlackRoad OS uses the **Gaia Agent** to provide cryptographic verification of core components using SHA-256 hashes. This ensures "Proven by Physics" mathematical certainty for system integrity.
+
+### Quick Start
+
+```bash
+# Verify all component hashes
+python3 agents/gaia/hash_generator.py --list
+
+# Generate a hash for data
+python3 agents/gaia/hash_generator.py "my-component-data"
+
+# Verify a specific component
+python3 agents/gaia/hash_generator.py --verify "BR-OS Core" "<hash>"
+```
+
+### Via BlackRoad CLI
+
+```bash
+# Install the CLI (from cli/ directory)
+npm install -g .
+
+# Use Gaia commands
+blackroad gaia verify    # Verify all components
+blackroad gaia hash <data>  # Generate hash
+blackroad gaia list      # List all components
+blackroad gaia info      # Show agent information
+```
+
+### Core Components Tracked
+
+- **BR-OS Core** (`blackroad-os-core`) - Core system component
+- **Lucidia Logic** (`lucidia-core`) - Intelligence layer
+- **Pi-Ops Mesh** (`blackroad-pi-ops`) - Operations mesh
+- **Trinity Auth** (`blackroad-os-api`) - Authentication system
+
+See [Gaia Agent Documentation](agents/gaia/README.md) for more details.
 
 ## 🌍 Environments
 
