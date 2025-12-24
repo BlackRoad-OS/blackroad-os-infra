@@ -513,6 +513,20 @@ if (require.main === module) {
     priority: 'high',
   });
 
+  orchestrator.registerAgent({
+    id: 'gaia-001',
+    name: 'Gaia',
+    type: 'identity',
+    capabilities: ['hash_generation', 'verification', 'integrity_monitoring'],
+    endpoints: ['gaia.blackroad.systems'],
+    priority: 'critical',
+    metadata: {
+      description: 'Live Truth Manifest Agent - Cryptographic verification system',
+      algorithm: 'SHA-256',
+      purpose: 'Proven by Physics verification',
+    },
+  });
+
   // Start orchestrator
   orchestrator.start();
 
