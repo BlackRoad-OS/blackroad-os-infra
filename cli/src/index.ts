@@ -78,8 +78,14 @@ program
   .name('blackroad')
   .description('BlackRoad OS Command Line Interface')
   .version('1.0.0')
-  .hook('preAction', () => {
-    console.log(banner);
+  .hook('preAction', (thisCommand) => {
+    // Skip banner if --json flag is present or if output is being piped
+    const hasJsonFlag = process.argv.includes('--json');
+    const isPiped = !process.stdout.isTTY;
+    
+    if (!hasJsonFlag && !isPiped) {
+      console.log(banner);
+    }
   });
 
 // =============================================================================

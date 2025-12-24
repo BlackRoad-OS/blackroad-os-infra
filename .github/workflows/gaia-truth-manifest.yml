@@ -48,11 +48,11 @@ jobs:
           cd cli
           npm run build
           
-          # Generate manifest as JSON
-          node dist/index.js gaia --manifest --json > ../truth-manifest.json
+          # Generate manifest as JSON (without banner due to pipe)
+          node dist/index.js gaia --manifest --json > ../manifests/truth-manifest-latest.json
           
-          # Generate manifest as Markdown
-          node dist/index.js gaia --manifest > ../truth-manifest.md
+          # Generate manifest as plain text for archive
+          node dist/index.js gaia --manifest > ../truth-manifest.txt
           
           # Calculate root hash for commit message
           ROOT_HASH=$(node dist/index.js gaia --manifest --json | jq -r '.rootHash')
@@ -69,12 +69,8 @@ jobs:
           # Add timestamp to filename
           TIMESTAMP=$(date -u +"%Y-%m-%d_%H-%M-%S")
           
-          # Copy current manifest
-          cp truth-manifest.json manifests/truth-manifest-latest.json
-          cp truth-manifest.md manifests/truth-manifest-latest.md
-          
-          # Archive with timestamp
-          cp truth-manifest.json "manifests/truth-manifest-${TIMESTAMP}.json"
+          # Copy current manifest JSON
+          cp manifests/truth-manifest-latest.json "manifests/truth-manifest-${TIMESTAMP}.json"
           
           echo "✓ Manifests organized"
       
@@ -85,7 +81,6 @@ jobs:
           git config --global user.email "gaia@blackroad.systems"
           
           git add manifests/truth-manifest-latest.json
-          git add manifests/truth-manifest-latest.md
           git add manifests/truth-manifest-*.json
           
           # Check if there are changes
@@ -108,7 +103,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Components Verified" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          cat truth-manifest.md >> $GITHUB_STEP_SUMMARY
+          cat truth-manifest.txt >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✓ Mathematical certainty through cryptographic verification" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

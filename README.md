@@ -33,6 +33,11 @@
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
 
+### 🤖 Agents & Automation
+- 🔐 **[Gaia Agent](agents/GAIA.md)** - Truth verification and hash generation
+- 🎯 [Agent Orchestrator](agents/src/orchestrator.ts) - Agent coordination system
+- ⚡ [Truth Manifest Workflow](.github/workflows/gaia-truth-manifest.yml) - Automated manifest generation
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
@@ -233,6 +238,29 @@ npm run gen:sig
 npm run lint:infra
 
 # Preview documentation
+npx docsify serve docs
+```
+
+### Gaia Truth Verification
+
+BlackRoad OS includes the Gaia agent for cryptographic verification:
+
+```bash
+# Generate Truth Manifest
+cd cli && npm run build
+node dist/index.js gaia --manifest
+
+# Verify a component
+node dist/index.js gaia --verify blackroad-os-core
+
+# Generate SHA-256 hash
+node dist/index.js gaia --hash "component-data"
+
+# Output as JSON for automation
+node dist/index.js gaia --manifest --json
+```
+
+**Learn more:** [Gaia Agent Documentation](agents/GAIA.md)
 npx docsify serve docs
 ```
 
