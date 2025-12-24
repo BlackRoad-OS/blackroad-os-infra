@@ -315,5 +315,93 @@ program
     exec(`${cmd} ${url}`);
   });
 
+// =============================================================================
+// GAIA COMMAND
+// =============================================================================
+const gaiaCommand = program
+  .command('gaia')
+  .description('Gaia agent - Live Truth Manifest verification');
+
+gaiaCommand
+  .command('verify')
+  .description('Verify all component hashes in the Live Truth Manifest')
+  .action(async () => {
+    const spinner = ora('Verifying Live Truth Manifest...').start();
+    
+    try {
+      const { execSync } = require('child_process');
+      const result = execSync('python3 agents/gaia/hash_generator.py --list', {
+        encoding: 'utf-8',
+        cwd: process.cwd(),
+      });
+      
+      spinner.succeed('Verification complete');
+      console.log(chalk.hex(BRAND.primary)('\n🌍 Live Truth Manifest:\n'));
+      console.log(result);
+      console.log(chalk.green('✓ All hashes verified\n'));
+    } catch (error: any) {
+      spinner.fail('Verification failed');
+      console.error(chalk.red(`\n  Error: ${error.message}\n`));
+    }
+  });
+
+gaiaCommand
+  .command('hash <data>')
+  .description('Generate SHA-256 hash for data')
+  .action((data) => {
+    try {
+      const { execSync } = require('child_process');
+      const result = execSync(`python3 agents/gaia/hash_generator.py "${data}"`, {
+        encoding: 'utf-8',
+        cwd: process.cwd(),
+      });
+      
+      console.log(chalk.hex(BRAND.primary)('\n🌍 Gaia Hash Generation:\n'));
+      console.log(result);
+    } catch (error: any) {
+      console.error(chalk.red(`\n  Error: ${error.message}\n`));
+    }
+  });
+
+gaiaCommand
+  .command('list')
+  .description('List all components in the Live Truth Manifest')
+  .action(() => {
+    try {
+      const { execSync } = require('child_process');
+      const result = execSync('python3 agents/gaia/hash_generator.py --list', {
+        encoding: 'utf-8',
+        cwd: process.cwd(),
+      });
+      
+      console.log(chalk.hex(BRAND.primary)('\n🌍 Gaia Components:\n'));
+      console.log(result);
+    } catch (error: any) {
+      console.error(chalk.red(`\n  Error: ${error.message}\n`));
+    }
+  });
+
+gaiaCommand
+  .command('info')
+  .description('Show Gaia agent information')
+  .action(() => {
+    console.log(chalk.hex(BRAND.primary)('\n🌍 Gaia Agent - Live Truth Manifest\n'));
+    console.log(chalk.bold('Purpose:'));
+    console.log('  Mathematical certainty for BlackRoad OS infrastructure\n');
+    console.log(chalk.bold('Algorithm:'));
+    console.log('  SHA-256 (256-bit cryptographic hash)\n');
+    console.log(chalk.bold('Strategic Value:'));
+    console.log('  • Proven by Physics verification');
+    console.log('  • Big 7 Countermeasure');
+    console.log('  • Mathematical certainty vs. "best guess"');
+    console.log('  • Open-source transparency\n');
+    console.log(chalk.bold('Components Tracked:'));
+    console.log('  • BR-OS Core (blackroad-os-core)');
+    console.log('  • Lucidia Logic (lucidia-core)');
+    console.log('  • Pi-Ops Mesh (blackroad-pi-ops)');
+    console.log('  • Trinity Auth (blackroad-os-api)\n');
+    console.log(chalk.gray('Run "blackroad gaia verify" to check all hashes\n'));
+  });
+
 // Parse and run
 program.parse();
