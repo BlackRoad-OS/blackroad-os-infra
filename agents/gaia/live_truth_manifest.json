@@ -2,6 +2,7 @@
   "version": "1.0.0",
   "generated_at": "2025-12-24T03:57:37.670Z",
   "description": "Gaia Root Hash - Live Truth Manifest for BlackRoad OS. These are real SHA-256 hashes derived from core architecture to ensure mathematical certainty and 'Proven by Physics' verification.",
+  "note": "These hashes are the official component identifiers as specified by Gaia-01. Any change to even a single character in these repos will break this signature.",
   "components": {
     "BR-OS Core": {
       "identity": "blackroad-os-core",

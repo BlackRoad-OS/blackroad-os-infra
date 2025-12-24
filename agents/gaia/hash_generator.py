@@ -17,10 +17,10 @@ import sys
 import argparse
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 
 
-def generate_gaia_hash(target_data: str | bytes) -> str:
+def generate_gaia_hash(target_data: Union[str, bytes]) -> str:
     """
     Generates a real SHA-256 hash for BlackRoad verification.
     
@@ -49,7 +49,18 @@ def generate_gaia_hash_from_file(filepath: str, block_size: int = 4096) -> str:
         
     Returns:
         Hexadecimal SHA-256 hash string
+        
+    Raises:
+        FileNotFoundError: If the specified file does not exist
     """
+    file_path = Path(filepath)
+    
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {filepath}")
+    
+    if not file_path.is_file():
+        raise ValueError(f"Path is not a file: {filepath}")
+    
     sha256_hash = hashlib.sha256()
     
     with open(filepath, 'rb') as f:

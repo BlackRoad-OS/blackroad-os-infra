@@ -21,6 +21,8 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
 import { table } from 'table';
+import { execSync } from 'child_process';
+import { resolve } from 'path';
 
 // Brand colors
 const BRAND = {
@@ -329,7 +331,6 @@ gaiaCommand
     const spinner = ora('Verifying Live Truth Manifest...').start();
     
     try {
-      const { execSync } = require('child_process');
       const result = execSync('python3 agents/gaia/hash_generator.py --list', {
         encoding: 'utf-8',
         cwd: process.cwd(),
@@ -348,16 +349,25 @@ gaiaCommand
 gaiaCommand
   .command('hash <data>')
   .description('Generate SHA-256 hash for data')
-  .action((data) => {
+  .action((data: string) => {
     try {
-      const { execSync } = require('child_process');
-      const result = execSync(`python3 agents/gaia/hash_generator.py "${data}"`, {
+      // Use array form of execSync to avoid shell injection
+      const { spawnSync } = require('child_process');
+      const result = spawnSync('python3', ['agents/gaia/hash_generator.py', data], {
         encoding: 'utf-8',
         cwd: process.cwd(),
       });
       
+      if (result.error) {
+        throw result.error;
+      }
+      
+      if (result.status !== 0) {
+        throw new Error(result.stderr || 'Command failed');
+      }
+      
       console.log(chalk.hex(BRAND.primary)('\n🌍 Gaia Hash Generation:\n'));
-      console.log(result);
+      console.log(result.stdout);
     } catch (error: any) {
       console.error(chalk.red(`\n  Error: ${error.message}\n`));
     }
@@ -368,7 +378,6 @@ gaiaCommand
   .description('List all components in the Live Truth Manifest')
   .action(() => {
     try {
-      const { execSync } = require('child_process');
       const result = execSync('python3 agents/gaia/hash_generator.py --list', {
         encoding: 'utf-8',
         cwd: process.cwd(),
