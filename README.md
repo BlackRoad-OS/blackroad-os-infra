@@ -261,8 +261,6 @@ node dist/index.js gaia --manifest --json
 ```
 
 **Learn more:** [Gaia Agent Documentation](agents/GAIA.md)
-npx docsify serve docs
-```
 
 ## 🌍 Environments
 

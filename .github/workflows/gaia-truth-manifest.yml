@@ -1,15 +1,18 @@
 name: Gaia Truth Manifest Generator
 
 on:
-  # Run after any workflow completes (agent tasks)
+  # Run after key workflows complete (agent tasks, deployments)
   workflow_run:
-    workflows: ["*"]
+    workflows:
+      - "CI"
+      - "Deploy"
+      - "Agent Metrics"
     types:
       - completed
-  
+
   # Allow manual trigger
   workflow_dispatch:
-  
+
   # Run on schedule (daily at 00:00 UTC)
   schedule:
     - cron: '0 0 * * *'
@@ -18,16 +21,16 @@ jobs:
   generate-manifest:
     name: Generate and Commit Truth Manifest
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
-      
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -36,53 +39,54 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             cli/package-lock.json
-      
+
       - name: Install CLI dependencies
         run: |
           cd cli
           npm ci
-      
+
       - name: Generate Truth Manifest
         id: generate
         run: |
           cd cli
           npm run build
-          
+
           # Generate manifest as JSON (without banner due to pipe)
           node dist/index.js gaia --manifest --json > ../manifests/truth-manifest-latest.json
-          
+
           # Generate manifest as plain text for archive
           node dist/index.js gaia --manifest > ../truth-manifest.txt
-          
+
           # Calculate root hash for commit message
+          # Note: jq is pre-installed on ubuntu-latest runners
           ROOT_HASH=$(node dist/index.js gaia --manifest --json | jq -r '.rootHash')
           echo "root_hash=$ROOT_HASH" >> $GITHUB_OUTPUT
-          
+
           echo "✓ Truth Manifest generated successfully"
           echo "Root Hash: $ROOT_HASH"
-      
+
       - name: Create manifests directory
         run: mkdir -p manifests
-      
+
       - name: Move manifests to directory
         run: |
           # Add timestamp to filename
           TIMESTAMP=$(date -u +"%Y-%m-%d_%H-%M-%S")
-          
+
           # Copy current manifest JSON
           cp manifests/truth-manifest-latest.json "manifests/truth-manifest-${TIMESTAMP}.json"
-          
+
           echo "✓ Manifests organized"
-      
+
       - name: Commit and push manifests
         id: commit
         run: |
           git config --global user.name "Gaia Agent"
           git config --global user.email "gaia@blackroad.systems"
-          
+
           git add manifests/truth-manifest-latest.json
           git add manifests/truth-manifest-*.json
-          
+
           # Check if there are changes
           if git diff --cached --quiet; then
             echo "No changes to commit"
@@ -93,7 +97,7 @@ jobs:
             echo "committed=true" >> $GITHUB_OUTPUT
             echo "✓ Manifests committed and pushed"
           fi
-      
+
       - name: Create summary
         if: steps.commit.outputs.committed == 'true'
         run: |

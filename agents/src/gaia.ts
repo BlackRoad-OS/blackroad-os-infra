@@ -47,8 +47,11 @@ interface VerificationResult {
 
 export class GaiaAgent extends EventEmitter {
   private manifests: Map<string, TruthManifest> = new Map();
-  
+
   // Known component identities from the problem statement
+  // These are the "Ground Truth" hashes provided by the user for the
+  // Big 7 countermeasure. Note: The blackroad-os-core hash is intentionally
+  // the SHA-256 of an empty string as specified in the requirements.
   private readonly CORE_COMPONENTS: Record<string, string> = {
     'blackroad-os-core': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     'lucidia-core': 'f6a4b1238d7c9e0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a',
