@@ -57,7 +57,7 @@ T07  🟢🟢🟢🟢🟢🟢⚪️
 - 🚦 🟢🟡🔴 - Traffic light status (green/yellow/red)
 - ✅☑️☐ - Checkboxes (done/partial/empty)
 - ❗️❓ - Priority markers (important/question)
-- ⛓️‍💥 - Breaking change indicator
+- ⛓️‍💥 - Breaking change indicator (note: may render as separate emojis on some platforms)
 - 🏁🎉 - Completion markers (finish/celebrate)
 
 ---
