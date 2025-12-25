@@ -1,0 +1,478 @@
+{
+  "pack_version": "v134",
+  "pack_name": "emoji-expense-invoice-lane",
+  "description": "Emoji-based expense and invoice approval workflow system with 7 lanes and 7 approval stages",
+  "legend": {
+    "status_indicators": {
+      "🟢": "ok - step completed successfully",
+      "🟡": "wait - step in progress or pending",
+      "🔴": "stop - step blocked or failed",
+      "⚪️": "empty - step not started"
+    },
+    "lane_types": {
+      "💳": "expense - expense submission lane",
+      "🧾": "invoice - invoice submission lane",
+      "📎": "proof - proof/attachment upload lane",
+      "👀": "review - review and validation lane",
+      "⭕": "approve - approval lane",
+      "🗂🔐": "file-store - file and secure storage lane",
+      "✅🏁": "verify-close - verification and closure lane"
+    },
+    "approval_stages": {
+      "1️⃣": "stage-1",
+      "2️⃣": "stage-2",
+      "3️⃣": "stage-3",
+      "4️⃣": "stage-4",
+      "5️⃣": "stage-5",
+      "6️⃣": "stage-6",
+      "7️⃣": "stage-7"
+    }
+  },
+  "lanes": [
+    {
+      "lane_id": "expense",
+      "lane_emoji": "💳",
+      "lane_name": "Expense Submission",
+      "description": "Submit expense claims and receipts",
+      "stages": [
+        {
+          "stage": "1️⃣",
+          "status": "⚪️",
+          "action": "Create expense claim",
+          "required_fields": ["amount", "date", "category", "description"]
+        },
+        {
+          "stage": "2️⃣",
+          "status": "⚪️",
+          "action": "Add expense details",
+          "required_fields": ["vendor", "payment_method", "cost_center"]
+        },
+        {
+          "stage": "3️⃣",
+          "status": "⚪️",
+          "action": "Validate expense policy",
+          "required_fields": ["policy_compliance", "budget_check"]
+        },
+        {
+          "stage": "4️⃣",
+          "status": "⚪️",
+          "action": "Manager review",
+          "required_fields": ["manager_notes"]
+        },
+        {
+          "stage": "5️⃣",
+          "status": "⚪️",
+          "action": "Finance review",
+          "required_fields": ["finance_notes", "accounting_code"]
+        },
+        {
+          "stage": "6️⃣",
+          "status": "⚪️",
+          "action": "Payment processing",
+          "required_fields": ["payment_status", "payment_date"]
+        },
+        {
+          "stage": "7️⃣",
+          "status": "⚪️",
+          "action": "Expense closed",
+          "required_fields": ["closure_date", "reference_number"]
+        }
+      ]
+    },
+    {
+      "lane_id": "invoice",
+      "lane_emoji": "🧾",
+      "lane_name": "Invoice Submission",
+      "description": "Submit vendor invoices for payment",
+      "stages": [
+        {
+          "stage": "1️⃣",
+          "status": "⚪️",
+          "action": "Upload invoice",
+          "required_fields": ["invoice_number", "vendor", "amount", "due_date"]
+        },
+        {
+          "stage": "2️⃣",
+          "status": "⚪️",
+          "action": "Invoice data entry",
+          "required_fields": ["line_items", "tax_amount", "total"]
+        },
+        {
+          "stage": "3️⃣",
+          "status": "⚪️",
+          "action": "Match purchase order",
+          "required_fields": ["po_number", "po_match_status"]
+        },
+        {
+          "stage": "4️⃣",
+          "status": "⚪️",
+          "action": "Department approval",
+          "required_fields": ["department_head_approval"]
+        },
+        {
+          "stage": "5️⃣",
+          "status": "⚪️",
+          "action": "Finance approval",
+          "required_fields": ["finance_approval", "gl_codes"]
+        },
+        {
+          "stage": "6️⃣",
+          "status": "⚪️",
+          "action": "Payment scheduled",
+          "required_fields": ["payment_schedule_date"]
+        },
+        {
+          "stage": "7️⃣",
+          "status": "⚪️",
+          "action": "Invoice paid",
+          "required_fields": ["payment_confirmation", "transaction_id"]
+        }
+      ]
+    },
+    {
+      "lane_id": "proof",
+      "lane_emoji": "📎",
+      "lane_name": "Proof/Attachment",
+      "description": "Upload and manage supporting documentation",
+      "stages": [
+        {
+          "stage": "1️⃣",
+          "status": "⚪️",
+          "action": "Attach receipts",
+          "required_fields": ["receipt_files"]
+        },
+        {
+          "stage": "2️⃣",
+          "status": "⚪️",
+          "action": "Attach invoices",
+          "required_fields": ["invoice_files"]
+        },
+        {
+          "stage": "3️⃣",
+          "status": "⚪️",
+          "action": "Attach supporting docs",
+          "required_fields": ["supporting_documents"]
+        },
+        {
+          "stage": "4️⃣",
+          "status": "⚪️",
+          "action": "Verify attachments",
+          "required_fields": ["attachment_verification"]
+        },
+        {
+          "stage": "5️⃣",
+          "status": "⚪️",
+          "action": "OCR processing",
+          "required_fields": ["ocr_data", "ocr_confidence"]
+        },
+        {
+          "stage": "6️⃣",
+          "status": "⚪️",
+          "action": "Archive documents",
+          "required_fields": ["archive_location"]
+        },
+        {
+          "stage": "7️⃣",
+          "status": "⚪️",
+          "action": "Retention policy applied",
+          "required_fields": ["retention_period", "deletion_date"]
+        }
+      ]
+    },
+    {
+      "lane_id": "review",
+      "lane_emoji": "👀",
+      "lane_name": "Review",
+      "description": "Review and validation of submissions",
+      "stages": [
+        {
+          "stage": "1️⃣",
+          "status": "⚪️",
+          "action": "Initial review",
+          "required_fields": ["reviewer_id", "review_date"]
+        },
+        {
+          "stage": "2️⃣",
+          "status": "⚪️",
+          "action": "Compliance check",
+          "required_fields": ["compliance_status"]
+        },
+        {
+          "stage": "3️⃣",
+          "status": "⚪️",
+          "action": "Fraud detection",
+          "required_fields": ["fraud_check_status"]
+        },
+        {
+          "stage": "4️⃣",
+          "status": "⚪️",
+          "action": "Policy validation",
+          "required_fields": ["policy_validation_status"]
+        },
+        {
+          "stage": "5️⃣",
+          "status": "⚪️",
+          "action": "Audit review",
+          "required_fields": ["audit_notes"]
+        },
+        {
+          "stage": "6️⃣",
+          "status": "⚪️",
+          "action": "Final review",
+          "required_fields": ["final_reviewer_id"]
+        },
+        {
+          "stage": "7️⃣",
+          "status": "⚪️",
+          "action": "Review complete",
+          "required_fields": ["review_completion_date"]
+        }
+      ]
+    },
+    {
+      "lane_id": "approve",
+      "lane_emoji": "⭕",
+      "lane_name": "Approval",
+      "description": "Multi-stage approval workflow",
+      "stages": [
+        {
+          "stage": "1️⃣",
+          "status": "⚪️",
+          "action": "Requester confirmation",
+          "required_fields": ["requester_id", "confirmation_date"]
+        },
+        {
+          "stage": "2️⃣",
+          "status": "⚪️",
+          "action": "Team lead approval",
+          "required_fields": ["team_lead_id", "approval_date"]
+        },
+        {
+          "stage": "3️⃣",
+          "status": "⚪️",
+          "action": "Manager approval",
+          "required_fields": ["manager_id", "approval_date"]
+        },
+        {
+          "stage": "4️⃣",
+          "status": "⚪️",
+          "action": "Department head approval",
+          "required_fields": ["dept_head_id", "approval_date"]
+        },
+        {
+          "stage": "5️⃣",
+          "status": "⚪️",
+          "action": "Finance approval",
+          "required_fields": ["finance_approver_id", "approval_date"]
+        },
+        {
+          "stage": "6️⃣",
+          "status": "⚪️",
+          "action": "Executive approval",
+          "required_fields": ["executive_id", "approval_date"]
+        },
+        {
+          "stage": "7️⃣",
+          "status": "⚪️",
+          "action": "Final authorization",
+          "required_fields": ["final_authorizer_id", "authorization_date"]
+        }
+      ]
+    },
+    {
+      "lane_id": "file-store",
+      "lane_emoji": "🗂🔐",
+      "lane_name": "File & Store",
+      "description": "Secure filing and storage of records",
+      "stages": [
+        {
+          "stage": "1️⃣",
+          "status": "⚪️",
+          "action": "Create file record",
+          "required_fields": ["record_id", "creation_date"]
+        },
+        {
+          "stage": "2️⃣",
+          "status": "⚪️",
+          "action": "Classify document",
+          "required_fields": ["classification", "security_level"]
+        },
+        {
+          "stage": "3️⃣",
+          "status": "⚪️",
+          "action": "Encrypt data",
+          "required_fields": ["encryption_method", "encryption_key_id"]
+        },
+        {
+          "stage": "4️⃣",
+          "status": "⚪️",
+          "action": "Store in repository",
+          "required_fields": ["storage_location", "storage_provider"]
+        },
+        {
+          "stage": "5️⃣",
+          "status": "⚪️",
+          "action": "Create backup",
+          "required_fields": ["backup_location", "backup_date"]
+        },
+        {
+          "stage": "6️⃣",
+          "status": "⚪️",
+          "action": "Set access controls",
+          "required_fields": ["access_policy", "authorized_users"]
+        },
+        {
+          "stage": "7️⃣",
+          "status": "⚪️",
+          "action": "Archive complete",
+          "required_fields": ["archive_confirmation", "archive_date"]
+        }
+      ]
+    },
+    {
+      "lane_id": "verify-close",
+      "lane_emoji": "✅🏁",
+      "lane_name": "Verify & Close",
+      "description": "Final verification and case closure",
+      "stages": [
+        {
+          "stage": "1️⃣",
+          "status": "⚪️",
+          "action": "Verify all documents",
+          "required_fields": ["document_verification_status"]
+        },
+        {
+          "stage": "2️⃣",
+          "status": "⚪️",
+          "action": "Verify all approvals",
+          "required_fields": ["approval_verification_status"]
+        },
+        {
+          "stage": "3️⃣",
+          "status": "⚪️",
+          "action": "Verify payment",
+          "required_fields": ["payment_verification_status"]
+        },
+        {
+          "stage": "4️⃣",
+          "status": "⚪️",
+          "action": "Verify storage",
+          "required_fields": ["storage_verification_status"]
+        },
+        {
+          "stage": "5️⃣",
+          "status": "⚪️",
+          "action": "Generate reports",
+          "required_fields": ["report_urls", "report_generation_date"]
+        },
+        {
+          "stage": "6️⃣",
+          "status": "⚪️",
+          "action": "Send notifications",
+          "required_fields": ["notification_recipients", "notification_date"]
+        },
+        {
+          "stage": "7️⃣",
+          "status": "⚪️",
+          "action": "Close case",
+          "required_fields": ["closure_date", "case_status", "final_notes"]
+        }
+      ]
+    }
+  ],
+  "workflow_states": {
+    "empty": {
+      "emoji": "⚪️",
+      "description": "Step not started",
+      "color": "white",
+      "next_actions": ["Initialize step"]
+    },
+    "wait": {
+      "emoji": "🟡",
+      "description": "Step in progress or pending",
+      "color": "yellow",
+      "next_actions": ["Monitor progress", "Provide required inputs"]
+    },
+    "ok": {
+      "emoji": "🟢",
+      "description": "Step completed successfully",
+      "color": "green",
+      "next_actions": ["Proceed to next stage"]
+    },
+    "stop": {
+      "emoji": "🔴",
+      "description": "Step blocked or failed",
+      "color": "red",
+      "next_actions": ["Investigate issue", "Resolve blockers", "Escalate"]
+    }
+  },
+  "usage_example": {
+    "scenario": "Processing an employee expense claim",
+    "initial_state": "All lanes at ⚪️ (empty)",
+    "flow": [
+      {
+        "step": 1,
+        "lane": "💳",
+        "stage": "1️⃣",
+        "action": "Employee creates expense claim",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      },
+      {
+        "step": 2,
+        "lane": "📎",
+        "stage": "1️⃣",
+        "action": "Employee uploads receipt",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      },
+      {
+        "step": 3,
+        "lane": "👀",
+        "stage": "1️⃣",
+        "action": "System reviews for completeness",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      },
+      {
+        "step": 4,
+        "lane": "⭕",
+        "stage": "2️⃣",
+        "action": "Team lead approves",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      },
+      {
+        "step": 5,
+        "lane": "⭕",
+        "stage": "3️⃣",
+        "action": "Manager approves",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      },
+      {
+        "step": 6,
+        "lane": "💳",
+        "stage": "6️⃣",
+        "action": "Payment processed",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      },
+      {
+        "step": 7,
+        "lane": "🗂🔐",
+        "stage": "7️⃣",
+        "action": "Records archived",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      },
+      {
+        "step": 8,
+        "lane": "✅🏁",
+        "stage": "7️⃣",
+        "action": "Case closed",
+        "status_change": "⚪️ → 🟡 → 🟢"
+      }
+    ]
+  },
+  "metadata": {
+    "created_date": "2025-12-25",
+    "version": "134",
+    "author": "BlackRoad OS Infrastructure Team",
+    "purpose": "Finance and regulatory recordkeeping workflow example",
+    "next_version": "v135: emoji ledger + audit log chart (7 entries × 7 fields)"
+  }
+}
