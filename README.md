@@ -32,6 +32,7 @@
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 🔐 [WORM Storage PR Templates](templates/WORM_STORAGE_PR_TEMPLATES.md) - Compliance record storage templates
 
 ---
 
