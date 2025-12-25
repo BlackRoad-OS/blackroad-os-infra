@@ -191,7 +191,7 @@ The status strip provides a quick visual summary:
 ## 📊 Example: Active Project
 
 ```
-🧾 PROJECT: New API Gateway Service   🚦 STATUS: 🟡   🗓️ WINDOW: Dec 2025 - Jan 2026
+🧾 PROJECT: New API Gateway Service   🚦 STATUS: 🟡   🗓️ WINDOW: Jan 2026 - Feb 2026
 
 🧭 Steps →      1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
 
@@ -325,8 +325,8 @@ Celebrate with: **✅🎉**
 
 ## 📚 Related Templates
 
-- [Service Infrastructure Template](./SERVICE_INFRA_TEMPLATE.md) - For new service setup
-- [Environment Variables Template](./.env.example) - For configuration
+- [Service Infrastructure Template](SERVICE_INFRA_TEMPLATE.md) - For new service setup
+- [Environment Variables Template](.env.example) - For configuration
 - [GitHub Workflow Templates](../github/workflows/) - For CI/CD
 
 ---
