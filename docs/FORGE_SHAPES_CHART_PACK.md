@@ -455,8 +455,8 @@ Iteration Progress:
 This chart pack complements the existing Trinity system:
 
 - **🟢 GreenLight**: Use progress triangles and gates for project tracking
-- **🟡 YellowLight**: Use waves and spirals for deployment flows
-- **🔴 RedLight**: Use diamonds and special patterns for visual experiences
+- **🟨 YellowLight**: Use waves and spirals for deployment flows
+- **🟥 RedLight**: Use diamonds and special patterns for visual experiences
 
 ### Example Integration
 ```
@@ -466,12 +466,12 @@ This chart pack complements the existing Trinity system:
   🟢🟢✨🟢🟢
 🟢🟢🟢✨🟢🟢🟢
 
-🟡 Deployment Wave
+🟨 Deployment Wave
 🌊  🟦🟦🟦⚪️⚪️⚪️⚪️
 🌊  ⚪️🟦🟦🟦⚪️⚪️⚪️
 🌊  ⚪️⚪️🟦🟦🟦⚪️⚪️
 
-🔴 Release Gate
+🟥 Release Gate
 🏁  🟢🟢🟢🟢🟢🟢🟢
 ```
 
