@@ -6,7 +6,7 @@ Use this template to track design work through multiple stages. Copy this templa
 
 ---
 
-## 🧩 EXAMPLES PACK v25 (design workflow) — 7 deliverables × 7 stages
+## 🧩 [PROJECT NAME] (design workflow) — 7 deliverables × 7 stages
 
 **Legend**: 🟢 done  🟡 in progress  🔴 blocked  ⚪️ empty  ⭕ pending review
 
@@ -14,18 +14,18 @@ Use this template to track design work through multiple stages. Copy this templa
 
 ---
 
-### 🎨 DESIGN FLOW: ____________________   📅 WEEK: ____________   🚦 STATUS: 🟡
+### 🎨 DESIGN FLOW: [PROJECT NAME]   📅 WEEK: [WEEK NUMBER]   🚦 STATUS: ⚪️
 
 ```
 🧭 Stages →        1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
 
-🖼️ Mockups           🟢🟢🟢⚪️⚪️⚪️⚪️
-🧩 Components        🟢🟢⚪️⚪️⚪️⚪️⚪️
-🧭 User flow         🟡🟡🟡⚪️⚪️⚪️⚪️
-📐 Spec handoff      🟢🟢🟢⚪️⚪️⚪️⚪️
-🧪 Usability test    🟡🟡⚪️⚪️⚪️⚪️⚪️
-📦 Final assets      🟢🟢⚪️⚪️⚪️⚪️⚪️
-✅ Sign-off          ⭕⭕⚪️⚪️⚪️⚪️⚪️
+🖼️ Mockups           ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+🧩 Components        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+🧭 User flow         ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+📐 Spec handoff      ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+🧪 Usability test    ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+📦 Final assets      ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+✅ Sign-off          ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
 ```
 
 ---
@@ -50,9 +50,9 @@ Use this template to track design work through multiple stages. Copy this templa
 High-fidelity visual designs showing final UI appearance.
 
 **Status by Stage:**
-- 1️⃣ Brief: 🟢 Complete
-- 2️⃣ Sketch: 🟢 Complete
-- 3️⃣ Design: 🟢 Complete
+- 1️⃣ Brief: ⚪️ Not started
+- 2️⃣ Sketch: ⚪️ Not started
+- 3️⃣ Design: ⚪️ Not started
 - 4️⃣ Review: ⚪️ Not started
 - 5️⃣ Iterate: ⚪️ Not started
 - 6️⃣ Export: ⚪️ Not started
@@ -62,8 +62,8 @@ High-fidelity visual designs showing final UI appearance.
 Reusable UI components and design system elements.
 
 **Status by Stage:**
-- 1️⃣ Brief: 🟢 Complete
-- 2️⃣ Sketch: 🟢 Complete
+- 1️⃣ Brief: ⚪️ Not started
+- 2️⃣ Sketch: ⚪️ Not started
 - 3️⃣ Design: ⚪️ Not started
 - 4️⃣ Review: ⚪️ Not started
 - 5️⃣ Iterate: ⚪️ Not started
@@ -74,9 +74,9 @@ Reusable UI components and design system elements.
 User journey maps and interaction flows.
 
 **Status by Stage:**
-- 1️⃣ Brief: 🟡 In progress
-- 2️⃣ Sketch: 🟡 In progress
-- 3️⃣ Design: 🟡 In progress
+- 1️⃣ Brief: ⚪️ Not started
+- 2️⃣ Sketch: ⚪️ Not started
+- 3️⃣ Design: ⚪️ Not started
 - 4️⃣ Review: ⚪️ Not started
 - 5️⃣ Iterate: ⚪️ Not started
 - 6️⃣ Export: ⚪️ Not started
@@ -86,9 +86,9 @@ User journey maps and interaction flows.
 Technical specifications and developer handoff documentation.
 
 **Status by Stage:**
-- 1️⃣ Brief: 🟢 Complete
-- 2️⃣ Sketch: 🟢 Complete
-- 3️⃣ Design: 🟢 Complete
+- 1️⃣ Brief: ⚪️ Not started
+- 2️⃣ Sketch: ⚪️ Not started
+- 3️⃣ Design: ⚪️ Not started
 - 4️⃣ Review: ⚪️ Not started
 - 5️⃣ Iterate: ⚪️ Not started
 - 6️⃣ Export: ⚪️ Not started
@@ -98,8 +98,8 @@ Technical specifications and developer handoff documentation.
 Usability testing plans, results, and insights.
 
 **Status by Stage:**
-- 1️⃣ Brief: 🟡 In progress
-- 2️⃣ Sketch: 🟡 In progress
+- 1️⃣ Brief: ⚪️ Not started
+- 2️⃣ Sketch: ⚪️ Not started
 - 3️⃣ Design: ⚪️ Not started
 - 4️⃣ Review: ⚪️ Not started
 - 5️⃣ Iterate: ⚪️ Not started
@@ -110,8 +110,8 @@ Usability testing plans, results, and insights.
 Production-ready design assets and exports.
 
 **Status by Stage:**
-- 1️⃣ Brief: 🟢 Complete
-- 2️⃣ Sketch: 🟢 Complete
+- 1️⃣ Brief: ⚪️ Not started
+- 2️⃣ Sketch: ⚪️ Not started
 - 3️⃣ Design: ⚪️ Not started
 - 4️⃣ Review: ⚪️ Not started
 - 5️⃣ Iterate: ⚪️ Not started
@@ -122,8 +122,8 @@ Production-ready design assets and exports.
 Final approval and project sign-off.
 
 **Status by Stage:**
-- 1️⃣ Brief: ⭕ Pending review
-- 2️⃣ Sketch: ⭕ Pending review
+- 1️⃣ Brief: ⚪️ Not started
+- 2️⃣ Sketch: ⚪️ Not started
 - 3️⃣ Design: ⚪️ Not started
 - 4️⃣ Review: ⚪️ Not started
 - 5️⃣ Iterate: ⚪️ Not started
@@ -140,16 +140,16 @@ Final approval and project sign-off.
 - **Total Work Items**: 49 (7 deliverables × 7 stages)
 
 ### Current Progress
-- 🟢 Complete: 11 items (22%)
-- 🟡 In progress: 5 items (10%)
-- ⭕ Pending review: 2 items (4%)
+- 🟢 Complete: 0 items (0%)
+- 🟡 In progress: 0 items (0%)
+- ⭕ Pending review: 0 items (0%)
 - 🔴 Blocked: 0 items (0%)
-- ⚪️ Not started: 31 items (63%)
+- ⚪️ Not started: 49 items (100%)
 
 ### Stage Completion
-- 1️⃣ Brief: 6/7 deliverables in progress or complete (86%)
-- 2️⃣ Sketch: 6/7 deliverables in progress or complete (86%)
-- 3️⃣ Design: 2/7 deliverables in progress or complete (29%)
+- 1️⃣ Brief: 0/7 deliverables started (0%)
+- 2️⃣ Sketch: 0/7 deliverables started (0%)
+- 3️⃣ Design: 0/7 deliverables started (0%)
 - 4️⃣ Review: 0/7 deliverables started (0%)
 - 5️⃣ Iterate: 0/7 deliverables started (0%)
 - 6️⃣ Export: 0/7 deliverables started (0%)
