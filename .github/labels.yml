@@ -1,3 +1,133 @@
+# ========================================
+# EXAMPLES PACK v110 - EMOJI LABELS
+# ========================================
+
+# Status Labels
+- name: '🚦 status: 🟢 done'
+  color: '0E8A16'
+  description: 'Status: Done - Work completed'
+
+- name: '🚦 status: 🟡 active'
+  color: 'FBCA04'
+  description: 'Status: Active - Currently in progress'
+
+- name: '🚦 status: 🔴 blocked'
+  color: 'D93F0B'
+  description: 'Status: Blocked - Cannot proceed'
+
+- name: '🚦 status: ⚪️ empty'
+  color: 'E4E5E7'
+  description: 'Status: Empty - Not started'
+
+- name: '🚦 status: 🏁 shipped'
+  color: '5319E7'
+  description: 'Status: Shipped - Deployed to production'
+
+# Priority Labels
+- name: '🎯 priority: 🟥 P0'
+  color: 'B60205'
+  description: 'Priority: P0 - Critical/Emergency'
+
+- name: '🎯 priority: 🟧 P1'
+  color: 'D93F0B'
+  description: 'Priority: P1 - High priority'
+
+- name: '🎯 priority: 🟨 P2'
+  color: 'FBCA04'
+  description: 'Priority: P2 - Medium priority'
+
+- name: '🎯 priority: 🟩 P3'
+  color: '0E8A16'
+  description: 'Priority: P3 - Low priority'
+
+- name: '🎯 priority: 🟦 P4'
+  color: '1D76DB'
+  description: 'Priority: P4 - Very low priority'
+
+- name: '🎯 priority: 🟪 P5'
+  color: '5319E7'
+  description: 'Priority: P5 - Future/Backlog'
+
+# Type Labels
+- name: '🔍 type: 🧩 task'
+  color: '0075CA'
+  description: 'Type: Task - General task'
+
+- name: '🔍 type: 🐞 bug'
+  color: 'D73A4A'
+  description: 'Type: Bug - Something is not working'
+
+- name: '🔍 type: 🧪 test'
+  color: 'BFD4F2'
+  description: 'Type: Test - Testing related'
+
+- name: '🔍 type: 🔐 security'
+  color: 'D93F0B'
+  description: 'Type: Security - Security related'
+
+- name: '🔍 type: 🗂 compliance'
+  color: '5319E7'
+  description: 'Type: Compliance - Compliance and regulatory'
+
+- name: '🔍 type: 🏗 infra'
+  color: '0E8A16'
+  description: 'Type: Infrastructure - Infrastructure changes'
+
+- name: '🔍 type: 📣 comms'
+  color: 'F9D0C4'
+  description: 'Type: Communications - Communication and announcements'
+
+- name: '🔍 type: 🎓 training'
+  color: 'FBCA04'
+  description: 'Type: Training - Training and education'
+
+- name: '🔍 type: ⚠️ risk'
+  color: 'D93F0B'
+  description: 'Type: Risk - Risk management'
+
+- name: '🔍 type: 🧾 audit'
+  color: '5319E7'
+  description: 'Type: Audit - Audit and review'
+
+# Blocker Label
+- name: '⛔ blocker: 🧱 blocked'
+  color: 'B60205'
+  description: 'Blocker: Work is blocked'
+
+# Dependencies Label
+- name: '🔗 deps: 🔗 has-deps'
+  color: '0075CA'
+  description: 'Dependencies: Has dependencies'
+
+# QA Label
+- name: '✅ qa: ✅ verified'
+  color: '0E8A16'
+  description: 'QA: Verified and tested'
+
+# Gate Label
+- name: '⭕ gate: ⭕ needs-approval'
+  color: 'FBCA04'
+  description: 'Gate: Needs approval to proceed'
+
+# Proof Label
+- name: '📎 proof: 📎 evidence'
+  color: '0075CA'
+  description: 'Proof: Evidence attached'
+
+# Docs Label
+- name: '🗂 docs: 🗂 archived'
+  color: 'E4E5E7'
+  description: 'Docs: Archived documentation'
+
+# Storage Label
+- name: '🔐 storage: 🔐 worm'
+  color: '5319E7'
+  description: 'Storage: Write Once Read Many'
+
+# ========================================
+# INFRASTRUCTURE LEGACY LABELS
+# ========================================
+
 # Infrastructure Labels
 - name: 'team:infra'
   color: '0E8A16'
