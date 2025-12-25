@@ -1,0 +1,99 @@
+name: "📋 TEMPIES Issue"
+description: "General TEMPIES issue template"
+title: "[TEMPIES] "
+labels: ["tempies"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## TEMPIES Issue
+        Template: `TEMPIES_<domain>_issue_<size>`
+
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: Select the domain
+      options:
+        - core
+        - compliance
+        - infra
+        - marketing
+        - bd_osj
+        - ia_ads
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      description: Scope of work
+      options:
+        - small
+        - medium
+        - big
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: status
+    attributes:
+      label: 🚦 Status
+      description: Current status
+      value: |
+        🟢⚪️⚪️⚪️⚪️⚪️⚪️ | 🟡⚪️⚪️⚪️⚪️⚪️⚪️ | 🔴⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: progress
+    attributes:
+      label: 🧭 Progress
+      description: Track progress (7 steps)
+      value: |
+        1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 🔗 Dependencies
+      description: List dependencies
+      value: |
+        T1 🔗 ________
+        T2 🔗 ________
+        T3 🔗 ________
+    validations:
+      required: false
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: ⚠️ Risk
+      description: Risk assessment
+      value: |
+        L: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  I: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  🔥: 🟢/🟡/🟠/🔴
+    validations:
+      required: false
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 📎 Attachments
+      description: Related links or documents
+      placeholder: |
+        - 
+        - 
+    validations:
+      required: false

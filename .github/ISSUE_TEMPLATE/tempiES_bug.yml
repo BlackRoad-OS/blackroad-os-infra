@@ -1,0 +1,98 @@
+name: "🐛 TEMPIES Bug"
+description: "Bug report with TEMPIES structure"
+title: "[BUG] "
+labels: ["bug", "tempies"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## TEMPIES Bug Report
+        Template: `TEMPIES_<domain>_bug_<size>`
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: Bug severity level
+      options:
+        - "🔥 Critical - Production down, data loss, security issue"
+        - "🟠 High - Major feature broken, no workaround"
+        - "🟡 Medium - Feature broken but has workaround"
+        - "🟢 Low - Minor issue, cosmetic, edge case"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: Which domain is affected?
+      options:
+        - core
+        - compliance
+        - infra
+        - marketing
+        - bd_osj
+        - ia_ads
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What's broken?
+      description: One sentence description
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happens?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Steps to trigger the bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: status
+    attributes:
+      label: 🚦 Status
+      value: |
+        🟢⚪️⚪️⚪️⚪️⚪️⚪️ | 🟡⚪️⚪️⚪️⚪️⚪️⚪️ | 🔴⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: progress
+    attributes:
+      label: 🧭 Progress
+      value: |
+        1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: ⚠️ Risk
+      value: |
+        L: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  I: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  🔥: 🟢/🟡/🟠/🔴
+    validations:
+      required: false

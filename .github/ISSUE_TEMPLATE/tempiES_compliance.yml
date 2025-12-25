@@ -1,0 +1,102 @@
+name: "🔒 TEMPIES Compliance"
+description: "Compliance or regulatory issue"
+title: "[COMPLIANCE] "
+labels: ["compliance", "tempies"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## TEMPIES Compliance Issue
+        Template: `TEMPIES_compliance_issue_<size>`
+
+  - type: dropdown
+    id: compliance_type
+    attributes:
+      label: Compliance Type
+      description: Type of compliance requirement
+      options:
+        - Audit
+        - Regulatory
+        - Security
+        - Privacy
+        - Data Retention
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Compliance priority
+      options:
+        - "🔴 Critical - Immediate action required"
+        - "🟠 High - Address within 1 week"
+        - "🟡 Medium - Address within 1 month"
+        - "🟢 Low - Can be scheduled"
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirement
+    attributes:
+      label: Compliance Requirement
+      description: What needs to be compliant?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current State
+      description: Where are we now?
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_state
+    attributes:
+      label: Target State
+      description: Where do we need to be?
+    validations:
+      required: true
+
+  - type: textarea
+    id: status
+    attributes:
+      label: 🚦 Status
+      value: |
+        🟢⚪️⚪️⚪️⚪️⚪️⚪️ | 🟡⚪️⚪️⚪️⚪️⚪️⚪️ | 🔴⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: progress
+    attributes:
+      label: 🧭 Progress
+      value: |
+        1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: worm
+    attributes:
+      label: 🔒 WORM Record
+      value: |
+        **Immutable Record**: This section is locked after initial creation
+        **Created**: [DATE]
+        **Hash**: [HASH]
+    validations:
+      required: false
+
+  - type: textarea
+    id: retention
+    attributes:
+      label: 📎 Retention
+      placeholder: |
+        - 
+        - 
+    validations:
+      required: false

@@ -1,0 +1,91 @@
+name: "⚠️ TEMPIES Risk"
+description: "Risk assessment issue"
+title: "[RISK] "
+labels: ["risk", "tempies"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## TEMPIES Risk Assessment
+        Template: `TEMPIES_<domain>_risk_<size>`
+
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: Which domain is affected?
+      options:
+        - core
+        - compliance
+        - infra
+        - marketing
+        - bd_osj
+        - ia_ads
+    validations:
+      required: true
+
+  - type: dropdown
+    id: risk_level
+    attributes:
+      label: Risk Level
+      description: Overall risk severity
+      options:
+        - "🔴 Critical"
+        - "🟠 High"
+        - "🟡 Medium"
+        - "🟢 Low"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Risk Description
+      description: What is the risk?
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What happens if this risk materializes?
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Mitigation Strategy
+      description: How to prevent or reduce this risk?
+    validations:
+      required: true
+
+  - type: textarea
+    id: status
+    attributes:
+      label: 🚦 Status
+      value: |
+        🟢⚪️⚪️⚪️⚪️⚪️⚪️ | 🟡⚪️⚪️⚪️⚪️⚪️⚪️ | 🔴⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: risk_matrix
+    attributes:
+      label: ⚠️ Risk Matrix
+      value: |
+        L: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  I: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  🔥: 🟢/🟡/🟠/🔴
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 🔗 Dependencies
+      value: |
+        T1 🔗 ________
+        T2 🔗 ________
+        T3 🔗 ________
+    validations:
+      required: false
