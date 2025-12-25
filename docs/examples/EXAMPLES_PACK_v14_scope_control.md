@@ -1,6 +1,6 @@
 # 🧩 EXAMPLES PACK v14 (scope control) — 7 requests × decision + effort + impact
 
-Legend: 🟢 yes  🟡 maybe  🔴 no  ⚪️ empty
+Legend: 🟢 yes  🟡 maybe  🟠 high  🔴 no  ⚪️ empty
 
 📦 SCOPE BOARD: ____________________   📅 WEEK: ____________   🚦 STATUS: 🟡
 🧭 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
