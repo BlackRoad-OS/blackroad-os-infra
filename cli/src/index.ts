@@ -21,6 +21,14 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
 import { table } from 'table';
+import {
+  generateChecklistBars,
+  generateStatusBars,
+  triangleShape,
+  diamondShape,
+  checklistBar,
+  statusBar
+} from './progress-bars';
 
 // Brand colors
 const BRAND = {
@@ -313,6 +321,80 @@ program
     const cmd = process.platform === 'darwin' ? 'open' :
                 process.platform === 'win32' ? 'start' : 'xdg-open';
     exec(`${cmd} ${url}`);
+  });
+
+// =============================================================================
+// PROGRESS COMMAND
+// =============================================================================
+program
+  .command('progress')
+  .description('Generate progress bar visualizations')
+  .option('--demo', 'Show all progress bar styles')
+  .option('--checklist <value>', 'Generate checklist bar (0.0-1.0)')
+  .option('--status <value>', 'Generate status bar (0.0-1.0)')
+  .option('--triangle <value>', 'Generate triangle shape (0.0-1.0)')
+  .option('--diamond <value>', 'Generate diamond shape (0.0-1.0)')
+  .option('--width <number>', 'Width of bars (default: 7)')
+  .action((options) => {
+    const width = parseInt(options.width) || 7;
+
+    if (options.demo) {
+      console.log(chalk.bold('\n✅ CHECKLIST BARS (10)\n'));
+      const checklistBars = generateChecklistBars(width);
+      checklistBars.forEach(bar => console.log(bar));
+      
+      console.log(chalk.bold('\n🚦 STATUS BARS (10)\n'));
+      const statusBars = generateStatusBars(width);
+      statusBars.forEach(bar => console.log(bar));
+      
+      console.log(chalk.bold('\n📊 SIMPLE SHAPES (10)\n'));
+      
+      console.log(triangleShape(0, 4).join('\n'));
+      console.log();
+      
+      console.log(triangleShape(0.5, 4).join('\n'));
+      console.log();
+      
+      console.log(diamondShape(0, 3).join('\n'));
+      console.log();
+      
+      console.log(diamondShape(0.5, 3).join('\n'));
+      console.log();
+      
+      console.log(diamondShape(1, 3).join('\n'));
+      console.log();
+      
+      return;
+    }
+
+    if (options.checklist !== undefined) {
+      const value = parseFloat(options.checklist);
+      console.log(checklistBar(value, { width }));
+      return;
+    }
+
+    if (options.status !== undefined) {
+      const value = parseFloat(options.status);
+      console.log(statusBar(value, { width }));
+      return;
+    }
+
+    if (options.triangle !== undefined) {
+      const value = parseFloat(options.triangle);
+      const height = Math.floor(width / 2) + 1;
+      console.log(triangleShape(value, height).join('\n'));
+      return;
+    }
+
+    if (options.diamond !== undefined) {
+      const value = parseFloat(options.diamond);
+      const size = Math.floor(width / 2) + 1;
+      console.log(diamondShape(value, size).join('\n'));
+      return;
+    }
+
+    console.log(chalk.yellow('\n  Use --demo to see all progress bar styles\n'));
+    console.log(chalk.gray('  Or use --checklist, --status, --triangle, or --diamond with a value (0.0-1.0)\n'));
   });
 
 // Parse and run
