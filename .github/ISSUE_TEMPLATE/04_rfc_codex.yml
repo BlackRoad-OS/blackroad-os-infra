@@ -1,0 +1,60 @@
+name: "🧠 RFC / Codex Proposal"
+description: "Decision before build."
+title: "🧠 RFC: "
+labels: ["type:rfc"]
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0","🟧 P1","🟨 P2","🟩 P3","🟦 P4"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: "🧨 Risk"
+      options: ["🧊 low","🧨 medium","☢️ high","🪦 irreversible"]
+    validations: { required: true }
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "🐛 Problem / Opportunity"
+      placeholder: "What are we trying to solve?"
+    validations: { required: true }
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "💡 Proposal"
+      placeholder: "What's the solution? What are we proposing?"
+    validations: { required: true }
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "🔄 Alternatives considered"
+      placeholder: "What else did we think about? Why not those?"
+    validations: { required: false }
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: "💥 Impact / Trade-offs"
+      placeholder: "What changes? What are the risks? What becomes easier/harder?"
+    validations: { required: true }
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: "🗳️ Decision criteria"
+      placeholder: "What needs to be true to say yes/no?"
+    validations: { required: true }
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: "⏰ Timeline / Deadline"
+      placeholder: "When do we need to decide? When would we implement?"
+    validations: { required: false }

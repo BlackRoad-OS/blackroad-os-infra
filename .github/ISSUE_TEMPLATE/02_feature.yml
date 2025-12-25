@@ -1,0 +1,62 @@
+name: "✨ Feature"
+description: "Build something new."
+title: "✨ "
+labels: ["type:feature"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: "🧩 Component"
+      options: ["🧠 core","🔌 api","🎛️ ui","🤖 agents","🛰️ infra","📚 docs","🔐 security","🧰 tooling","🧬 data"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0","🟧 P1","🟨 P2","🟩 P3","🟦 P4"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "🧱 Effort"
+      options: ["🐜 XS","🐇 S","🐻 M","🦏 L","🐉 XL"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: "🧨 Risk"
+      options: ["🧊 low","🧨 medium","☢️ high","🪦 irreversible"]
+    validations: { required: true }
+
+  - type: textarea
+    id: what
+    attributes:
+      label: "🧠 What are we building?"
+    validations: { required: true }
+
+  - type: textarea
+    id: why
+    attributes:
+      label: "🎯 Why does it matter?"
+    validations: { required: true }
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ Acceptance Criteria"
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations: { required: true }
+
+  - type: textarea
+    id: rollout
+    attributes:
+      label: "🛰️ Rollout / Monitoring (required for ☢️/🪦)"
+      placeholder: |
+        Rollout:
+        Monitoring:
+        Rollback:

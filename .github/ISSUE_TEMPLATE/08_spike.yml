@@ -1,0 +1,62 @@
+name: "🧪 Spike / Experiment"
+description: "Research, prototype, time-boxed exploration."
+title: "🧪 "
+labels: ["type:spike"]
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0","🟧 P1","🟨 P2","🟩 P3","🟦 P4"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: timebox
+    attributes:
+      label: "⏰ Timebox"
+      options: ["🐜 hours","🐇 1 day","🐻 2-3 days","🦏 1 week","🐉 2+ weeks"]
+    validations: { required: true }
+
+  - type: textarea
+    id: question
+    attributes:
+      label: "❓ Question / Hypothesis"
+      placeholder: "What are we trying to learn? What do we think will happen?"
+    validations: { required: true }
+
+  - type: textarea
+    id: why
+    attributes:
+      label: "🎯 Why now?"
+      placeholder: "Why is this important? What decision does this unblock?"
+    validations: { required: true }
+
+  - type: textarea
+    id: success
+    attributes:
+      label: "✅ Success criteria"
+      placeholder: "What does 'done' look like? What would make us say yes/no?"
+    validations: { required: true }
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: "🧠 Approach"
+      placeholder: "How will we test this? What will we build/try?"
+    validations: { required: true }
+
+  - type: textarea
+    id: results
+    attributes:
+      label: "📊 Results (fill in after)"
+      placeholder: |
+        What did we learn?
+        Decision: ✅ proceed / 🛑 stop / 🔁 iterate
+    validations: { required: false }
+
+  - type: textarea
+    id: next
+    attributes:
+      label: "➡️ Next steps (fill in after)"
+      placeholder: "Convert to Feature/Task? Close? Iterate?"
+    validations: { required: false }

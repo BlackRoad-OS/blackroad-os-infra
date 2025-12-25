@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: "💬 Quick question / discussion"
-    url: https://github.com/YOUR_USERNAME/YOUR_REPO/discussions
-    about: "For questions, ideas, or discussions that aren't actionable tasks yet"
+  - name: "📚 BlackRoad Workflow Playbook"
+    url: "docs/WORKFLOW_PLAYBOOK.md"
+    about: "How we run work (TEMPIES)."
+  - name: "🧠 Emoji Dictionary"
+    url: "docs/EMOJI_DICTIONARY.md"
+    about: "All emojis, meanings, rails."

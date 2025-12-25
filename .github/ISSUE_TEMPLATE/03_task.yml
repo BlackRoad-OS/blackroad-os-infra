@@ -1,0 +1,54 @@
+name: "🎯 Task"
+description: "Standard work item."
+title: "🎯 "
+labels: ["type:task"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: "🧩 Component"
+      options: ["🧠 core","🔌 api","🎛️ ui","🤖 agents","🛰️ infra","📚 docs","🔐 security","🧰 tooling","🧬 data"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0","🟧 P1","🟨 P2","🟩 P3","🟦 P4"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "🧱 Effort"
+      options: ["🐜 XS","🐇 S","🐻 M","🦏 L","🐉 XL"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: "🧨 Risk"
+      options: ["🧊 low","🧨 medium","☢️ high","🪦 irreversible"]
+    validations: { required: true }
+
+  - type: textarea
+    id: what
+    attributes:
+      label: "🎯 What needs to happen?"
+    validations: { required: true }
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ Definition of Done"
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations: { required: true }
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "🧩 Context (optional)"
+      placeholder: "Related issues, background, links, etc."
+    validations: { required: false }

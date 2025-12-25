@@ -1,0 +1,53 @@
+name: "🐛 Bug"
+description: "Something is broken."
+title: "🐛 "
+labels: ["type:bug"]
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0","🟧 P1","🟨 P2","🟩 P3","🟦 P4"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "🧱 Effort"
+      options: ["🐜 XS","🐇 S","🐻 M","🦏 L","🐉 XL"]
+    validations: { required: true }
+
+  - type: textarea
+    id: what
+    attributes:
+      label: "🐛 What's broken?"
+    validations: { required: true }
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: "🧪 Repro steps"
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations: { required: true }
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "✅ Expected behavior"
+    validations: { required: true }
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "🔴 Actual behavior"
+    validations: { required: true }
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "🧷 Evidence (logs/screenshots)"
+      placeholder: "Paste logs, screenshots, or error messages here"
+    validations: { required: false }

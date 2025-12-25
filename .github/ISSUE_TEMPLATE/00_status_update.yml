@@ -1,0 +1,32 @@
+name: "📡 Status Update (Rails)"
+description: "Fast update that's standardized."
+title: "📡 "
+labels: ["type:status"]
+body:
+  - type: dropdown
+    id: status
+    attributes:
+      label: "🚦 Status"
+      options: ["🟢 green", "🟡 yellow", "🔴 red", "⭕ unknown"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: progress
+    attributes:
+      label: "📈 Progress (0–7)"
+      options: ["0","1","2","3","4","5","6","7"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0", "🟧 P1", "🟨 P2", "🟩 P3", "🟦 P4"]
+    validations: { required: true }
+
+  - type: textarea
+    id: update
+    attributes:
+      label: "🧾 Update (1–3 lines)"
+      placeholder: "What changed? What's next? Any blockers?"
+    validations: { required: true }

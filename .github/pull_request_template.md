@@ -1,24 +1,30 @@
-# Pull Request
+# 🚂 TEMPIES PR
 
-## Description
+## 📈 Progress (pick one)
+- [ ] 0/7 ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+- [ ] 1/7 🟢⚪️⚪️⚪️⚪️⚪️⚪️
+- [ ] 2/7 🟢🟢⚪️⚪️⚪️⚪️⚪️
+- [ ] 3/7 🟢🟢🟢⚪️⚪️⚪️⚪️
+- [ ] 4/7 🟢🟢🟢🟢⚪️⚪️⚪️
+- [ ] 5/7 🟢🟢🟢🟢🟢⚪️⚪️
+- [ ] 6/7 🟢🟢🟢🟢🟢🟢⚪️
+- [ ] 7/7 🟢🟢🟢🟢🟢🟢🟢
 
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-- [ ] Infrastructure/DevOps change
+## 🚦 Status (pick one)
+- [ ] ⭕ unknown
+- [ ] 🟢 green
+- [ ] 🟡 yellow
+- [ ] 🔴 red
 
-## Testing
-- [ ] Tested locally
-- [ ] Health checks pass
-- [ ] Railway deployment succeeds
+## 🎯 Priority / Risk
+Priority: 🟥 P0 / 🟧 P1 / 🟨 P2 / 🟩 P3 / 🟦 P4
+Risk: 🧊 low / 🧨 medium / ☢️ high / 🪦 irreversible
 
-## Checklist
-- [ ] Code follows project style
-- [ ] Self-reviewed code
-- [ ] Updated documentation
-- [ ] Tests pass
+## 🧩 Summary
+-
 
----
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+## 🧪 Proof
+-
+
+## ✅ Ship Signal
+✅✅✅✅✅✅✅

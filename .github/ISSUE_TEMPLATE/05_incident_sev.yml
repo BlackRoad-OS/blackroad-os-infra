@@ -1,0 +1,38 @@
+name: "🔥 Incident / SEV"
+description: "Production issue / outage / urgent."
+title: "🔥 SEV: "
+labels: ["type:incident", "🚨triage"]
+body:
+  - type: dropdown
+    id: sev
+    attributes:
+      label: "🚨 Severity"
+      options: ["🟥 SEV0","🟧 SEV1","🟨 SEV2","🟩 SEV3"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: "🚦 Current status"
+      options: ["🔴 active","🟡 mitigating","🟢 resolved","⭕ unknown"]
+    validations: { required: true }
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: "💥 Impact / Blast radius"
+    validations: { required: true }
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: "🧯 Mitigation right now"
+    validations: { required: true }
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: "🕰️ Timeline (UTC or local)"
+      placeholder: |
+        - T0:
+        - T+:

@@ -1,0 +1,64 @@
+name: "🔐 Security"
+description: "Security issue or vulnerability."
+title: "🔐 "
+labels: ["type:security", "🚨triage"]
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "🚨 Severity"
+      options: ["🟥 critical","🟧 high","🟨 medium","🟩 low"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0","🟧 P1","🟨 P2","🟩 P3","🟦 P4"]
+    validations: { required: true }
+
+  - type: textarea
+    id: vulnerability
+    attributes:
+      label: "🔓 Vulnerability / Threat"
+      placeholder: "What's the security issue? What could go wrong?"
+    validations: { required: true }
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: "💥 Impact / Blast radius"
+      placeholder: "What data/systems are at risk? Who's affected?"
+    validations: { required: true }
+
+  - type: textarea
+    id: threat_model
+    attributes:
+      label: "🧠 Threat model"
+      placeholder: "How could this be exploited? What's the attack vector?"
+    validations: { required: true }
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: "🧯 Mitigation / Fix"
+      placeholder: "How do we fix this? What needs to change?"
+    validations: { required: true }
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "🧷 Evidence (if applicable)"
+      placeholder: "Logs, scan results, proof of concept (sanitized)"
+    validations: { required: false }
+
+  - type: textarea
+    id: rollout
+    attributes:
+      label: "🛰️ Rollout plan"
+      placeholder: |
+        Fix:
+        Test:
+        Deploy:
+        Verify:
+    validations: { required: true }
