@@ -1,5 +1,11 @@
 name: Render Emoji Rails
 
+# This workflow automatically generates visual progress "rails" for issues
+# Requirements: Create the following labels in your repository:
+#   - status:green, status:yellow, status:red, status:unknown
+#   - priority:P0, priority:P1, priority:P2, priority:P3, priority:P4
+#   - progress:0/7, progress:1/7, progress:2/7, ... progress:7/7
+
 on:
   issues:
     types: [opened, edited]
@@ -93,7 +99,11 @@ jobs:
                 labels
               });
             } catch (error) {
-              console.log(`Note: Some labels may not exist yet. Please create: ${labels.join(', ')}`);
+              console.log('⚠️  Some labels may not exist yet. Create these labels in your repository:');
+              console.log('   Status: status:green, status:yellow, status:red, status:unknown');
+              console.log('   Priority: priority:P0, priority:P1, priority:P2, priority:P3, priority:P4');
+              console.log('   Progress: progress:0/7 through progress:7/7');
+              console.log(`   Missing: ${labels.join(', ')}`);
               // Continue even if labels fail - the comment is more important
             }
 
