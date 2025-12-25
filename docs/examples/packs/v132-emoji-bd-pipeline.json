@@ -1,0 +1,159 @@
+{
+  "pack_version": "v132",
+  "pack_name": "emoji-bd-pipeline",
+  "pack_type": "business-development",
+  "description": "7-stage business development pipeline with 7 deals - emoji visualization",
+  "legend": {
+    "status": {
+      "🟢": "moving - active progress",
+      "🟡": "waiting - blocked on external",
+      "🔴": "stuck - internal blocker",
+      "⚪️": "empty - no deal in stage",
+      "⭕": "gate - approval checkpoint",
+      "🏁": "win - deal closed"
+    },
+    "stages": {
+      "1️⃣": {
+        "emoji": "📥",
+        "name": "Intake",
+        "description": "Initial contact and qualification"
+      },
+      "2️⃣": {
+        "emoji": "🧑‍🤝‍🧑",
+        "name": "Discovery",
+        "description": "Stakeholder meetings and needs analysis"
+      },
+      "3️⃣": {
+        "emoji": "✍️",
+        "name": "Proposal",
+        "description": "Solution design and proposal creation"
+      },
+      "4️⃣": {
+        "emoji": "👀",
+        "name": "Review",
+        "description": "Internal review and stakeholder feedback"
+      },
+      "5️⃣": {
+        "emoji": "⭕",
+        "name": "Gate",
+        "description": "Approval checkpoint and decision point"
+      },
+      "6️⃣": {
+        "emoji": "📎🗂",
+        "name": "Closing",
+        "description": "Contract negotiation and paperwork"
+      },
+      "7️⃣": {
+        "emoji": "🏁",
+        "name": "Win",
+        "description": "Deal closed and customer onboarded"
+      }
+    }
+  },
+  "pipeline": {
+    "deals": [
+      {
+        "id": "D1",
+        "name": "Deal 1",
+        "stages": {
+          "1": "⚪️",
+          "2": "⚪️",
+          "3": "⚪️",
+          "4": "⚪️",
+          "5": "⚪️",
+          "6": "⚪️",
+          "7": "⚪️"
+        }
+      },
+      {
+        "id": "D2",
+        "name": "Deal 2",
+        "stages": {
+          "1": "⚪️",
+          "2": "⚪️",
+          "3": "⚪️",
+          "4": "⚪️",
+          "5": "⚪️",
+          "6": "⚪️",
+          "7": "⚪️"
+        }
+      },
+      {
+        "id": "D3",
+        "name": "Deal 3",
+        "stages": {
+          "1": "⚪️",
+          "2": "⚪️",
+          "3": "⚪️",
+          "4": "⚪️",
+          "5": "⚪️",
+          "6": "⚪️",
+          "7": "⚪️"
+        }
+      },
+      {
+        "id": "D4",
+        "name": "Deal 4",
+        "stages": {
+          "1": "⚪️",
+          "2": "⚪️",
+          "3": "⚪️",
+          "4": "⚪️",
+          "5": "⚪️",
+          "6": "⚪️",
+          "7": "⚪️"
+        }
+      },
+      {
+        "id": "D5",
+        "name": "Deal 5",
+        "stages": {
+          "1": "⚪️",
+          "2": "⚪️",
+          "3": "⚪️",
+          "4": "⚪️",
+          "5": "⚪️",
+          "6": "⚪️",
+          "7": "⚪️"
+        }
+      },
+      {
+        "id": "D6",
+        "name": "Deal 6",
+        "stages": {
+          "1": "⚪️",
+          "2": "⚪️",
+          "3": "⚪️",
+          "4": "⚪️",
+          "5": "⚪️",
+          "6": "⚪️",
+          "7": "⚪️"
+        }
+      },
+      {
+        "id": "D7",
+        "name": "Deal 7",
+        "stages": {
+          "1": "⚪️",
+          "2": "⚪️",
+          "3": "⚪️",
+          "4": "⚪️",
+          "5": "⚪️",
+          "6": "⚪️",
+          "7": "⚪️"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "description": "This template provides a visual pipeline tracking system for business development deals",
+    "how_to_update": "Update the stage values in pipeline.deals[].stages to track deal progress",
+    "valid_status_values": ["🟢", "🟡", "🔴", "⚪️", "⭕", "🏁"],
+    "example": "Set pipeline.deals[0].stages.1 to '🟢' to show Deal 1 is actively moving through Intake stage"
+  },
+  "integration": {
+    "IAR": "Can be integrated with IAR (Issue/Action Resolution) tracking",
+    "BD_setup": "Designed for business development and sales pipeline visualization",
+    "next_version": "v133 will add emoji finance controls (7 controls × 7 cycles)"
+  }
+}
