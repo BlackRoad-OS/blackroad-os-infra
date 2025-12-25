@@ -8,7 +8,7 @@ Use this template for tracking and triaging multiple issues across a project wit
 
 ```
 🧩 PROJECT PLANNING TEMPLATE v18 (issue triage) — 7 issues × 7 signals
-Legend: 🟢 ok  🟡 watch  🔴 bad  ⚪️ empty
+Legend: 🟢 ok  🟡 watch  🟠 moderate  🔴 bad  ⚪️ empty
 
 🧾 PROJECT: ____________________________   🚦 STATUS: 🟡   📅 DATE: ____________
 
@@ -139,7 +139,7 @@ Add emoji indicators to show overall mood/status:
 
 ```
 🧩 PROJECT PLANNING TEMPLATE v18 (issue triage) — 7 issues × 7 signals
-Legend: 🟢 ok  🟡 watch  🔴 bad  ⚪️ empty
+Legend: 🟢 ok  🟡 watch  🟠 moderate  🔴 bad  ⚪️ empty
 
 🧾 PROJECT: API Gateway Stability   🚦 STATUS: 🟡   📅 DATE: 2025-12-25
 
