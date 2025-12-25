@@ -1,0 +1,393 @@
+{
+  "version": "v149",
+  "type": "emoji-risk-register",
+  "title": "🧩 EXAMPLES PACK v149 — ⚠️🔥 EMOJI RISK REGISTER",
+  "dimensions": {
+    "risks": 7,
+    "fields": 7
+  },
+  "legend": {
+    "severity": {
+      "🟢": "low",
+      "🟡": "medium",
+      "🟠": "high",
+      "🔴": "critical",
+      "⚪️": "empty"
+    },
+    "actions": {
+      "📎": "proof",
+      "🗂": "file",
+      "⭕": "approve",
+      "✅": "verify",
+      "🏁": "close"
+    },
+    "alerts": {
+      "‼️": "urgent action required"
+    }
+  },
+  "risks": [
+    {
+      "id": "R1",
+      "emoji": "🔥",
+      "name": "Critical Infrastructure Risk",
+      "category": "Infrastructure",
+      "owner": "Platform Team",
+      "impact": "System-wide outage potential",
+      "fields": {
+        "1": {
+          "name": "Current Severity",
+          "description": "Current risk level assessment",
+          "value": "⚪️"
+        },
+        "2": {
+          "name": "Mitigation Status",
+          "description": "Progress on mitigation measures",
+          "value": "⚪️"
+        },
+        "3": {
+          "name": "Owner Assignment",
+          "description": "Responsible party identification",
+          "value": "⚪️"
+        },
+        "4": {
+          "name": "Timeline",
+          "description": "Expected resolution timeframe",
+          "value": "⚪️"
+        },
+        "5": {
+          "name": "Dependencies",
+          "description": "Blocked by or blocking other risks",
+          "value": "⚪️"
+        },
+        "6": {
+          "name": "Evidence",
+          "description": "Documentation and proof of mitigation",
+          "value": "⚪️"
+        },
+        "7": {
+          "name": "Sign-off",
+          "description": "Approval and closure status",
+          "value": "⚪️"
+        }
+      }
+    },
+    {
+      "id": "R2",
+      "emoji": "🎯",
+      "name": "Target Achievement Risk",
+      "category": "Objectives & Key Results",
+      "owner": "Product Team",
+      "impact": "Strategic goal delivery",
+      "fields": {
+        "1": {
+          "name": "Current Severity",
+          "description": "Risk to OKR achievement",
+          "value": "⚪️"
+        },
+        "2": {
+          "name": "Mitigation Status",
+          "description": "Actions in progress",
+          "value": "⚪️"
+        },
+        "3": {
+          "name": "Owner Assignment",
+          "description": "Team responsible",
+          "value": "⚪️"
+        },
+        "4": {
+          "name": "Timeline",
+          "description": "Quarter/milestone alignment",
+          "value": "⚪️"
+        },
+        "5": {
+          "name": "Dependencies",
+          "description": "Cross-team dependencies",
+          "value": "⚪️"
+        },
+        "6": {
+          "name": "Evidence",
+          "description": "Metrics and progress indicators",
+          "value": "⚪️"
+        },
+        "7": {
+          "name": "Sign-off",
+          "description": "Stakeholder approval",
+          "value": "⚪️"
+        }
+      }
+    },
+    {
+      "id": "R3",
+      "emoji": "🧱",
+      "name": "Foundation/Architecture Risk",
+      "category": "Technical Debt",
+      "owner": "Engineering Team",
+      "impact": "Scalability and maintainability",
+      "fields": {
+        "1": {
+          "name": "Current Severity",
+          "description": "Technical debt severity",
+          "value": "⚪️"
+        },
+        "2": {
+          "name": "Mitigation Status",
+          "description": "Refactoring progress",
+          "value": "⚪️"
+        },
+        "3": {
+          "name": "Owner Assignment",
+          "description": "Engineering lead",
+          "value": "⚪️"
+        },
+        "4": {
+          "name": "Timeline",
+          "description": "Refactor schedule",
+          "value": "⚪️"
+        },
+        "5": {
+          "name": "Dependencies",
+          "description": "Architectural changes required",
+          "value": "⚪️"
+        },
+        "6": {
+          "name": "Evidence",
+          "description": "Code reviews and architecture docs",
+          "value": "⚪️"
+        },
+        "7": {
+          "name": "Sign-off",
+          "description": "Technical approval",
+          "value": "⚪️"
+        }
+      }
+    },
+    {
+      "id": "R4",
+      "emoji": "🛠",
+      "name": "Operational/Tooling Risk",
+      "category": "DevOps & Operations",
+      "owner": "DevOps Team",
+      "impact": "Development velocity and reliability",
+      "fields": {
+        "1": {
+          "name": "Current Severity",
+          "description": "Operational impact level",
+          "value": "⚪️"
+        },
+        "2": {
+          "name": "Mitigation Status",
+          "description": "Tooling improvements",
+          "value": "⚪️"
+        },
+        "3": {
+          "name": "Owner Assignment",
+          "description": "DevOps engineer",
+          "value": "⚪️"
+        },
+        "4": {
+          "name": "Timeline",
+          "description": "Implementation schedule",
+          "value": "⚪️"
+        },
+        "5": {
+          "name": "Dependencies",
+          "description": "Tool/platform availability",
+          "value": "⚪️"
+        },
+        "6": {
+          "name": "Evidence",
+          "description": "Monitoring and incident reports",
+          "value": "⚪️"
+        },
+        "7": {
+          "name": "Sign-off",
+          "description": "Operations approval",
+          "value": "⚪️"
+        }
+      }
+    },
+    {
+      "id": "R5",
+      "emoji": "😭",
+      "name": "User Experience Risk",
+      "category": "UX/Customer Satisfaction",
+      "owner": "Design & Product Team",
+      "impact": "User retention and satisfaction",
+      "fields": {
+        "1": {
+          "name": "Current Severity",
+          "description": "Customer pain point severity",
+          "value": "⚪️"
+        },
+        "2": {
+          "name": "Mitigation Status",
+          "description": "UX improvements in progress",
+          "value": "⚪️"
+        },
+        "3": {
+          "name": "Owner Assignment",
+          "description": "Product/design lead",
+          "value": "⚪️"
+        },
+        "4": {
+          "name": "Timeline",
+          "description": "Release schedule",
+          "value": "⚪️"
+        },
+        "5": {
+          "name": "Dependencies",
+          "description": "User research and testing",
+          "value": "⚪️"
+        },
+        "6": {
+          "name": "Evidence",
+          "description": "User feedback and analytics",
+          "value": "⚪️"
+        },
+        "7": {
+          "name": "Sign-off",
+          "description": "Product approval",
+          "value": "⚪️"
+        }
+      }
+    },
+    {
+      "id": "R6",
+      "emoji": "📎🗂",
+      "name": "Documentation/Compliance Risk",
+      "category": "Documentation & Compliance",
+      "owner": "Compliance Team",
+      "impact": "Regulatory and knowledge management",
+      "fields": {
+        "1": {
+          "name": "Current Severity",
+          "description": "Compliance gap severity",
+          "value": "⚪️"
+        },
+        "2": {
+          "name": "Mitigation Status",
+          "description": "Documentation progress",
+          "value": "⚪️"
+        },
+        "3": {
+          "name": "Owner Assignment",
+          "description": "Compliance officer",
+          "value": "⚪️"
+        },
+        "4": {
+          "name": "Timeline",
+          "description": "Audit/review schedule",
+          "value": "⚪️"
+        },
+        "5": {
+          "name": "Dependencies",
+          "description": "Legal/regulatory changes",
+          "value": "⚪️"
+        },
+        "6": {
+          "name": "Evidence",
+          "description": "Audit trails and documentation",
+          "value": "⚪️"
+        },
+        "7": {
+          "name": "Sign-off",
+          "description": "Compliance approval",
+          "value": "⚪️"
+        }
+      }
+    },
+    {
+      "id": "R7",
+      "emoji": "✅🏁",
+      "name": "Verification/Closure Risk",
+      "category": "Quality Assurance",
+      "owner": "QA Team",
+      "impact": "Release quality and validation",
+      "fields": {
+        "1": {
+          "name": "Current Severity",
+          "description": "Testing coverage gaps",
+          "value": "⚪️"
+        },
+        "2": {
+          "name": "Mitigation Status",
+          "description": "Test automation progress",
+          "value": "⚪️"
+        },
+        "3": {
+          "name": "Owner Assignment",
+          "description": "QA lead",
+          "value": "⚪️"
+        },
+        "4": {
+          "name": "Timeline",
+          "description": "Testing schedule",
+          "value": "⚪️"
+        },
+        "5": {
+          "name": "Dependencies",
+          "description": "Feature completion",
+          "value": "⚪️"
+        },
+        "6": {
+          "name": "Evidence",
+          "description": "Test reports and coverage metrics",
+          "value": "⚪️"
+        },
+        "7": {
+          "name": "Sign-off",
+          "description": "QA sign-off",
+          "value": "⚪️"
+        }
+      }
+    }
+  ],
+  "example": {
+    "scenario": "Production Infrastructure Review",
+    "period": "Week 51, 2025",
+    "populated_matrix": [
+      {
+        "risk_id": "R1",
+        "fields": ["🔴", "🟡", "🟢", "🟠", "🟢", "📎", "⭕"]
+      },
+      {
+        "risk_id": "R2",
+        "fields": ["🟡", "🟢", "🟢", "🟢", "🟡", "📎", "✅"]
+      },
+      {
+        "risk_id": "R3",
+        "fields": ["🟠", "🟡", "🟢", "🟡", "🟠", "🗂", "⭕"]
+      },
+      {
+        "risk_id": "R4",
+        "fields": ["🟢", "🟢", "🟢", "🟢", "🟢", "📎", "🏁"]
+      },
+      {
+        "risk_id": "R5",
+        "fields": ["🟡", "🟡", "🟢", "🟢", "🟢", "📎", "⭕"]
+      },
+      {
+        "risk_id": "R6",
+        "fields": ["🟠", "🔴", "🟢", "🔴", "🟢", "🔴", "⚪️"]
+      },
+      {
+        "risk_id": "R7",
+        "fields": ["🟢", "🟢", "🟢", "🟢", "🟢", "📎", "✅"]
+      }
+    ]
+  },
+  "next_version": {
+    "version": "v150",
+    "title": "Emoji Compliance Matrix",
+    "description": "7 rules × 7 controls with ⭕/📎/🗂/🔐/✅/🏁",
+    "dimensions": {
+      "rules": 7,
+      "controls": 7
+    }
+  },
+  "meta": {
+    "created_at": "2025-12-25T23:33:50Z",
+    "maintained_by": "BlackRoad OS Infrastructure Team",
+    "status": "complete"
+  }
+}
