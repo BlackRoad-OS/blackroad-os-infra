@@ -1,0 +1,459 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://blackroad.io/schemas/org.capacity.spec.json",
+  "title": "Organization Capacity Dashboard Specification",
+  "description": "Schema for org-wide capacity tracking across teams and signals (EXAMPLES PACK v8)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["org", "week", "status", "teams", "updated_at"],
+  "properties": {
+    "org": {
+      "type": "string",
+      "description": "Organization or company name"
+    },
+    "week": {
+      "type": "string",
+      "pattern": "^\\d{4}-W\\d{2}$",
+      "description": "ISO week number (e.g., 2025-W52)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["good", "watch", "bad"],
+      "description": "Overall organizational capacity status"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when dashboard was last updated"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata about the dashboard",
+      "properties": {
+        "collector": {
+          "type": "string",
+          "description": "System or person who collected the data"
+        },
+        "notes": {
+          "type": "string",
+          "description": "General notes or context for this period"
+        },
+        "trend": {
+          "type": "string",
+          "enum": ["improving", "stable", "declining"],
+          "description": "Overall trend compared to previous period"
+        }
+      }
+    },
+    "teams": {
+      "type": "array",
+      "description": "Array of team capacity data (typically 7 teams)",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["team", "signals", "overallStatus"],
+        "properties": {
+          "team": {
+            "type": "string",
+            "description": "Team name"
+          },
+          "overallStatus": {
+            "type": "string",
+            "enum": ["good", "watch", "bad", "empty"],
+            "description": "Aggregate status across all signals"
+          },
+          "signals": {
+            "type": "array",
+            "description": "Array of 7 capacity signals",
+            "minItems": 7,
+            "maxItems": 7,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["signal", "status"],
+              "properties": {
+                "signal": {
+                  "type": "string",
+                  "enum": [
+                    "headcount",
+                    "focus_time",
+                    "wip_load",
+                    "blocked",
+                    "priority",
+                    "comms_health",
+                    "momentum"
+                  ],
+                  "description": "Signal type identifier"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["good", "watch", "bad", "empty"],
+                  "description": "Signal status: 🟢=good 🟡=watch 🔴=bad ⚪️=empty"
+                },
+                "value": {
+                  "type": "number",
+                  "description": "Numeric value of the signal (optional)"
+                },
+                "threshold": {
+                  "type": "object",
+                  "description": "Thresholds for determining status",
+                  "properties": {
+                    "good": {
+                      "description": "Value or range for good status",
+                      "oneOf": [
+                        { "type": "number" },
+                        { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+                      ]
+                    },
+                    "watch": {
+                      "description": "Value or range for watch status",
+                      "oneOf": [
+                        { "type": "number" },
+                        { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+                      ]
+                    }
+                  }
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Additional context or notes about this signal"
+                },
+                "trend": {
+                  "type": "string",
+                  "enum": ["up", "stable", "down"],
+                  "description": "Trend direction: ↗️=up →=stable ↘️=down"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "example": {
+    "org": "BlackRoad OS",
+    "week": "2025-W52",
+    "status": "watch",
+    "updated_at": "2025-12-25T18:00:00Z",
+    "metadata": {
+      "collector": "org-capacity-bot",
+      "notes": "Sprint 42 review - some blockers identified",
+      "trend": "declining"
+    },
+    "teams": [
+      {
+        "team": "Platform Engineering",
+        "overallStatus": "watch",
+        "signals": [
+          {
+            "signal": "headcount",
+            "status": "good",
+            "value": 1.0,
+            "threshold": { "good": [0.9, 1.1], "watch": [0.7, 1.2] },
+            "notes": "Fully staffed",
+            "trend": "stable"
+          },
+          {
+            "signal": "focus_time",
+            "status": "good",
+            "value": 0.55,
+            "threshold": { "good": 0.5, "watch": 0.3 },
+            "notes": "55% deep work time available",
+            "trend": "down"
+          },
+          {
+            "signal": "wip_load",
+            "status": "watch",
+            "value": 3.2,
+            "threshold": { "good": 2, "watch": 4 },
+            "notes": "3.2 concurrent tasks per person",
+            "trend": "stable"
+          },
+          {
+            "signal": "blocked",
+            "status": "bad",
+            "value": 0.30,
+            "threshold": { "good": 0.1, "watch": 0.25 },
+            "notes": "30% of work items blocked on infrastructure",
+            "trend": "up"
+          },
+          {
+            "signal": "priority",
+            "status": "good",
+            "value": 0.85,
+            "threshold": { "good": 0.8, "watch": 0.6 },
+            "notes": "85% team alignment on priorities",
+            "trend": "stable"
+          },
+          {
+            "signal": "comms_health",
+            "status": "good",
+            "value": 82,
+            "threshold": { "good": 80, "watch": 60 },
+            "notes": "Good communication cadence",
+            "trend": "up"
+          },
+          {
+            "signal": "momentum",
+            "status": "good",
+            "value": 0.92,
+            "threshold": { "good": 0.9, "watch": 0.7 },
+            "notes": "92% of sprint goals achieved",
+            "trend": "stable"
+          }
+        ]
+      },
+      {
+        "team": "API Team",
+        "overallStatus": "good",
+        "signals": [
+          {
+            "signal": "headcount",
+            "status": "good",
+            "value": 1.0
+          },
+          {
+            "signal": "focus_time",
+            "status": "good",
+            "value": 0.60
+          },
+          {
+            "signal": "wip_load",
+            "status": "good",
+            "value": 2.0
+          },
+          {
+            "signal": "blocked",
+            "status": "good",
+            "value": 0.05
+          },
+          {
+            "signal": "priority",
+            "status": "good",
+            "value": 0.90
+          },
+          {
+            "signal": "comms_health",
+            "status": "good",
+            "value": 88
+          },
+          {
+            "signal": "momentum",
+            "status": "good",
+            "value": 0.95
+          }
+        ]
+      },
+      {
+        "team": "Web Team",
+        "overallStatus": "watch",
+        "signals": [
+          {
+            "signal": "headcount",
+            "status": "good",
+            "value": 0.95
+          },
+          {
+            "signal": "focus_time",
+            "status": "watch",
+            "value": 0.42
+          },
+          {
+            "signal": "wip_load",
+            "status": "watch",
+            "value": 3.5
+          },
+          {
+            "signal": "blocked",
+            "status": "good",
+            "value": 0.08
+          },
+          {
+            "signal": "priority",
+            "status": "good",
+            "value": 0.82
+          },
+          {
+            "signal": "comms_health",
+            "status": "good",
+            "value": 75
+          },
+          {
+            "signal": "momentum",
+            "status": "watch",
+            "value": 0.78
+          }
+        ]
+      },
+      {
+        "team": "Data Team",
+        "overallStatus": "bad",
+        "signals": [
+          {
+            "signal": "headcount",
+            "status": "bad",
+            "value": 0.65,
+            "notes": "Critical staffing shortage"
+          },
+          {
+            "signal": "focus_time",
+            "status": "watch",
+            "value": 0.38
+          },
+          {
+            "signal": "wip_load",
+            "status": "watch",
+            "value": 3.8
+          },
+          {
+            "signal": "blocked",
+            "status": "bad",
+            "value": 0.28,
+            "notes": "Multiple dependencies blocking progress"
+          },
+          {
+            "signal": "priority",
+            "status": "good",
+            "value": 0.85
+          },
+          {
+            "signal": "comms_health",
+            "status": "good",
+            "value": 80
+          },
+          {
+            "signal": "momentum",
+            "status": "watch",
+            "value": 0.72
+          }
+        ]
+      },
+      {
+        "team": "Security Team",
+        "overallStatus": "good",
+        "signals": [
+          {
+            "signal": "headcount",
+            "status": "good",
+            "value": 1.0
+          },
+          {
+            "signal": "focus_time",
+            "status": "good",
+            "value": 0.58
+          },
+          {
+            "signal": "wip_load",
+            "status": "good",
+            "value": 2.1
+          },
+          {
+            "signal": "blocked",
+            "status": "good",
+            "value": 0.06
+          },
+          {
+            "signal": "priority",
+            "status": "good",
+            "value": 0.88
+          },
+          {
+            "signal": "comms_health",
+            "status": "good",
+            "value": 85
+          },
+          {
+            "signal": "momentum",
+            "status": "good",
+            "value": 0.91
+          }
+        ]
+      },
+      {
+        "team": "DevOps Team",
+        "overallStatus": "watch",
+        "signals": [
+          {
+            "signal": "headcount",
+            "status": "good",
+            "value": 1.0
+          },
+          {
+            "signal": "focus_time",
+            "status": "watch",
+            "value": 0.35,
+            "notes": "High interrupt rate from incidents"
+          },
+          {
+            "signal": "wip_load",
+            "status": "watch",
+            "value": 3.6
+          },
+          {
+            "signal": "blocked",
+            "status": "good",
+            "value": 0.09
+          },
+          {
+            "signal": "priority",
+            "status": "good",
+            "value": 0.83
+          },
+          {
+            "signal": "comms_health",
+            "status": "good",
+            "value": 81
+          },
+          {
+            "signal": "momentum",
+            "status": "watch",
+            "value": 0.75
+          }
+        ]
+      },
+      {
+        "team": "AI Research",
+        "overallStatus": "good",
+        "signals": [
+          {
+            "signal": "headcount",
+            "status": "good",
+            "value": 1.05
+          },
+          {
+            "signal": "focus_time",
+            "status": "good",
+            "value": 0.65
+          },
+          {
+            "signal": "wip_load",
+            "status": "good",
+            "value": 1.8
+          },
+          {
+            "signal": "blocked",
+            "status": "good",
+            "value": 0.04
+          },
+          {
+            "signal": "priority",
+            "status": "good",
+            "value": 0.87
+          },
+          {
+            "signal": "comms_health",
+            "status": "good",
+            "value": 84
+          },
+          {
+            "signal": "momentum",
+            "status": "good",
+            "value": 0.93
+          }
+        ]
+      }
+    ]
+  }
+}
