@@ -76,7 +76,7 @@ Stages: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
 
 ## 🔗 Related Resources
 
-- [Documentation Standards](../ARCHITECTURE.md)
+- [Architecture Documentation](../ARCHITECTURE.md)
 - [BlackRoad OS Research Pack](../../services/packs/infra.yml)
 - [Playbooks Directory](../playbooks/)
 
