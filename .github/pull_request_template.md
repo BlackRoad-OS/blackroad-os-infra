@@ -20,5 +20,15 @@
 - [ ] Updated documentation
 - [ ] Tests pass
 
+## 😭 Health Rails (optional but iconic)
+Sadness:
+🙂🙂🙂🙂🙂🙂🙂 / 😭😭😭😢☹️🙁😐
+
+Energy:
+🔋🔋🔋🔋🔋🔋🔋 / 🪫🪫🪫🪫🪫🪫🪫
+
+Blocked:
+🟢🟢🟢🟢🟢🟢🟢 / 🔴🔴🔴🔴🔴🔴🔴
+
 ---
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

@@ -1,0 +1,52 @@
+name: "🐛 Bug"
+description: "Something broke or is wrong."
+title: "🐛 "
+labels: ["type:bug", "🚨triage"]
+body:
+  - type: dropdown
+    id: status
+    attributes:
+      label: "🚦 Status"
+      options: ["🟢 green","🟡 yellow","🔴 red","⭕ unknown"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "💥 Severity"
+      options: ["🟥 P0 stop-the-line","🟧 P1 urgent","🟨 P2 normal","🟩 P3 minor","🟦 P4 cosmetic"]
+    validations: { required: true }
+
+  - type: textarea
+    id: what
+    attributes:
+      label: "🧩 What happened?"
+    validations: { required: true }
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "🎯 Expected behavior"
+    validations: { required: true }
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: "🧪 Steps to reproduce"
+      placeholder: |
+        1)
+        2)
+        3)
+    validations: { required: true }
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "🧷 Logs / screenshots / traces"
+      render: shell
+
+  - type: input
+    id: env
+    attributes:
+      label: "🧬 Environment"
+      placeholder: "device/node, OS, commit, version, region"

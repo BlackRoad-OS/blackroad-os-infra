@@ -1,0 +1,33 @@
+name: "🧹 Task / Chore"
+description: "Maintenance, refactor, cleanup, small upgrades."
+title: "🧹 "
+labels: ["type:chore"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: "🧩 Area"
+      options: ["🧠 core","🔌 api","🎛️ ui","🤖 agents","🛰️ infra","📚 docs","🧰 tooling","🔐 security","🧬 data"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "🧱 Effort"
+      options: ["🐜 XS","🐇 S","🐻 M","🦏 L","🐉 XL"]
+    validations: { required: true }
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: "🎯 Goal"
+    validations: { required: true }
+
+  - type: textarea
+    id: checklist
+    attributes:
+      label: "✅ Checklist"
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations: { required: true }

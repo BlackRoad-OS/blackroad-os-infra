@@ -1,0 +1,29 @@
+name: "🧪 Spike / Experiment"
+description: "Timeboxed research to reduce uncertainty."
+title: "🧪 "
+labels: ["type:spike"]
+body:
+  - type: dropdown
+    id: timebox
+    attributes:
+      label: "⏳ Timebox"
+      options: ["🕐 1–2 hours","🕓 half day","🗓️ 1 day","🗓️ 2–3 days","🗓️ 1 week"]
+    validations: { required: true }
+
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: "🧠 Hypothesis"
+    validations: { required: true }
+
+  - type: textarea
+    id: success
+    attributes:
+      label: "✅ Success criteria"
+    validations: { required: true }
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: "📌 Outcome (fill after)"
+      placeholder: "Decision: ✅ proceed / 🛑 stop / 🔁 iterate"

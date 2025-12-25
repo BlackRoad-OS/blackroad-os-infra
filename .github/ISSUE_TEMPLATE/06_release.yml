@@ -1,0 +1,38 @@
+name: "🚀 Release"
+description: "Cut a release with rails + rollout."
+title: "🚀 Release: "
+labels: ["type:release"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: "🏷️ Version / Tag"
+      placeholder: "v0.0.x"
+    validations: { required: true }
+
+  - type: dropdown
+    id: risk
+    attributes:
+      label: "🧨 Risk"
+      options: ["🧊 low","🧨 medium","☢️ high","🪦 irreversible"]
+    validations: { required: true }
+
+  - type: textarea
+    id: changes
+    attributes:
+      label: "📦 What's in this release?"
+      placeholder: |
+        - ✨
+        - 🐛
+        - 🔐
+    validations: { required: true }
+
+  - type: textarea
+    id: rollout
+    attributes:
+      label: "🛰️ Rollout / Monitoring / Rollback"
+      placeholder: |
+        Rollout:
+        Monitoring:
+        Rollback:
+    validations: { required: true }
