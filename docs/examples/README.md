@@ -14,6 +14,12 @@ This directory contains example files and templates for various infrastructure c
 
 **Purpose:** Track innovation experiments with 7 experiments × 7 signals. Each experiment has 7 checkpoints with visual status indicators (🟢 good, 🟡 watch, 🔴 bad, ⚪️ empty).
 
+**Progress Tracking:**
+- **Signals** show the status of each checkpoint attempt
+- **Progress bars** track meaningful forward movement (e.g., successful milestones)
+- Note: A checkpoint can have a status (🟡/🔴) without counting as progress
+- This allows tracking issues/blockers separately from actual completion progress
+
 **Use Cases:**
 - Feature experimentation tracking
 - A/B testing monitoring
