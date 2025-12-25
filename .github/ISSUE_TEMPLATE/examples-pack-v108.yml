@@ -1,0 +1,129 @@
+name: "🧩 EXAMPLES PACK v108 — 📟 SINGLE-SCREEN SUPER TEMPLATE"
+description: "Emoji-only tracking template with status, progress, charts, links, warnings, and attachments"
+title: "[PACK-v108] "
+labels: ["examples-pack", "tracking"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧩 EXAMPLES PACK v108 — 📟 SINGLE-SCREEN SUPER TEMPLATE (emoji-only)
+        
+        **Legend:** 🟢🟡🔴⚪️  ⭕  🔗  🧱  📎  🗂  🔐  ✅  🏁
+        
+        Use this template to track complex tasks with visual, emoji-based status indicators.
+
+  - type: textarea
+    id: status_lights
+    attributes:
+      label: "🚦 Status Lights"
+      description: "Track status across different categories using traffic light indicators"
+      value: |
+        🟢⚪️⚪️⚪️⚪️⚪️⚪️ | 🟡⚪️⚪️⚪️⚪️⚪️⚪️ | 🔴⚪️⚪️⚪️⚪️⚪️⚪️ | ⭕⚪️⚪️⚪️⚪️⚪️⚪️
+      placeholder: |
+        🟢⚪️⚪️⚪️⚪️⚪️⚪️ | 🟡⚪️⚪️⚪️⚪️⚪️⚪️ | 🔴⚪️⚪️⚪️⚪️⚪️⚪️ | ⭕⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: navigation_steps
+    attributes:
+      label: "🧭 Navigation / Steps"
+      description: "Track progress through numbered steps (1-7)"
+      value: |
+        1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+      placeholder: |
+        1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: progress_chart
+    attributes:
+      label: "📊 Progress Chart"
+      description: "Visual progress tracking for rows R1-R7 with status indicators"
+      value: |
+        R1 ⬜🟩🟩⭕⬜⬜🏁
+        R2 ⬜⬜🟩🟩⭕⬜🏁
+        R3 ⬜⬜⬜🟩🟩⭕🏁
+        R4 ⬜⬜⬜⬜🟩🟩🏁
+        R5 ⬜🟨🟨⭕⬜⬜🏁
+        R6 ⬜🟥🟥⭕⬜⬜🏁
+        R7 ⬜⬜⬜🟩🟩🟩🏁
+      placeholder: |
+        R1 ⬜⬜⬜⭕⬜⬜🏁
+        R2 ⬜⬜⬜⭕⬜⬜🏁
+        R3 ⬜⬜⬜⭕⬜⬜🏁
+        R4 ⬜⬜⬜⭕⬜⬜🏁
+        R5 ⬜⬜⬜⭕⬜⬜🏁
+        R6 ⬜⬜⬜⭕⬜⬜🏁
+        R7 ⬜⬜⬜⭕⬜⬜🏁
+    validations:
+      required: false
+
+  - type: textarea
+    id: links_dependencies
+    attributes:
+      label: "🔗 Links & Dependencies"
+      description: "Track related tasks, dependencies, and blockers"
+      value: |
+        T1 🔗 ________   T2 🔗 ________   T3 🔗 ________
+        🧱 ________  🧱 ________  🧱 ________
+      placeholder: |
+        T1 🔗 https://...   T2 🔗 https://...   T3 🔗 https://...
+        🧱 Blocked by #123  🧱 Depends on #456  🧱 Related to #789
+    validations:
+      required: false
+
+  - type: textarea
+    id: warnings_alerts
+    attributes:
+      label: "⚠️ Warnings & Alerts"
+      description: "Track warnings, issues, and critical alerts"
+      value: |
+        🔥🟢🟡🟠🔴  😭⚪️⚪️⚪️⚪️⚪️⚪️  ‼️⚪️⚪️⚪️⚪️⚪️⚪️
+      placeholder: |
+        🔥🟢🟡🟠🔴  😭⚪️⚪️⚪️⚪️⚪️⚪️  ‼️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: false
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: "📎 Attachments"
+      description: "Reference files, documents, and resources"
+      value: |
+        📎 ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+        📎 ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+        📎 ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+      placeholder: |
+        📎 Design doc: https://...
+        📎 Spec: https://...
+        📎 Reference: https://...
+    validations:
+      required: false
+
+  - type: textarea
+    id: final_checklist
+    attributes:
+      label: "🗂🔐✅🏁 Final Checklist"
+      description: "Track final items before completion"
+      value: |
+        🗂⚪️  🔐⚪️  ✅⚪️  🏁⚪️
+      placeholder: |
+        🗂 Documentation updated
+        🔐 Security review passed
+        ✅ Testing complete
+        🏁 Ready to deploy
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "📝 Additional Context (optional)"
+      description: "Any additional information or notes"
+      placeholder: "Add any extra context, notes, or information here..."
+    validations:
+      required: false
