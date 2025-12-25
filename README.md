@@ -32,6 +32,7 @@
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 🎯 [Project Planning Template](templates/PROJECT_PLANNING_TEMPLATE.md) - OKR-based project tracking
 
 ---
 
@@ -92,6 +93,7 @@ Run validations locally before opening a PR:
 /templates             # Reusable templates
   .env.example         # Environment variables template
   SERVICE_INFRA_TEMPLATE.md  # New service template
+  PROJECT_PLANNING_TEMPLATE.md  # OKR-based project planning
 
 /terraform             # Terraform IaC (existing)
   main.tf
@@ -379,6 +381,7 @@ See `terraform/` directory for IaC definitions.
 - **Railway Guide**: `railway/README.md`
 - **Workflow Templates**: `github/workflows/README.md`
 - **Service Template**: `templates/SERVICE_INFRA_TEMPLATE.md`
+- **Project Planning Template**: `templates/PROJECT_PLANNING_TEMPLATE.md`
 
 ### Existing Terraform Docs
 - DNS Playbook: `docs/dns-playbook.md`
