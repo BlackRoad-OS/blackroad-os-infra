@@ -31,7 +31,7 @@ ASCII art sprint board for tracking 7 stories across 7 stages of development. Fe
 - Project milestone visualization
 - Team stand-ups and retrospectives
 
-**Quick create**: Use the [GitHub Issue Template](./.github/ISSUE_TEMPLATE/sprint.yml) to create a sprint tracking issue.
+**Quick create**: Use the [GitHub Issue Template](../.github/ISSUE_TEMPLATE/sprint.yml) to create a sprint tracking issue.
 
 ### 📝 Environment Variables Template
 **File**: [`.env.example`](./.env.example)
