@@ -1,0 +1,401 @@
+# Books & Records Workflow Automation Template
+# Based on EXAMPLES PACK v44
+# Implements 7-step Books & Records compliance workflow
+
+version: "1.0"
+workflow_name: "books_records_management"
+regulatory_framework:
+  bd:
+    - "SEC Rule 17a-3"
+    - "SEC Rule 17a-4"
+    - "FINRA Rule 4511"
+  ia_ria:
+    - "SEC Rule 204-2"
+    - "Investment Advisers Act"
+
+# Step 1: Record List (What to Keep)
+record_definitions:
+  bd_records:
+    - type: "blotter_securities"
+      retention_years: 6
+      description: "Securities purchased and sold"
+      worm_required: true
+    - type: "blotter_trading"
+      retention_years: 6
+      description: "Original entry record of all transactions"
+      worm_required: true
+    - type: "ledger_general"
+      retention_years: 6
+      description: "General ledger accounts"
+      worm_required: true
+    - type: "ledger_customer"
+      retention_years: 6
+      description: "Customer account ledgers"
+      worm_required: true
+    - type: "customer_account_records"
+      retention_years: 6
+      description: "Account agreements, updates, documents"
+      worm_required: true
+    - type: "order_tickets"
+      retention_years: 3
+      description: "Order memoranda"
+      worm_required: true
+    - type: "confirmations"
+      retention_years: 3
+      description: "Trade confirmations"
+      worm_required: false
+    - type: "communications"
+      retention_years: 3
+      description: "Business-related communications"
+      worm_required: false
+    - type: "supervisory_procedures"
+      retention_years: 3
+      description: "Written supervisory procedures"
+      worm_required: false
+    
+  ia_ria_records:
+    - type: "advisory_agreements"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "Investment advisory contracts"
+      worm_required: true
+    - type: "client_communications"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "All client communications"
+      worm_required: false
+    - type: "performance_calculations"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "Performance records and calculations"
+      worm_required: true
+    - type: "trade_orders"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "Trade orders and confirmations"
+      worm_required: true
+    - type: "personal_securities"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "Access person transactions"
+      worm_required: true
+    - type: "code_of_ethics"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "Code of ethics and attestations"
+      worm_required: true
+    - type: "proxy_voting"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "Proxy voting records"
+      worm_required: true
+    - type: "form_adv"
+      retention_years: 5
+      readily_accessible_years: 2
+      description: "Form ADV and amendments"
+      worm_required: true
+
+# Step 2: Capture (Create/Store)
+capture_configuration:
+  automatic_capture:
+    enabled: true
+    sources:
+      - type: "trading_system"
+        api_endpoint: "${TRADING_SYSTEM_API}"
+        capture_events:
+          - "order_created"
+          - "order_executed"
+          - "order_cancelled"
+      - type: "email_system"
+        api_endpoint: "${EMAIL_ARCHIVE_API}"
+        capture_scope: "business_related"
+      - type: "crm_system"
+        api_endpoint: "${CRM_API}"
+        capture_events:
+          - "client_interaction"
+          - "account_update"
+      - type: "document_management"
+        api_endpoint: "${DMS_API}"
+        capture_events:
+          - "document_created"
+          - "document_updated"
+  
+  metadata_tagging:
+    required_fields:
+      - "record_type"
+      - "creation_date"
+      - "author"
+      - "client_id"
+      - "retention_category"
+      - "regulatory_classification"
+    optional_fields:
+      - "matter_id"
+      - "product_id"
+      - "account_number"
+      - "transaction_id"
+  
+  storage_configuration:
+    primary_storage:
+      type: "worm_compliant"
+      provider: "${STORAGE_PROVIDER}"
+      encryption: "AES-256"
+      location: "${PRIMARY_REGION}"
+    backup_storage:
+      type: "replicated"
+      provider: "${BACKUP_PROVIDER}"
+      encryption: "AES-256"
+      location: "${BACKUP_REGION}"
+    versioning:
+      enabled: true
+      max_versions: 100
+
+# Step 3: Retain (Time Rules)
+retention_policies:
+  automatic_classification:
+    enabled: true
+    ml_model: "record_classifier_v2"
+  
+  retention_rules:
+    - record_type: "bd_records"
+      default_retention_years: 6
+      countdown_starts: "creation_date"
+      extension_triggers:
+        - "legal_hold"
+        - "litigation"
+        - "examination"
+    - record_type: "ia_ria_records"
+      default_retention_years: 5
+      readily_accessible_years: 2
+      countdown_starts: "creation_date"
+      extension_triggers:
+        - "legal_hold"
+        - "examination"
+  
+  disposition_workflow:
+    enabled: true
+    review_before_deletion: true
+    approval_required: true
+    notification_days_before: 30
+    audit_log_retention_years: 10
+
+# Step 4: Protect (Access/Locks)
+security_configuration:
+  access_controls:
+    authentication:
+      - "multi_factor_required"
+      - "sso_integration"
+    authorization:
+      role_based_access:
+        - role: "compliance_officer"
+          permissions: ["read", "export", "legal_hold"]
+        - role: "supervisor"
+          permissions: ["read", "export"]
+        - role: "registered_representative"
+          permissions: ["read_own"]
+        - role: "auditor"
+          permissions: ["read", "audit"]
+  
+  data_protection:
+    encryption_at_rest: true
+    encryption_in_transit: true
+    key_management: "hsm"
+    tamper_detection: true
+  
+  audit_trail:
+    enabled: true
+    log_events:
+      - "access"
+      - "export"
+      - "modification_attempt"
+      - "deletion"
+      - "legal_hold"
+    retention_years: 10
+
+# Step 5: Find (Search + Index)
+search_configuration:
+  indexing:
+    full_text: true
+    metadata: true
+    ocr_enabled: true
+    update_frequency: "real_time"
+  
+  search_features:
+    - "full_text_search"
+    - "metadata_filters"
+    - "date_range"
+    - "boolean_operators"
+    - "proximity_search"
+    - "wildcard_search"
+  
+  search_ui:
+    advanced_query_builder: true
+    saved_searches: true
+    search_history: true
+    export_results: true
+
+# Step 6: Produce (On Request)
+production_workflow:
+  request_intake:
+    channels:
+      - "compliance_portal"
+      - "email"
+      - "examination_management_system"
+    required_fields:
+      - "requester"
+      - "request_type"
+      - "scope"
+      - "due_date"
+  
+  search_and_collect:
+    automated_search: true
+    deduplication: true
+    threading: true
+  
+  review_and_redact:
+    privilege_review: true
+    pii_redaction: true
+    confidential_redaction: true
+  
+  export_formats:
+    - "native"
+    - "pdf"
+    - "tiff"
+    - "load_file"
+  
+  delivery:
+    secure_transfer: true
+    encryption_required: true
+    chain_of_custody: true
+    certification: true
+
+# Step 7: Review (Periodic Check)
+periodic_review:
+  annual_policy_review:
+    enabled: true
+    schedule: "january"
+    participants:
+      - "compliance_officer"
+      - "legal"
+      - "it"
+    deliverables:
+      - "policy_updates"
+      - "gap_analysis"
+      - "remediation_plan"
+  
+  sample_testing:
+    enabled: true
+    frequency: "quarterly"
+    sample_size: 25
+    test_criteria:
+      - "completeness"
+      - "accuracy"
+      - "timeliness"
+      - "accessibility"
+  
+  access_log_audit:
+    enabled: true
+    frequency: "monthly"
+    review_criteria:
+      - "unauthorized_access"
+      - "excessive_exports"
+      - "after_hours_access"
+      - "terminated_user_access"
+  
+  technology_assessment:
+    enabled: true
+    frequency: "annual"
+    assessment_areas:
+      - "system_capacity"
+      - "search_performance"
+      - "backup_integrity"
+      - "security_controls"
+
+# Notifications and Alerts
+notifications:
+  retention_expiring:
+    enabled: true
+    advance_days: 30
+    recipients: ["compliance_team"]
+  
+  legal_hold_applied:
+    enabled: true
+    recipients: ["legal_team", "compliance_team"]
+  
+  examination_request:
+    enabled: true
+    recipients: ["compliance_officer", "ceo"]
+  
+  access_anomaly:
+    enabled: true
+    recipients: ["security_team", "compliance_team"]
+
+# Reporting
+reports:
+  - name: "books_records_inventory"
+    frequency: "monthly"
+    format: "pdf"
+    recipients: ["compliance_officer"]
+  
+  - name: "retention_status"
+    frequency: "quarterly"
+    format: "excel"
+    recipients: ["compliance_team"]
+  
+  - name: "access_audit"
+    frequency: "monthly"
+    format: "pdf"
+    recipients: ["compliance_officer", "ciso"]
+  
+  - name: "examination_readiness"
+    frequency: "annual"
+    format: "pdf"
+    recipients: ["ceo", "cco", "board"]
+
+# Integration Endpoints
+integrations:
+  trading_system:
+    type: "rest_api"
+    endpoint: "${TRADING_SYSTEM_API}/v1/records"
+    authentication: "oauth2"
+  
+  email_archive:
+    type: "rest_api"
+    endpoint: "${EMAIL_ARCHIVE_API}/v1/messages"
+    authentication: "api_key"
+  
+  crm_system:
+    type: "rest_api"
+    endpoint: "${CRM_API}/v1/interactions"
+    authentication: "oauth2"
+  
+  document_management:
+    type: "rest_api"
+    endpoint: "${DMS_API}/v1/documents"
+    authentication: "oauth2"
+
+# Audit and Compliance
+compliance_monitoring:
+  automated_testing:
+    enabled: true
+    frequency: "daily"
+    tests:
+      - "capture_completeness"
+      - "retention_compliance"
+      - "access_controls"
+      - "backup_integrity"
+  
+  exception_handling:
+    alert_on_failure: true
+    auto_remediation: false
+    escalation_path:
+      - "compliance_team"
+      - "compliance_officer"
+      - "legal"
+  
+  regulatory_updates:
+    monitoring: true
+    sources:
+      - "sec_website"
+      - "finra_notices"
+      - "compliance_news"
+    review_frequency: "weekly"
