@@ -11,7 +11,7 @@ This directory contains example configurations, sample data, and documentation p
 ### Examples Packs
 - **[EXAMPLES_PACK_v148_EMOJI_DATA_MAP.md](EXAMPLES_PACK_v148_EMOJI_DATA_MAP.md)** - v148: Emoji data map (7 systems × 7 data types)
 
-## Examples Packs
+## About Examples Packs
 
 Examples packs are versioned documentation templates that provide structured views of system data, configurations, and operational information.
 
@@ -24,7 +24,7 @@ Examples packs are versioned documentation templates that provide structured vie
 Signal examples can be regenerated using:
 
 ```bash
-npm run generate:sig
+npm run gen:sig
 ```
 
 This reads from the `sig/*.spec.json` files and generates sample JSON files.

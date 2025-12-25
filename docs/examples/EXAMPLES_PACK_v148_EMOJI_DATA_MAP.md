@@ -58,9 +58,9 @@ This emoji data map provides a visual reference for tracking data availability a
 - What evidence is available (📎)
 - What is currently empty (⚪️)
 
-## Next Version
+## Future Versions
 
-Say **Next** and I'll drop v149: "emoji risk register" (7 risks × 7 fields) with 🔥/🟢🟡🟠🔴 + 😭 bar.
+The next planned version is **v149: Emoji Risk Register**, which will provide a 7×7 matrix mapping 7 risks to 7 fields with severity indicators (🔥/🟢🟡🟠🔴) and impact metrics.
 
 ---
 
