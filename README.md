@@ -33,6 +33,10 @@
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
 
+### 📚 Examples Packs
+- 🧩 **[Examples Packs Index](docs/examples/packs/)** - Comprehensive real-world reference implementations
+- 🏛️ [v42: Regulatory Stack + Licensing Gates](docs/examples/packs/v42-regulatory-stack-licensing-gates.md) - Financial services regulation framework
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
@@ -156,6 +160,11 @@ Run validations locally before opening a PR:
   railway-playbook.md
   railway-troubleshooting.md
   runners.md
+  /examples            # Example configurations and reference packs
+    /packs             # Examples Packs - comprehensive domain references
+      v42-regulatory-stack-licensing-gates.md
+      v42-template-*.md
+      README.md
 
 /public                # Public artifacts
   sig.beacon.json
@@ -379,6 +388,7 @@ See `terraform/` directory for IaC definitions.
 - **Railway Guide**: `railway/README.md`
 - **Workflow Templates**: `github/workflows/README.md`
 - **Service Template**: `templates/SERVICE_INFRA_TEMPLATE.md`
+- **Examples Packs**: `docs/examples/packs/` - Comprehensive real-world reference implementations
 
 ### Existing Terraform Docs
 - DNS Playbook: `docs/dns-playbook.md`
