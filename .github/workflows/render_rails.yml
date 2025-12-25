@@ -86,21 +86,35 @@ jobs:
               `progress:${prog}/7`
             ];
 
-            await github.rest.issues.addLabels({
-              ...context.repo,
-              issue_number: context.payload.issue.number,
-              labels
-            });
+            try {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: context.payload.issue.number,
+                labels
+              });
+            } catch (error) {
+              console.log(`Note: Some labels may not exist yet. Please create: ${labels.join(', ')}`);
+              // Continue even if labels fail - the comment is more important
+            }
 
-            // Avoid spamming: only comment if not already present
+            // Update existing comment or create new one
             const comments = await github.rest.issues.listComments({
               ...context.repo,
               issue_number: context.payload.issue.number,
               per_page: 100
             });
 
-            const already = comments.data.some(c => (c.body || "").includes("## 🚂 TEMPIES Rails"));
-            if (!already) {
+            const existingComment = comments.data.find(c => (c.body || "").includes("## 🚂 TEMPIES Rails"));
+            
+            if (existingComment) {
+              // Update existing comment on edit
+              await github.rest.issues.updateComment({
+                ...context.repo,
+                comment_id: existingComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
               await github.rest.issues.createComment({
                 ...context.repo,
                 issue_number: context.payload.issue.number,
