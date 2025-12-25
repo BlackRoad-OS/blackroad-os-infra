@@ -1,0 +1,119 @@
+name: "W3: BD 🏛️📣 Institutional Communications"
+description: "BD institutional communications workflow - specific review requirements"
+title: "[W3-BD-INST] "
+labels: ["workflow:bd", "workflow:w3", "comms:institutional", "supervision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## W3: BD Institutional Communications (🏛️)
+        
+        **7-Step Supervision Workflow**
+        🧭1️⃣ Classify → 2️⃣ Draft → 3️⃣👀 Review → 4️⃣⭕ Approve → 5️⃣📣 Distribute → 6️⃣🗂 Archive → 7️⃣✅🏁 Evidence/Close
+        
+        **Legal Hook**: Supervised + review procedures + keep evidence for institutional audience.
+
+  - type: dropdown
+    id: step
+    attributes:
+      label: Current Step
+      description: Where are we in the workflow?
+      options:
+        - "1️⃣ Classify (🏛️ Institutional)"
+        - "2️⃣ Draft (✍️)"
+        - "3️⃣ Review (👀)"
+        - "4️⃣ Approve (⭕)"
+        - "5️⃣ Distribute (📣)"
+        - "6️⃣ Archive (🗂)"
+        - "7️⃣ Evidence/Close (✅🏁)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: communication_details
+    attributes:
+      label: Communication Details
+      description: What is being communicated?
+      placeholder: |
+        - Type: Report / Analysis / Research
+        - Institutional audience: [banks, pension funds, institutional investors]
+        - Subject: [subject or topic]
+        - Draft location: [link to draft]
+    validations:
+      required: true
+
+  - type: textarea
+    id: classification
+    attributes:
+      label: Classification (Step 1)
+      description: Confirm this is institutional communication
+      placeholder: |
+        ✓ Audience is institutional (not retail)
+        ✓ Requires supervision and review
+        ✓ Keep evidence of review
+    validations:
+      required: false
+
+  - type: textarea
+    id: review_approval
+    attributes:
+      label: Review & Approval (Steps 3-4)
+      description: Review and approval documentation
+      placeholder: |
+        Reviewer Name: [name]
+        Review Date: [date]
+        Approval Status: [approved/changes required]
+        Approval Date: [date]
+        Notes: [any issues or changes]
+    validations:
+      required: false
+
+  - type: textarea
+    id: archive_details
+    attributes:
+      label: Archive Details (Step 6)
+      description: Records retention information
+      placeholder: |
+        - Archive location: [path/system]
+        - Retention period: [per record type requirements]
+        - Archive date: [date]
+        - Evidence of review retained: [yes/no]
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence & Closure (Step 7)
+      description: Proof of completion
+      placeholder: |
+        - Distribution confirmation: [link/attachment]
+        - Archive confirmation: [link/reference]
+        - Review evidence: [link/reference]
+        - Completion date: [date]
+    validations:
+      required: false
+
+  - type: dropdown
+    id: pressure
+    attributes:
+      label: 🔥 Pressure Level (optional)
+      description: Optional pressure tracking
+      options:
+        - "⚪️⚪️⚪️⚪️⚪️⚪️ No pressure"
+        - "😤⚪️⚪️⚪️⚪️⚪️ Low pressure"
+        - "😤😤⚪️⚪️⚪️⚪️ Medium pressure"
+        - "😤😤😤⚪️⚪️⚪️ High pressure"
+        - "😭⚪️⚪️⚪️⚪️⚪️ Stress level 1"
+        - "😭😭😭⚪️⚪️⚪️ Stress level 3"
+        - "🔥🔥🔥🔥🔥🔥 CRITICAL"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any other relevant information
+    validations:
+      required: false

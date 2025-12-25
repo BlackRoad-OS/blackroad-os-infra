@@ -1,0 +1,154 @@
+name: "W7: IA 🧠📜 Code of Ethics"
+description: "IA code of ethics workflow - compliance and records requirements"
+title: "[W7-IA-ETHICS] "
+labels: ["workflow:ia", "workflow:w7", "ethics:code", "supervision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## W7: IA Code of Ethics (🧠📜)
+        
+        **7-Step Supervision Workflow**
+        🧭1️⃣ Classify → 2️⃣ Draft → 3️⃣👀 Review → 4️⃣⭕ Approve → 5️⃣📣 Distribute → 6️⃣🗂 Archive → 7️⃣✅🏁 Evidence/Close
+        
+        **Legal Hook**: Code of ethics records + compliance + 5-year retention + review procedures.
+
+  - type: dropdown
+    id: step
+    attributes:
+      label: Current Step
+      description: Where are we in the workflow?
+      options:
+        - "1️⃣ Classify (🧑‍⚖️ - Ethics matter)"
+        - "2️⃣ Draft (✍️)"
+        - "3️⃣ Review (👀)"
+        - "4️⃣ Approve (⭕)"
+        - "5️⃣ Distribute (📣)"
+        - "6️⃣ Archive (🗂)"
+        - "7️⃣ Evidence/Close (✅🏁)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ethics_type
+    attributes:
+      label: Ethics Matter Type
+      description: What type of ethics matter?
+      options:
+        - "Code of Ethics adoption/amendment"
+        - "Ethics training documentation"
+        - "Ethics violation report"
+        - "Ethics certification/acknowledgment"
+        - "Personal trading review"
+        - "Conflict of interest disclosure"
+        - "Other - See notes"
+    validations:
+      required: true
+
+  - type: textarea
+    id: matter_details
+    attributes:
+      label: Ethics Matter Details
+      description: What is the ethics matter?
+      placeholder: |
+        - Matter type: [specific type]
+        - Date: [date]
+        - Personnel involved: [names/roles]
+        - Description: [brief description]
+        - Source documentation: [link or reference]
+    validations:
+      required: true
+
+  - type: textarea
+    id: classification
+    attributes:
+      label: Classification (Step 1)
+      description: Ethics matter classification
+      placeholder: |
+        ✓ Code of ethics requirement identified
+        ✓ Review procedures applicable: [yes/no]
+        ✓ Retention period: 5 years
+        ✓ Distribution requirements: [who needs to know]
+    validations:
+      required: false
+
+  - type: textarea
+    id: review_approval
+    attributes:
+      label: Review & Approval (Steps 3-4)
+      description: Review and approval documentation
+      placeholder: |
+        Chief Compliance Officer review: [name]
+        Review date: [date]
+        Approval status: [approved/escalated/requires action]
+        Approval date: [date]
+        Actions required: [list any required actions]
+        Follow-up needed: [yes/no and details]
+    validations:
+      required: false
+
+  - type: textarea
+    id: distribution
+    attributes:
+      label: Distribution (Step 5)
+      description: Who needs to be notified/receive documentation
+      placeholder: |
+        - Distributed to: [personnel list]
+        - Distribution date: [date]
+        - Distribution method: [email/system/meeting]
+        - Acknowledgment required: [yes/no]
+        - Acknowledgments received: [list]
+    validations:
+      required: false
+
+  - type: textarea
+    id: archive_details
+    attributes:
+      label: Archive Details (Step 6)
+      description: Records retention information
+      placeholder: |
+        - Archive location: [path/system]
+        - Archive date: [date]
+        - Retention period: 5 years from [date]
+        - Related records: [links to related items]
+        - Index reference: [index number/ID]
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence & Closure (Step 7)
+      description: Proof of completion
+      placeholder: |
+        - Distribution confirmations: [link/attachment]
+        - Archive confirmation: [link/reference]
+        - Approval record: [link/reference]
+        - Any required actions completed: [list with dates]
+        - Completion date: [date]
+    validations:
+      required: false
+
+  - type: dropdown
+    id: pressure
+    attributes:
+      label: 🔥 Pressure Level (optional)
+      description: Optional pressure tracking
+      options:
+        - "⚪️⚪️⚪️⚪️⚪️⚪️ No pressure"
+        - "😤⚪️⚪️⚪️⚪️⚪️ Low pressure"
+        - "😤😤⚪️⚪️⚪️⚪️ Medium pressure"
+        - "😤😤😤⚪️⚪️⚪️ High pressure"
+        - "😭⚪️⚪️⚪️⚪️⚪️ Stress level 1"
+        - "😭😭😭⚪️⚪️⚪️ Stress level 3"
+        - "🔥🔥🔥🔥🔥🔥 CRITICAL"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any other relevant information
+    validations:
+      required: false

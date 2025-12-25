@@ -1,0 +1,148 @@
+name: "W5: BD 💽🔒 Electronic Storage (WORM)"
+description: "BD electronic storage workflow - WORM compliance required"
+title: "[W5-BD-WORM] "
+labels: ["workflow:bd", "workflow:w5", "storage:electronic", "worm", "supervision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## W5: BD Electronic Storage (💽🔒)
+        
+        **7-Step Supervision Workflow**
+        🧭1️⃣ Classify → 2️⃣ Configure → 3️⃣👀 Review → 4️⃣⭕ Approve → 5️⃣🔌 Deploy → 6️⃣🔒 WORM Lock → 7️⃣✅🏁 Evidence/Close
+        
+        **Legal Hook**: WORM (Write Once Read Many) compliance + 90-day notice requirement for electronic storage systems.
+
+  - type: dropdown
+    id: step
+    attributes:
+      label: Current Step
+      description: Where are we in the workflow?
+      options:
+        - "1️⃣ Classify (💽 - Storage system)"
+        - "2️⃣ Configure (⚙️)"
+        - "3️⃣ Review (👀)"
+        - "4️⃣ Approve (⭕)"
+        - "5️⃣ Deploy (🔌)"
+        - "6️⃣ WORM Lock (🔒)"
+        - "7️⃣ Evidence/Close (✅🏁)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: storage_details
+    attributes:
+      label: Storage System Details
+      description: What electronic storage system is being implemented?
+      placeholder: |
+        - System name: [storage system/vendor]
+        - System type: [cloud/on-premise/hybrid]
+        - Records covered: [types of records]
+        - Configuration location: [link to config]
+    validations:
+      required: true
+
+  - type: textarea
+    id: classification
+    attributes:
+      label: Classification (Step 1)
+      description: Storage system classification
+      placeholder: |
+        ✓ WORM capability verified
+        ✓ 90-day notice requirement addressed
+        ✓ Record types to be stored: [list]
+        ✓ Retention periods supported: [list]
+    validations:
+      required: false
+
+  - type: textarea
+    id: worm_compliance
+    attributes:
+      label: WORM Compliance Requirements
+      description: WORM-specific compliance details
+      placeholder: |
+        - WORM technology: [system/method]
+        - Write-once verification: [how ensured]
+        - Read-many capability: [access method]
+        - Tamper protection: [mechanism]
+        - Audit trail: [logging method]
+    validations:
+      required: false
+
+  - type: textarea
+    id: notice_requirement
+    attributes:
+      label: 90-Day Notice Requirement
+      description: Electronic storage notice to regulators
+      placeholder: |
+        - Notice provided to: [regulator name]
+        - Notice date: [date]
+        - Notice method: [submission method]
+        - Notice confirmation: [reference number]
+        - Records covered in notice: [list]
+    validations:
+      required: false
+
+  - type: textarea
+    id: deployment
+    attributes:
+      label: Deployment (Step 5)
+      description: System deployment information
+      placeholder: |
+        - Deployment date: [date]
+        - Initial records migrated: [count/types]
+        - Migration verification: [method]
+        - Access controls configured: [yes/no]
+    validations:
+      required: false
+
+  - type: textarea
+    id: worm_lock
+    attributes:
+      label: WORM Lock (Step 6)
+      description: WORM lock activation and verification
+      placeholder: |
+        - WORM lock activated: [date]
+        - Lock verification: [method/result]
+        - Test records locked: [examples]
+        - Modification attempts blocked: [verified yes/no]
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence & Closure (Step 7)
+      description: Proof of completion
+      placeholder: |
+        - Deployment confirmation: [link/reference]
+        - WORM verification report: [link/reference]
+        - 90-day notice confirmation: [link/reference]
+        - Audit trail enabled: [link/reference]
+        - Completion date: [date]
+    validations:
+      required: false
+
+  - type: dropdown
+    id: pressure
+    attributes:
+      label: 🔥 Pressure Level (optional)
+      description: Optional pressure tracking
+      options:
+        - "⚪️⚪️⚪️⚪️⚪️⚪️ No pressure"
+        - "😤⚪️⚪️⚪️⚪️⚪️ Low pressure"
+        - "😤😤⚪️⚪️⚪️⚪️ Medium pressure"
+        - "😤😤😤⚪️⚪️⚪️ High pressure"
+        - "😭⚪️⚪️⚪️⚪️⚪️ Stress level 1"
+        - "😭😭😭⚪️⚪️⚪️ Stress level 3"
+        - "🔥🔥🔥🔥🔥🔥 CRITICAL"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any other relevant information
+    validations:
+      required: false

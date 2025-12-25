@@ -1,0 +1,146 @@
+name: "W6: IA 🗂🔐 Records & Archive"
+description: "IA records and archive workflow - 5-year retention, principal office requirements"
+title: "[W6-IA-RECORDS] "
+labels: ["workflow:ia", "workflow:w6", "records:ia", "supervision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## W6: IA Records & Archive (🗂🔐)
+        
+        **7-Step Supervision Workflow**
+        🧭1️⃣ Classify → 2️⃣ Draft → 3️⃣👀 Review → 4️⃣⭕ Approve → 5️⃣📣 Distribute → 6️⃣🗂🔐🧭 Archive → 7️⃣✅🏁 Evidence/Close
+        
+        **Legal Hook**: 5 years (first 2 years in principal office) + safeguard/limit access + true & legible reproduction + index + print access.
+
+  - type: dropdown
+    id: step
+    attributes:
+      label: Current Step
+      description: Where are we in the workflow?
+      options:
+        - "1️⃣ Classify (🧾 - Determine record type)"
+        - "2️⃣ Draft (✍️)"
+        - "3️⃣ Review (👀)"
+        - "4️⃣ Approve (⭕)"
+        - "5️⃣ Distribute (📣)"
+        - "6️⃣ Archive (🗂🔐🧭)"
+        - "7️⃣ Evidence/Close (✅🏁)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: record_type
+    attributes:
+      label: IA Record Type
+      description: What type of IA record?
+      options:
+        - "Advisory records - 5 year retention"
+        - "Books and records - 5 year retention"
+        - "Performance records - 5 year retention"
+        - "Code of ethics records - 5 year retention"
+        - "Other - See notes"
+    validations:
+      required: true
+
+  - type: textarea
+    id: record_details
+    attributes:
+      label: Record Details
+      description: What is being recorded?
+      placeholder: |
+        - Record type: [specific type]
+        - Record date: [date]
+        - Description: [brief description]
+        - Source location: [link or reference]
+    validations:
+      required: true
+
+  - type: textarea
+    id: classification
+    attributes:
+      label: Classification (Step 1)
+      description: Retention classification and requirements
+      placeholder: |
+        Retention period: 5 years from [date]
+        First 2 years location: Principal office required
+        Years 3-5 location: Can be electronic/remote
+        Special requirements: [any special handling]
+    validations:
+      required: false
+
+  - type: textarea
+    id: archive_details
+    attributes:
+      label: Archive Details (Step 6)
+      description: Archive storage information - IA-specific requirements
+      placeholder: |
+        **First 2 Years (Principal Office):**
+        - Location: [principal office address/system]
+        - Archive date: [date]
+        - Physical/Electronic: [format]
+        
+        **Years 3-5 (Can be remote):**
+        - Storage system: [system name if applicable]
+        - Electronic storage location: [if applicable]
+        
+        **Compliance Checklist:**
+        ✓ Safeguarded from unauthorized access
+        ✓ Limited access controls configured
+        ✓ True and legible reproduction capability verified
+        ✓ Indexed for retrieval
+        ✓ Print access available upon request
+    validations:
+      required: false
+
+  - type: textarea
+    id: access_controls
+    attributes:
+      label: Access & Security Controls
+      description: Safeguarding and access limitation requirements
+      placeholder: |
+        - Access control method: [system/process]
+        - Authorized personnel: [list roles]
+        - Audit trail enabled: [yes/no]
+        - Reproduction method: [scanning/digital/print]
+        - Index system: [database/filing system]
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence & Closure (Step 7)
+      description: Proof of completion
+      placeholder: |
+        - Archive confirmation: [link/reference]
+        - Principal office storage verified (years 1-2): [link/reference]
+        - Access controls verified: [link/reference]
+        - Index entry: [link/reference]
+        - Completion date: [date]
+    validations:
+      required: false
+
+  - type: dropdown
+    id: pressure
+    attributes:
+      label: 🔥 Pressure Level (optional)
+      description: Optional pressure tracking
+      options:
+        - "⚪️⚪️⚪️⚪️⚪️⚪️ No pressure"
+        - "😤⚪️⚪️⚪️⚪️⚪️ Low pressure"
+        - "😤😤⚪️⚪️⚪️⚪️ Medium pressure"
+        - "😤😤😤⚪️⚪️⚪️ High pressure"
+        - "😭⚪️⚪️⚪️⚪️⚪️ Stress level 1"
+        - "😭😭😭⚪️⚪️⚪️ Stress level 3"
+        - "🔥🔥🔥🔥🔥🔥 CRITICAL"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any other relevant information
+    validations:
+      required: false

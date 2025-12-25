@@ -1,0 +1,136 @@
+name: "W4: BD 📚🗂 Records Management"
+description: "BD records management workflow - lifetime/6/3-year retention buckets"
+title: "[W4-BD-RECORDS] "
+labels: ["workflow:bd", "workflow:w4", "records:management", "supervision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## W4: BD Records Management (📚🗂)
+        
+        **7-Step Supervision Workflow**
+        🧭1️⃣ Classify → 2️⃣ Document → 3️⃣👀 Review → 4️⃣⭕ Approve → 5️⃣📌 Index → 6️⃣🗂🔐 Archive → 7️⃣✅🏁 Evidence/Close
+        
+        **Legal Hook**: Lifetime/6/3-year buckets + 4-year written complaints + most recent 2 years readily accessible + WORM + 90-day notice for electronic storage.
+
+  - type: dropdown
+    id: step
+    attributes:
+      label: Current Step
+      description: Where are we in the workflow?
+      options:
+        - "1️⃣ Classify (📜🕒 - Determine retention)"
+        - "2️⃣ Document (🧾)"
+        - "3️⃣ Review (👀)"
+        - "4️⃣ Approve (⭕)"
+        - "5️⃣ Index (📌)"
+        - "6️⃣ Archive (🗂🔐 - WORM)"
+        - "7️⃣ Evidence/Close (✅🏁)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: record_type
+    attributes:
+      label: Record Type & Retention Period
+      description: What type of record and how long to keep?
+      options:
+        - "Lifetime - Partnership agreements, corporate docs"
+        - "6 years - Blotters, ledgers, account statements"
+        - "3 years - Advertising, general correspondence"
+        - "4 years - Written complaints"
+        - "Other - See notes"
+    validations:
+      required: true
+
+  - type: textarea
+    id: record_details
+    attributes:
+      label: Record Details
+      description: What is being recorded?
+      placeholder: |
+        - Record type: [blotter/ledger/statement/correspondence/complaint]
+        - Record date: [date]
+        - Description: [brief description]
+        - Source location: [link or reference]
+    validations:
+      required: true
+
+  - type: textarea
+    id: classification
+    attributes:
+      label: Classification (Step 1)
+      description: Retention classification and requirements
+      placeholder: |
+        Retention period: [lifetime/6yr/3yr/4yr]
+        Readily accessible requirement: [first 2 years]
+        WORM compliance: [required/not required]
+        Special notes: [any special handling]
+    validations:
+      required: false
+
+  - type: textarea
+    id: indexing
+    attributes:
+      label: Indexing (Step 5)
+      description: Record indexing and retrieval information
+      placeholder: |
+        - Index number/ID: [unique identifier]
+        - Index date: [date]
+        - Retrieval keywords: [keywords for search]
+        - Related records: [links to related records]
+    validations:
+      required: false
+
+  - type: textarea
+    id: archive_details
+    attributes:
+      label: Archive Details (Step 6)
+      description: Archive storage information - WORM compliance required
+      placeholder: |
+        - Archive system: [system name]
+        - Archive location: [path/identifier]
+        - Archive date: [date]
+        - WORM compliant: [yes/no]
+        - Electronic storage notice: [90-day notice provided if applicable]
+        - Readily accessible period: [first 2 years location]
+        - Long-term storage: [location after 2 years]
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence & Closure (Step 7)
+      description: Proof of completion
+      placeholder: |
+        - Archive confirmation: [link/reference]
+        - Index entry: [link/reference]
+        - WORM verification: [link/reference]
+        - Completion date: [date]
+    validations:
+      required: false
+
+  - type: dropdown
+    id: pressure
+    attributes:
+      label: 🔥 Pressure Level (optional)
+      description: Optional pressure tracking
+      options:
+        - "⚪️⚪️⚪️⚪️⚪️⚪️ No pressure"
+        - "😤⚪️⚪️⚪️⚪️⚪️ Low pressure"
+        - "😤😤⚪️⚪️⚪️⚪️ Medium pressure"
+        - "😤😤😤⚪️⚪️⚪️ High pressure"
+        - "😭⚪️⚪️⚪️⚪️⚪️ Stress level 1"
+        - "😭😭😭⚪️⚪️⚪️ Stress level 3"
+        - "🔥🔥🔥🔥🔥🔥 CRITICAL"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any other relevant information
+    validations:
+      required: false
