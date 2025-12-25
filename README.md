@@ -33,6 +33,10 @@
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
 
+### 🎨 Visual Resources
+- 🧩 **[Forge Shapes Chart Pack](docs/FORGE_SHAPES_CHART_PACK.md)** - Visual pattern library (triangles, diamonds, waves, spirals, gates)
+- 🚦 [Trinity System](trinity/README.md) - Complete visual language framework
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
