@@ -83,6 +83,8 @@ G7 ☐☐☐☐☐☐☐    — Deploy scheduled in 2 hours
 
 **Change:** Migrate from PostgreSQL 13 to 15
 
+**Note:** Extended to 10 checks per gate due to infrastructure complexity
+
 ```
 🧾 PROJECT: PostgreSQL 13 → 15 Migration   🚦 STATUS: 🟡   🗓️ WINDOW: Maintenance Window (Sat 2AM)
 
@@ -120,6 +122,8 @@ G7 ☐☐☐☐☐☐☐☐☐☐       — Production migration scheduled
 ## Example 4: Documentation Update
 
 **Task:** Update API documentation for v2.0
+
+**Note:** Simplified to 5 checks per gate for documentation-focused project
 
 ```
 🧾 PROJECT: API Docs v2.0 Update   🚦 STATUS: 🟢   🗓️ WINDOW: Week 12
