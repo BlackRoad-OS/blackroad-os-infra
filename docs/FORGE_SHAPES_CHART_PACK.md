@@ -18,11 +18,13 @@ These symbols are used to fill the chart patterns:
 | ✨ | Special/Highlight | Featured, special attention |
 
 ### Category Markers
-These decorative emojis are used as labels to identify pattern types:
-- 🌊 = Wave patterns
-- 🚪🚦🧱🔐🧪📣🏁✅ = Gate and checkpoint patterns
-- 🌀 = Spiral patterns
+These decorative emojis are used as labels to identify certain pattern types:
+- 🌊 = Wave patterns (Section 3)
+- 🚪🚦🧱🔐🧪📣🏁 = Gate and checkpoint patterns (Section 4)
+- 🌀 = Spiral patterns (Section 5)
 - 🎉 = Celebration/completion markers
+
+**Note**: Triangles and Diamonds (Sections 1-2) use numbered section headers (1️⃣ 2️⃣) without individual pattern markers.
 
 ---
 
@@ -288,7 +290,7 @@ These decorative emojis are used as labels to identify pattern types:
 
 ### 4.8 Victory Gate
 ```
-✅  ✅✅✅✅✅✅✅   🎉🎉🎉🎉🎉🎉🎉
+🏁  🟢🟢🟢🟢🟢🟢🟢   🎉🎉🎉🎉🎉🎉🎉
 ```
 
 ---
