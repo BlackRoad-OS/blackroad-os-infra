@@ -17,7 +17,7 @@ body:
     attributes:
       label: Sprint Name
       description: Name or ID of this sprint
-      placeholder: "Sprint 24" or "Q1 Week 3"
+      placeholder: "Sprint 24"
     validations:
       required: true
 
