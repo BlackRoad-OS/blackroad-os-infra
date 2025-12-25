@@ -13,7 +13,7 @@
     },
     "week": {
       "type": "string",
-      "pattern": "^\\d{4}-W\\d{2}$",
+      "pattern": "^\\d{4}-W([0-4]\\d|5[0-3])$",
       "description": "ISO week number (e.g., 2025-W52)"
     },
     "status": {

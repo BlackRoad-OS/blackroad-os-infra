@@ -67,6 +67,10 @@ const signalOrder: Array<keyof typeof signalLabels> = [
   'momentum'
 ];
 
+// Constants for rendering
+const TEAM_NAME_WIDTH = 16;
+const SIGNAL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
+
 function renderDashboard(data: OrgCapacityDashboard): string {
   const lines: string[] = [];
   
@@ -87,7 +91,7 @@ function renderDashboard(data: OrgCapacityDashboard): string {
   
   // Display signals with labels
   signalOrder.forEach((signal, idx) => {
-    const label = String.fromCharCode(65 + idx); // A, B, C, ...
+    const label = SIGNAL_LABELS[idx];
     const line = `${label}) ${signalLabels[signal]} ${signalAggregates[signal].join('')}`;
     
     // Add special notes for bad signals
@@ -110,7 +114,7 @@ function renderDashboard(data: OrgCapacityDashboard): string {
     });
     
     // Pad team name to fixed width
-    const paddedName = (team.team + ' ').padEnd(16, '_');
+    const paddedName = (team.team + ' ').padEnd(TEAM_NAME_WIDTH, '_');
     lines.push(`${paddedName}   ${teamSignals.join('')}`);
   });
   
