@@ -51,14 +51,20 @@ Legend: 🟢 low  🟡 medium  🟠 high-medium  🔴 high  ⚪️ empty
 
 ## Signal Scale (7 levels)
 
-The 7-emoji scale provides granular risk assessment:
+The 7-emoji scale provides granular risk assessment using color-coded emojis:
 
-- **Level 1**: 🟢⚪️⚪️⚪️⚪️⚪️⚪️ (Very Low) - No significant concern
-- **Level 2**: 🟢🟢⚪️⚪️⚪️⚪️⚪️ (Low) - Minimal concern, routine monitoring
-- **Level 3**: 🟡🟡🟡⚪️⚪️⚪️⚪️ (Medium) - Active tracking required, mitigation planned
-- **Level 4**: 🟠🟠🟠🟠⚪️⚪️⚪️ (High-Medium) - Significant concern, mitigation in progress
-- **Level 5**: 🔴🔴🔴🔴🔴⚪️⚪️ (High) - Critical priority, immediate action needed
-- **Level 6**: 🔴🔴🔴🔴🔴🔴⚪️ (Very High) - Urgent escalation required
-- **Level 7**: 🔴🔴🔴🔴🔴🔴🔴 (Critical) - Crisis level, all hands on deck
+**Colors represent risk severity:**
+- 🟢 (green) = Low risk
+- 🟡 (yellow) = Medium risk
+- 🟠 (orange) = High-medium risk
+- 🔴 (red) = High/Critical risk
+- ⚪️ (white) = Empty placeholder
 
-Use ⚪️ to fill remaining slots up to 7 total indicators.
+**How to use:**
+Fill in the appropriate number of colored emojis (1-7) to indicate the level, using the color that best represents the severity. For example:
+- 🟢🟢⚪️⚪️⚪️⚪️⚪️ = Low risk, level 2
+- 🟡🟡🟡⚪️⚪️⚪️⚪️ = Medium risk, level 3
+- 🔴🔴🔴⚪️⚪️⚪️⚪️ = High risk, level 3
+- 🔴🔴🔴🔴🔴⚪️⚪️ = Critical risk, level 5
+
+The number of colored emojis indicates intensity, while the color indicates the severity category.
