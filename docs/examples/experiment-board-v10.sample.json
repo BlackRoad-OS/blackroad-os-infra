@@ -189,9 +189,9 @@
         }
       ],
       "progress": {
-        "completed": 2,
+        "completed": 3,
         "total": 7,
-        "percentage": 29,
+        "percentage": 43,
         "emoji": "📶"
       }
     },
@@ -381,9 +381,9 @@
         }
       ],
       "progress": {
-        "completed": 1,
+        "completed": 2,
         "total": 7,
-        "percentage": 14,
+        "percentage": 29,
         "emoji": "📶"
       }
     },
