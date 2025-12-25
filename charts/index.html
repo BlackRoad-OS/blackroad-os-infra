@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swimlane Kanban Charts - BlackRoad OS</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --text: #ffffff;
+      --accent: #FF9D00;
+      --success: #22c55e;
+      --warning: #eab308;
+      --error: #ef4444;
+      --card-bg: #1a1f2e;
+      --border: #2a3142;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #FF9D00, #FF6B00, #FF0066);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      font-weight: 900;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    .section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .chart-container {
+      background: #0a0e1a;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem;
+      overflow-x: auto;
+      white-space: pre;
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .tab:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .legend-icon {
+      font-size: 1.2rem;
+    }
+
+    .description {
+      color: #aaa;
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      background: #0a0e1a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+    }
+
+    .feature-card h3 {
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    code {
+      background: #0a0e1a;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      font-family: inherit;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .chart-container {
+        font-size: 0.7rem;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏊‍♀️ Swimlane Kanban Charts</h1>
+      <p class="subtitle">Visual workflow management for 30,000 humans across pods and teams</p>
+    </header>
+
+    <div class="section">
+      <h2 class="section-title">📊 Chart Types</h2>
+      <div class="tabs">
+        <div class="tab active" data-tab="standard">1️⃣ Standard Swimlane</div>
+        <div class="tab" data-tab="countbars">2️⃣ Count Bars</div>
+        <div class="tab" data-tab="mood">3️⃣ Mood Heat</div>
+        <div class="tab" data-tab="gantt">4️⃣ Pod Gantt</div>
+        <div class="tab" data-tab="compact">5️⃣ Super Compact</div>
+      </div>
+
+      <div id="standard" class="tab-content active">
+        <p class="description">
+          <strong>Standard Swimlane Board:</strong> Each row represents a pod/team, and each column represents a workflow stage (Backlog, Doing, Review, Blocked, Done). Tasks are shown with type emoji and status indicators.
+        </p>
+        <div class="chart-container" id="chart-standard">Loading...</div>
+      </div>
+
+      <div id="countbars" class="tab-content">
+        <p class="description">
+          <strong>Count Bars (Executive View):</strong> A high-level overview showing the number of items in each column as visual bar charts. Perfect for executives and stakeholders who need quick insights.
+        </p>
+        <div class="chart-container" id="chart-countbars">Loading...</div>
+      </div>
+
+      <div id="mood" class="tab-content">
+        <p class="description">
+          <strong>Mood Heat Swimlane:</strong> Visualizes the emotional state and energy levels of teams across different workflow stages. Helps identify team morale and potential burnout.
+        </p>
+        <div class="chart-container" id="chart-mood">Loading...</div>
+      </div>
+
+      <div id="gantt" class="tab-content">
+        <p class="description">
+          <strong>Pod Gantt Inside Kanban:</strong> Combines Gantt chart timelines with Kanban columns. Each cell shows when tasks are scheduled within the workflow stage.
+        </p>
+        <div class="chart-container" id="chart-gantt">Loading...</div>
+      </div>
+
+      <div id="compact" class="tab-content">
+        <p class="description">
+          <strong>Super Compact (Slack-Friendly):</strong> Minimal format optimized for messaging platforms like Slack, Discord, or Teams. Shows essential information in the smallest space.
+        </p>
+        <div class="chart-container" id="chart-compact">Loading...</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">🎨 Legend</h2>
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-icon">🧺</span>
+          <span>Backlog</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">⚙️</span>
+          <span>Doing / In Progress</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">👀</span>
+          <span>Review</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">🧱</span>
+          <span>Blocked</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">✅</span>
+          <span>Done / Complete</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">🟢</span>
+          <span>Green / On Track</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">🟥</span>
+          <span>Red / At Risk</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">⚪️</span>
+          <span>White / Neutral</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">📚</span>
+          <span>Documentation</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">💻</span>
+          <span>Coding</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">🧪</span>
+          <span>Testing</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon">🚀</span>
+          <span>Deployment</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">✨ Features</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>🎯 Scalable</h3>
+          <p>Designed to handle 30,000+ humans across unlimited pods and teams</p>
+        </div>
+        <div class="feature-card">
+          <h3>📱 Multi-Platform</h3>
+          <p>Works in terminal, Slack, web browsers, and documentation</p>
+        </div>
+        <div class="feature-card">
+          <h3>🎨 Emoji-Driven</h3>
+          <p>Universal visual language that works across all platforms</p>
+        </div>
+        <div class="feature-card">
+          <h3>⚡ Real-Time</h3>
+          <p>Generate charts instantly from data sources</p>
+        </div>
+        <div class="feature-card">
+          <h3>🔧 Customizable</h3>
+          <p>Easy to extend with new chart types and visualizations</p>
+        </div>
+        <div class="feature-card">
+          <h3>📊 Multiple Views</h3>
+          <p>5 different chart types for different audiences and use cases</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">💻 Usage</h2>
+      <p class="description">Generate charts using the CLI tool:</p>
+      <div class="chart-container">
+# Generate with example data
+npx ts-node charts/cli.ts --example
+
+# Generate from custom data file
+npx ts-node charts/cli.ts --input data.json
+
+# Save to file
+npx ts-node charts/cli.ts --example --output charts.txt
+
+# Show help
+npx ts-node charts/cli.ts --help
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load chart data from example output
+    async function loadCharts() {
+      try {
+        const response = await fetch('example-output.txt');
+        const text = await response.text();
+        
+        // Parse the different chart sections
+        const sections = text.split('⸻');
+        
+        // Standard Swimlane (section 1)
+        const standardMatch = sections[1].match(/1\) Swimlane board.*?\n\n([\s\S]*?)$/);
+        if (standardMatch) {
+          document.getElementById('chart-standard').textContent = standardMatch[1].trim();
+        }
+        
+        // Count Bars (section 2)
+        const countBarsMatch = sections[2].match(/2\) Same board.*?\n\n([\s\S]*?)$/);
+        if (countBarsMatch) {
+          document.getElementById('chart-countbars').textContent = countBarsMatch[1].trim();
+        }
+        
+        // Mood Heat (section 3)
+        const moodMatch = sections[3].match(/3\) "Mood heat".*?\n\n([\s\S]*?)$/);
+        if (moodMatch) {
+          document.getElementById('chart-mood').textContent = moodMatch[1].trim();
+        }
+        
+        // Pod Gantt (section 4)
+        const ganttMatch = sections[4].match(/4\) "Pod Gantt".*?\n\n([\s\S]*?)$/);
+        if (ganttMatch) {
+          document.getElementById('chart-gantt').textContent = ganttMatch[1].trim();
+        }
+        
+        // Compact (section 5)
+        const compactMatch = sections[5].match(/5\) "Super compact".*?\n\n([\s\S]*?)$/);
+        if (compactMatch) {
+          document.getElementById('chart-compact').textContent = compactMatch[1].trim();
+        }
+        
+      } catch (error) {
+        console.error('Error loading charts:', error);
+        document.querySelectorAll('.chart-container').forEach(el => {
+          el.textContent = 'Error loading chart data. Please run: npx ts-node charts/cli.ts --example --output charts/example-output.txt';
+        });
+      }
+    }
+
+    // Tab switching functionality
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.getAttribute('data-tab');
+        
+        // Remove active class from all tabs and contents
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        tab.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // Load charts on page load
+    loadCharts();
+  </script>
+</body>
+</html>
