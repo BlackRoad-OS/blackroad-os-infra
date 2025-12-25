@@ -36,3 +36,4 @@ body:
       placeholder: |
         - T0:
         - T+:
+    validations: { required: false }
