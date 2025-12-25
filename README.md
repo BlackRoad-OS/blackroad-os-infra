@@ -26,12 +26,14 @@
 - 🧬 [Correlation IDs](docs/observability/correlation-ids.md) - Request tracing
 - ❤️‍🩹 [Health Endpoints](docs/observability/health-endpoints.md) - Health check standards
 - 🔗 [Dashboards](docs/observability/dashboards.md) - Monitoring links
+- 📊 [Org Capacity Dashboard](docs/examples/org-capacity-dashboard-v8.md) - Team capacity tracking
 
 ### 🧩 Registries & Blueprints
 - 📋 [Service Registry](registry/services.yaml) - All services mapping
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 🎯 [Examples Pack](docs/examples/README.md) - Data format examples and samples
 
 ---
 
