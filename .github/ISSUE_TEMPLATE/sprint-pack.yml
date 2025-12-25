@@ -1,0 +1,267 @@
+name: "🧩 EXAMPLES PACK v24 (Engineering Sprint)"
+description: "Track 7 stories across 7 stages - Sprint planning and execution template"
+title: "🧩 EXAMPLES PACK v24 (engineering sprint) — 7 stories × 7 stages"
+labels: ["sprint", "pack", "tracking"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧩 EXAMPLES PACK v24 (engineering sprint) — 7 stories × 7 stages
+        
+        **Legend**: 🟢 done  🟡 in progress  🔴 blocked  ⚪️ empty
+        
+        **Stages**: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+
+  - type: input
+    id: sprint_name
+    attributes:
+      label: "🧑‍💻 SPRINT"
+      description: "Name of this sprint"
+      placeholder: "Q1 Platform Launch"
+    validations:
+      required: true
+
+  - type: input
+    id: sprint_dates
+    attributes:
+      label: "📅 DATES"
+      description: "Sprint timeline"
+      placeholder: "Dec 25 - Jan 8"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sprint_status
+    attributes:
+      label: "🚦 STATUS"
+      description: "Overall sprint status"
+      options:
+        - "🟢 On track"
+        - "🟡 At risk"
+        - "🔴 Blocked"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        
+        ## 📊 Sprint Progress Grid
+        
+        🧭 **Stages** →      1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
+
+  - type: input
+    id: story_01_name
+    attributes:
+      label: "🧩 Story-01"
+      description: "Story name"
+      placeholder: "API Gateway Setup"
+    validations:
+      required: true
+
+  - type: input
+    id: story_01_progress
+    attributes:
+      label: "Story-01 Progress"
+      description: "Use emojis: 🟢 done, 🟡 in progress, 🔴 blocked, ⚪️ empty"
+      placeholder: "🟢🟢🟢🟢⚪️⚪️⚪️"
+      value: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: true
+
+  - type: input
+    id: story_02_name
+    attributes:
+      label: "🧩 Story-02"
+      description: "Story name"
+      placeholder: "User Authentication"
+    validations:
+      required: true
+
+  - type: input
+    id: story_02_progress
+    attributes:
+      label: "Story-02 Progress"
+      description: "Use emojis: 🟢 done, 🟡 in progress, 🔴 blocked, ⚪️ empty"
+      placeholder: "🟢🟢🟢⚪️⚪️⚪️⚪️"
+      value: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: true
+
+  - type: input
+    id: story_03_name
+    attributes:
+      label: "🧩 Story-03"
+      description: "Story name"
+      placeholder: "Database Migration"
+    validations:
+      required: true
+
+  - type: input
+    id: story_03_progress
+    attributes:
+      label: "Story-03 Progress"
+      description: "Use emojis: 🟢 done, 🟡 in progress, 🔴 blocked, ⚪️ empty"
+      placeholder: "🟡🟡🟡⚪️⚪️⚪️⚪️"
+      value: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: true
+
+  - type: input
+    id: story_04_name
+    attributes:
+      label: "🧩 Story-04"
+      description: "Story name"
+      placeholder: "Payment Integration"
+    validations:
+      required: true
+
+  - type: input
+    id: story_04_progress
+    attributes:
+      label: "Story-04 Progress"
+      description: "Use emojis: 🟢 done, 🟡 in progress, 🔴 blocked, ⚪️ empty (add 😭 if severely blocked)"
+      placeholder: "🔴🔴⚪️⚪️⚪️⚪️⚪️   😭"
+      value: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: true
+
+  - type: input
+    id: story_05_name
+    attributes:
+      label: "🧩 Story-05"
+      description: "Story name"
+      placeholder: "Email Service"
+    validations:
+      required: true
+
+  - type: input
+    id: story_05_progress
+    attributes:
+      label: "Story-05 Progress"
+      description: "Use emojis: 🟢 done, 🟡 in progress, 🔴 blocked, ⚪️ empty"
+      placeholder: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+      value: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: true
+
+  - type: input
+    id: story_06_name
+    attributes:
+      label: "🧩 Story-06"
+      description: "Story name"
+      placeholder: "Dashboard UI"
+    validations:
+      required: true
+
+  - type: input
+    id: story_06_progress
+    attributes:
+      label: "Story-06 Progress"
+      description: "Use emojis: 🟢 done, 🟡 in progress, 🔴 blocked, ⚪️ empty"
+      placeholder: "🟢🟢⚪️⚪️⚪️⚪️⚪️"
+      value: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: true
+
+  - type: input
+    id: story_07_name
+    attributes:
+      label: "🧩 Story-07"
+      description: "Story name"
+      placeholder: "Testing Suite"
+    validations:
+      required: true
+
+  - type: input
+    id: story_07_progress
+    attributes:
+      label: "Story-07 Progress"
+      description: "Use emojis: 🟢 done, 🟡 in progress, 🔴 blocked, ⚪️ empty"
+      placeholder: "🟢🟢🟢⚪️⚪️⚪️⚪️"
+      value: "⚪️⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        
+        ## ✅ STAGE LABELS (edit as needed)
+
+  - type: input
+    id: stage_1
+    attributes:
+      label: "1️⃣ Stage 1"
+      placeholder: "Backlog"
+      value: "Backlog"
+    validations:
+      required: true
+
+  - type: input
+    id: stage_2
+    attributes:
+      label: "2️⃣ Stage 2"
+      placeholder: "Ready"
+      value: "Ready"
+    validations:
+      required: true
+
+  - type: input
+    id: stage_3
+    attributes:
+      label: "3️⃣ Stage 3"
+      placeholder: "Build"
+      value: "Build"
+    validations:
+      required: true
+
+  - type: input
+    id: stage_4
+    attributes:
+      label: "4️⃣ Stage 4"
+      placeholder: "Review"
+      value: "Review"
+    validations:
+      required: true
+
+  - type: input
+    id: stage_5
+    attributes:
+      label: "5️⃣ Stage 5"
+      placeholder: "Test"
+      value: "Test"
+    validations:
+      required: true
+
+  - type: input
+    id: stage_6
+    attributes:
+      label: "6️⃣ Stage 6"
+      placeholder: "Ship"
+      value: "Ship"
+    validations:
+      required: true
+
+  - type: input
+    id: stage_7
+    attributes:
+      label: "7️⃣ Stage 7"
+      placeholder: "Done"
+      value: "Done"
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "📝 Sprint Notes"
+      description: "Additional context, blockers, or notes"
+      placeholder: |
+        - Story-04 blocked by external API access
+        - Story-03 dependencies: database schema finalized
+        - Team velocity: 8 story points per week
+    validations:
+      required: false

@@ -32,6 +32,7 @@
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 🧩 [Sprint Pack Template](docs/SPRINT_PACK_TEMPLATE.md) - Engineering sprint tracking (7 stories × 7 stages)
 
 ---
 
