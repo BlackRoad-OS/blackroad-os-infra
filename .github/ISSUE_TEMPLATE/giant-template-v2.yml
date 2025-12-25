@@ -1,0 +1,152 @@
+name: "📋 Giant Template v2"
+description: "Comprehensive project tracking template with visual progress indicators for large epics and cross-team initiatives"
+title: "[PROJECT] "
+labels: ["epic", "tracking", "giant-template"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 🧾 GIANT TEMPLATE v2 (clean + more visual)
+        
+        Use this template for major projects and epics that need comprehensive tracking across PLAN → DO → SHIP phases.
+        
+        **Legend**: 🟢 done  🟡 watch  🔴 blocked  ⚪️ empty
+        
+        ---
+
+  - type: textarea
+    id: project_summary
+    attributes:
+      label: Project Summary
+      description: Brief description of the project or epic
+      placeholder: "Describe what this project aims to achieve in 1-2 sentences"
+    validations:
+      required: true
+
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals & Success Metrics
+      description: What are we trying to achieve and how do we measure success?
+      placeholder: |
+        Goals:
+        - Goal 1
+        - Goal 2
+        
+        Success Metrics:
+        - Metric 1
+        - Metric 2
+    validations:
+      required: true
+
+  - type: textarea
+    id: plan_phase
+    attributes:
+      label: "A) PLAN Phase"
+      description: Update the emoji indicators as you progress (⚪️ → 🟢/🟡/🔴)
+      value: |
+        🧭 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        
+        📌 **Scope**      ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        📚 **Docs**       ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🧬 **Data**       ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🔐 **Access**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🧑‍⚖️ **Decision**  ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        ⚠️ **Risk**       ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🎯 **Target**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: true
+
+  - type: textarea
+    id: do_phase
+    attributes:
+      label: "B) DO Phase"
+      description: Update the emoji indicators as you progress (⚪️ → 🟢/🟡/🔴)
+      value: |
+        💻 **Build**      ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🛠 **Tools**      ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🧪 **Tests**      ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🔍 **Review**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        📣 **Comms**      ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🧯 **Issues**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        📦 **Output**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: true
+
+  - type: textarea
+    id: ship_phase
+    attributes:
+      label: "C) SHIP Phase"
+      description: Update the emoji indicators as you progress (⚪️ → 🟢/🟡/🔴)
+      value: |
+        🚀 **Deploy**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        📊 **Monitor**    ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        📶 **Signal**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🚦 **Status**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🏁 **Finish**     ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        🎉 **Celebrate**  ⚪️⚪️⚪️⚪️⚪️⚪️⚪️  
+        ✅ **Done**       ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: true
+
+  - type: textarea
+    id: pod_tracking
+    attributes:
+      label: "Pod Tracking (Optional)"
+      description: Copy and customize the row below for each team/pod working on this project
+      value: |
+        🐣 **Pod-01** | 🧺⬜️⬜️⬜️⬜️⬜️⬜️⬜️  ⚙️⬜️⬜️⬜️⬜️⬜️⬜️⬜️  👀⬜️⬜️⬜️⬜️⬜️⬜️⬜️  🧱⬜️⬜️⬜️⬜️⬜️⬜️⬜️  ✅⬜️⬜️⬜️⬜️⬜️⬜️⬜️  🚦⚪️
+      placeholder: |
+        Example:
+        🐣 Pod-Frontend | 🧺🟦🟦🟦⬜️⬜️⬜️⬜️  ⚙️🟦🟦⬜️⬜️⬜️⬜️⬜️  👀🟦⬜️⬜️⬜️⬜️⬜️⬜️  🧱⬜️⬜️⬜️⬜️⬜️⬜️⬜️  ✅⬜️⬜️⬜️⬜️⬜️⬜️⬜️  🚦🟢
+        🐣 Pod-Backend  | 🧺🟦🟦⬜️⬜️⬜️⬜️⬜️  ⚙️🟦🟦🟦⬜️⬜️⬜️⬜️  👀🟦⬜️⬜️⬜️⬜️⬜️⬜️  🧱⬜️⬜️⬜️⬜️⬜️⬜️⬜️  ✅⬜️⬜️⬜️⬜️⬜️⬜️⬜️  🚦🟡
+    validations:
+      required: false
+
+  - type: textarea
+    id: team_timeline
+    attributes:
+      label: Team & Timeline
+      description: Who is involved and what are the key dates?
+      placeholder: |
+        **Team:**
+        - Lead: @username
+        - Contributors: @user1, @user2
+        
+        **Timeline:**
+        - Start: YYYY-MM-DD
+        - Milestones: 
+          - M1: Description (date)
+          - M2: Description (date)
+        - Target completion: YYYY-MM-DD
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Links, related issues, dependencies, or other relevant information
+      placeholder: |
+        - Related issues: #123, #456
+        - Documentation: [link]
+        - Dependencies: Project X must complete first
+        - Resources: [Figma], [Design doc], etc.
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        
+        ## How to Update Progress
+        
+        Edit this issue to update the emoji indicators:
+        - Replace ⚪️ with 🟢 when tasks are done
+        - Use 🟡 for items needing attention
+        - Use 🔴 for blocked items
+        - Use 🟦 for pod progress squares
+        - Add status flags at end of rows (e.g., 🚦🟡, 😭, 🎯)
+        
+        See the [full documentation](../../scripts/templates/GIANT_TEMPLATE_V2.md) for detailed usage guidelines.
