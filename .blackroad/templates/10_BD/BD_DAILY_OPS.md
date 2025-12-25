@@ -1,0 +1,20 @@
+# BD Daily Operations
+
+🧾 TEMPLATE: BD_DAILY_OPS   🚦 STATUS: 🟡   🧭 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+1️⃣ 📥 Intake  2️⃣ 👀 Review  3️⃣ ⭕ Approve  4️⃣ 🧾 Log  5️⃣ 🛠 Do  6️⃣ ✅ Verify  7️⃣ 🏁 Close
+🟢🟢🟡⚪️⚪️⚪️⚪️
+
+## 📋 Daily Checklist
+- [ ] Review overnight activity
+- [ ] Check compliance alerts
+- [ ] Update activity logs
+- [ ] Monitor pending items
+
+## 📎 Evidence
+📎 EVIDENCE: ⚪️
+
+## 👤 Owner
+👤 OWNER: 👩‍⚖️
+
+## 🏁 Outcome
+🏁 OUTCOME: ⚪️
