@@ -1,5 +1,5 @@
 🧩 EXAMPLES PACK v16 (decision log) — 7 decisions × confidence + impact + deadline
-Legend: 🟢 yes  🟡 maybe  🔴 no  ⚪️ empty
+Legend: 🟢 yes  🟡 maybe  🟠 warning  🔴 no  ⚪️ empty
 Scale:  1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
 
 🧾 DECISION LOG: ____________________   📅 WEEK: ____________   🚦 STATUS: 🟡
