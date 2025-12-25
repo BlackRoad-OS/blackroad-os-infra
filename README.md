@@ -33,6 +33,11 @@
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
 
+### 📚 Examples & Templates
+- 🧩 **[Examples Pack v43](docs/examples/EXAMPLES_PACK_v43.md)** - BD + IAR regulatory standard master board
+- 📊 [SIG Beacon Sample](docs/examples/sig.beacon.sample.json) - Signal beacon example
+- 📝 [SIG Deploy Log Sample](docs/examples/sig.deploy-log.sample.json) - Deployment log example
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
