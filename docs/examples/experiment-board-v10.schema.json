@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Experiment Board v10",
+  "description": "Schema for tracking innovation experiments with 7 experiments × 7 signals",
+  "type": "object",
+  "required": ["board_name", "week", "status", "experiments"],
+  "properties": {
+    "board_name": {
+      "type": "string",
+      "description": "Name of the experiment board"
+    },
+    "week": {
+      "type": "string",
+      "pattern": "^\\d{4}-W\\d{2}$",
+      "description": "ISO week format (e.g., 2025-W01)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["good", "watch", "bad"],
+      "description": "Overall board status"
+    },
+    "experiments": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "description": "Array of 7 experiments",
+      "items": {
+        "type": "object",
+        "required": ["id", "emoji", "type", "name", "signals", "progress"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^E[1-7]$",
+            "description": "Experiment identifier (E1-E7)"
+          },
+          "emoji": {
+            "type": "string",
+            "description": "Emoji representing the experiment type"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["Hypothesis", "Variant A", "Variant B", "Metric", "Run", "Result", "Decision"],
+            "description": "Type of experiment"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the experiment"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the experiment"
+          },
+          "signals": {
+            "type": "array",
+            "minItems": 7,
+            "maxItems": 7,
+            "description": "Array of 7 checkpoint signals",
+            "items": {
+              "type": "object",
+              "required": ["checkpoint", "status", "emoji"],
+              "properties": {
+                "checkpoint": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 7,
+                  "description": "Checkpoint number (1-7)"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["good", "watch", "bad", "empty"],
+                  "description": "Status of the checkpoint"
+                },
+                "emoji": {
+                  "type": "string",
+                  "enum": ["🟢", "🟡", "🔴", "⚪️"],
+                  "description": "Visual indicator for status"
+                },
+                "date": {
+                  "type": ["string", "null"],
+                  "format": "date",
+                  "description": "Date checkpoint was completed"
+                },
+                "note": {
+                  "type": "string",
+                  "description": "Notes about the checkpoint"
+                }
+              }
+            }
+          },
+          "progress": {
+            "type": "object",
+            "required": ["completed", "total", "percentage", "emoji"],
+            "properties": {
+              "completed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 7,
+                "description": "Number of completed checkpoints"
+              },
+              "total": {
+                "type": "integer",
+                "const": 7,
+                "description": "Total number of checkpoints"
+              },
+              "percentage": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Completion percentage"
+              },
+              "emoji": {
+                "type": "string",
+                "description": "Progress indicator emoji"
+              }
+            }
+          }
+        }
+      }
+    },
+    "outcomes": {
+      "type": "object",
+      "properties": {
+        "selected": {
+          "type": ["string", "null"],
+          "enum": ["success", "celebration", "failure", null],
+          "description": "Selected outcome type"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["success", "celebration", "failure"]
+              },
+              "emoji": {
+                "type": "string",
+                "enum": ["✅", "🎉", "❌"]
+              },
+              "description": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "related_docs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
