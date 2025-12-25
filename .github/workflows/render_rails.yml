@@ -1,0 +1,109 @@
+name: Render Emoji Rails
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Render rails + label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || "";
+
+            function pick(re, fallback=null) {
+              const m = body.match(re);
+              return m ? m[1].trim() : fallback;
+            }
+
+            // Pull values from Issue Forms markdown (works for your templates)
+            const statusRaw   = pick(/🚦\s*Status\s*\n\s*([^\n]+)/i, "⭕ unknown");
+            const priorityRaw = pick(/🎯\s*Priority\s*\n\s*([^\n]+)/i, "🟨 P2");
+            const progressRaw = pick(/📈\s*Progress.*\n\s*([0-7])/i, "0");
+
+            const status =
+              statusRaw.includes("🟢") ? "green" :
+              statusRaw.includes("🟡") ? "yellow" :
+              statusRaw.includes("🔴") ? "red" : "unknown";
+
+            const pNum = (priorityRaw.match(/P[0-4]/) || ["P2"])[0];
+            const prog = Math.max(0, Math.min(7, parseInt(progressRaw, 10)));
+
+            const rails = [
+              "⚪️⚪️⚪️⚪️⚪️⚪️⚪️",
+              "🟢⚪️⚪️⚪️⚪️⚪️⚪️",
+              "🟢🟢⚪️⚪️⚪️⚪️⚪️",
+              "🟢🟢🟢⚪️⚪️⚪️⚪️",
+              "🟢🟢🟢🟢⚪️⚪️⚪️",
+              "🟢🟢🟢🟢🟢⚪️⚪️",
+              "🟢🟢🟢🟢🟢🟢⚪️",
+              "🟢🟢🟢🟢🟢🟢🟢",
+            ];
+
+            const traffic = status === "green" ? "🟢🟢🟢🟢🟢🟢🟢"
+                         : status === "yellow" ? "🟡🟡🟡🟡🟡🟡🟡"
+                         : status === "red" ? "🔴🔴🔴🔴🔴🔴🔴"
+                         : "⭕⭕⭕⭕⭕⭕⭕";
+
+            const sad = [
+              "🙂🙂🙂🙂🙂🙂🙂",
+              "😐🙂🙂🙂🙂🙂🙂",
+              "🙁😐🙂🙂🙂🙂🙂",
+              "☹️🙁😐🙂🙂🙂🙂",
+              "😢☹️🙁😐🙂🙂🙂",
+              "😭😢☹️🙁😐🙂🙂",
+              "😭😭😢☹️🙁😐🙂",
+              "😭😭😭😢☹️🙁😐",
+            ];
+
+            const comment = [
+              "## 🚂 TEMPIES Rails",
+              "",
+              `**🚦 Status:** ${statusRaw}  →  ${traffic}`,
+              `**🎯 Priority:** ${priorityRaw}`,
+              `**📈 Progress:** ${prog}/7`,
+              "",
+              "### 📈 Progress Bar",
+              rails[prog],
+              "",
+              "### 😭 Sad Bar",
+              sad[prog],
+              "",
+              "### ✅ Ship Signal",
+              prog === 7 ? "✅✅✅✅✅✅✅" : "⭕⭕⭕⭕⭕⭕⭕",
+            ].join("\n");
+
+            // Apply labels (create these labels once in the repo)
+            const labels = [
+              `status:${status}`,
+              `priority:${pNum}`,
+              `progress:${prog}/7`
+            ];
+
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number: context.payload.issue.number,
+              labels
+            });
+
+            // Avoid spamming: only comment if not already present
+            const comments = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.payload.issue.number,
+              per_page: 100
+            });
+
+            const already = comments.data.some(c => (c.body || "").includes("## 🚂 TEMPIES Rails"));
+            if (!already) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.payload.issue.number,
+                body: comment
+              });
+            }
