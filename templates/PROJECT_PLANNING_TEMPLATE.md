@@ -8,6 +8,7 @@ Use this template to plan and track project objectives using OKRs (Objectives an
 
 🟢 done — Completed milestone or deliverable  
 🟡 watch — Needs attention or at risk  
+🟠 caution — Medium risk or concern  
 🔴 blocked — Critical blocker, cannot proceed  
 ⚪️ empty — Not started yet  
 
