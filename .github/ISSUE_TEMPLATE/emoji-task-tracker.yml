@@ -1,0 +1,117 @@
+name: "🧩 Emoji Task Tracker"
+description: "Use the v118 emoji mini-cards system for complex multi-step tasks"
+title: "[TRACKER] "
+labels: ["tracker", "emoji-cards"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧩 EXAMPLES PACK v118 — 7×3 MINI-CARDS
+        Use this template for complex tasks that require visual tracking across multiple stages.
+        
+        **See full documentation**: [EXAMPLES_PACK_v118.md](../../docs/examples/EXAMPLES_PACK_v118.md)
+
+  - type: textarea
+    id: task_overview
+    attributes:
+      label: Task Overview
+      description: Brief description of what needs to be accomplished
+      placeholder: "Implement user authentication system with OAuth2 and JWT tokens"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "P0 - Critical"
+        - "P1 - High"
+        - "P2 - Medium"
+        - "P3 - Low"
+    validations:
+      required: true
+
+  - type: textarea
+    id: emoji_tracker
+    attributes:
+      label: Emoji Task Tracker
+      description: Copy and update the template below. Replace ⚪️ with 🟢 (done), 🟡 (active), or 🔴 (blocked) as you progress.
+      value: |
+        Legend: 🟢 done 🟡 active 🔴 blocked ⚪️ empty  ⭕ gate  📎 proof  🗂 file  🔐 store  🏁 close
+
+        🚦
+        🟢⚪️⚪️⚪️⚪️⚪️⚪️ | 🟡⚪️⚪️⚪️⚪️⚪️⚪️ | 🔴⚪️⚪️⚪️⚪️⚪️⚪️ | ⭕⚪️⚪️⚪️⚪️⚪️⚪️
+
+        🧭 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+
+        1️⃣
+        1️⃣🅰️ 🚦⚪️  🧭⚪️⚪️⚪️⚪️⚪️⚪️⚪️  🏁⚪️
+        1️⃣🅱️ 🔗⚪️  🧱⚪️  ⭕⚪️  ✅⚪️
+        1️⃣🅲️ 📎⚪️  🗂⚪️  🔐⚪️  🖨⚪️
+
+        2️⃣
+        2️⃣🅰️ 🚦⚪️  🧭⚪️⚪️⚪️⚪️⚪️⚪️⚪️  🏁⚪️
+        2️⃣🅱️ 🔗⚪️  🧱⚪️  ⭕⚪️  ✅⚪️
+        2️⃣🅲️ 📎⚪️  🗂⚪️  🔐⚪️  🖨⚪️
+
+        3️⃣
+        3️⃣🅰️ 🚦⚪️  🧭⚪️⚪️⚪️⚪️⚪️⚪️⚪️  🏁⚪️
+        3️⃣🅱️ 🔗⚪️  🧱⚪️  ⭕⚪️  ✅⚪️
+        3️⃣🅲️ 📎⚪️  🗂⚪️  🔐⚪️  🖨⚪️
+
+        4️⃣
+        4️⃣🅰️ 🚦⚪️  🧭⚪️⚪️⚪️⚪️⚪️⚪️⚪️  🏁⚪️
+        4️⃣🅱️ 🔗⚪️  🧱⚪️  ⭕⚪️  ✅⚪️
+        4️⃣🅲️ 📎⚪️  🗂⚪️  🔐⚪️  🖨⚪️
+
+        5️⃣
+        5️⃣🅰️ 🚦⚪️  🧭⚪️⚪️⚪️⚪️⚪️⚪️⚪️  🏁⚪️
+        5️⃣🅱️ 🔗⚪️  🧱⚪️  ⭕⚪️  ✅⚪️
+        5️⃣🅲️ 📎⚪️  🗂⚪️  🔐⚪️  🖨⚪️
+
+        6️⃣
+        6️⃣🅰️ 🚦⚪️  🧭⚪️⚪️⚪️⚪️⚪️⚪️⚪️  🏁⚪️
+        6️⃣🅱️ 🔗⚪️  🧱⚪️  ⭕⚪️  ✅⚪️
+        6️⃣🅲️ 📎⚪️  🗂⚪️  🔐⚪️  🖨⚪️
+
+        7️⃣
+        7️⃣🅰️ 🚦⚪️  🧭⚪️⚪️⚪️⚪️⚪️⚪️⚪️  🏁⚪️
+        7️⃣🅱️ 🔗⚪️  🧱⚪️  ⭕⚪️  ✅⚪️
+        7️⃣🅲️ 📎⚪️  🗂⚪️  🔐⚪️  🖨⚪️
+    validations:
+      required: true
+
+  - type: textarea
+    id: card_descriptions
+    attributes:
+      label: Card Descriptions
+      description: Describe what each numbered card (1️⃣-7️⃣) represents
+      placeholder: |
+        1️⃣ Database schema design and migration
+        2️⃣ API endpoint implementation
+        3️⃣ Frontend authentication UI
+        4️⃣ Testing and validation
+        5️⃣ Security audit
+        6️⃣ Documentation
+        7️⃣ Deployment and monitoring
+    validations:
+      required: true
+
+  - type: textarea
+    id: blockers
+    attributes:
+      label: Blockers (if any)
+      description: List any items marked with 🔴 and explain the blocker
+      placeholder: "Card 3️⃣ blocked: waiting for design approval from UX team"
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any other context or information
+    validations:
+      required: false
