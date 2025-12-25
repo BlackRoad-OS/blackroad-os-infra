@@ -1,0 +1,146 @@
+name: "🧩 Sprint Tracking"
+description: "Track engineering sprint progress across 7 stories and 7 stages"
+title: "[SPRINT] "
+labels: ["sprint", "tracking"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Sprint Tracking Board
+        Use this template to track your engineering sprint progress.
+        
+        **Legend**: 🟢 done  🟡 in progress  🔴 blocked  ⚪️ empty
+        **Stages**: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+
+  - type: input
+    id: sprint_name
+    attributes:
+      label: Sprint Name
+      description: Name or ID of this sprint
+      placeholder: "Sprint 24"
+    validations:
+      required: true
+
+  - type: input
+    id: sprint_dates
+    attributes:
+      label: Sprint Dates
+      description: Date range for this sprint
+      placeholder: "Jan 15-29, 2025"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sprint_status
+    attributes:
+      label: Sprint Status
+      description: Overall health of the sprint
+      options:
+        - "🟢 On track"
+        - "🟡 At risk / In progress"
+        - "🔴 Blocked / Critical issues"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sprint_board
+    attributes:
+      label: Sprint Board
+      description: Copy and update the board below with your stories and progress
+      value: |
+        🧑‍💻 SPRINT: ____________________   📅 DATES: ____________   🚦 STATUS: 🟡
+        🧭 Stages →      1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
+
+        🧩 Story-01 __________   🟢🟢🟢🟢⚪️⚪️⚪️
+        🧩 Story-02 __________   🟢🟢🟢⚪️⚪️⚪️⚪️
+        🧩 Story-03 __________   🟡🟡🟡⚪️⚪️⚪️⚪️
+        🧩 Story-04 __________   🔴🔴⚪️⚪️⚪️⚪️⚪️   😭
+        🧩 Story-05 __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+        🧩 Story-06 __________   🟢🟢⚪️⚪️⚪️⚪️⚪️
+        🧩 Story-07 __________   🟢🟢🟢⚪️⚪️⚪️⚪️
+
+        ✅ STAGE LABELS
+        1️⃣ Backlog
+        2️⃣ Ready
+        3️⃣ Build
+        4️⃣ Review
+        5️⃣ Test
+        6️⃣ Ship
+        7️⃣ Done
+      placeholder: Update the story names and progress indicators
+    validations:
+      required: true
+
+  - type: textarea
+    id: blockers
+    attributes:
+      label: Blockers & Notes
+      description: List any blockers, dependencies, or important notes
+      placeholder: |
+        - Story-04 blocked: Waiting for SMTP credentials from DevOps
+        - Story-02 dependency: Needs Story-01 Auth API to be in production
+    validations:
+      required: false
+
+  - type: textarea
+    id: story_details
+    attributes:
+      label: Story Details (Optional)
+      description: Add links or brief descriptions for each story
+      placeholder: |
+        **Story-01**: Auth API - Implement JWT authentication
+        - PR: #123
+        - Epic: #100
+        
+        **Story-02**: User Dashboard - Frontend for user profile
+        - PR: #124
+        - Figma: https://...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: team
+    attributes:
+      label: Team
+      description: Which team owns this sprint?
+      options:
+        - "Platform"
+        - "Frontend"
+        - "Backend"
+        - "DevOps"
+        - "Full Stack"
+        - "Cross-functional"
+    validations:
+      required: false
+
+  - type: textarea
+    id: goals
+    attributes:
+      label: Sprint Goals
+      description: What are the main objectives for this sprint?
+      placeholder: |
+        1. Complete authentication system
+        2. Launch user dashboard MVP
+        3. Set up monitoring infrastructure
+    validations:
+      required: false
+
+  - type: textarea
+    id: retrospective
+    attributes:
+      label: Retrospective Notes (End of Sprint)
+      description: Add retrospective notes at the end of the sprint
+      placeholder: |
+        **What went well:**
+        - Fast code reviews
+        - Good collaboration on Story-03
+        
+        **What could improve:**
+        - Story estimation was off for Story-04
+        - Need to identify blockers earlier
+        
+        **Action items:**
+        - [ ] Improve story estimation process
+        - [ ] Set up blocker check-ins mid-sprint
+    validations:
+      required: false
