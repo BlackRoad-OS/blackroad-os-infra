@@ -33,6 +33,12 @@
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
 
+### 📝 Issue Templates & Examples
+- 🧩 [Examples Pack v108](docs/examples/EXAMPLES_PACK_v108_GUIDE.md) - Single-screen emoji tracking template
+- 🤖 [Agent Task Template](.github/ISSUE_TEMPLATE/agent-task.yml) - AI agent execution
+- 🐛 [Bug Template](.github/ISSUE_TEMPLATE/bug.yml) - Bug reports
+- 🎯 [Task Template](.github/ISSUE_TEMPLATE/task.yml) - Standard tasks
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
