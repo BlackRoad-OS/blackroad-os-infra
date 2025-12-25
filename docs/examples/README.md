@@ -12,6 +12,7 @@
 
 - 📄 [**quality-gates-v9.md**](./quality-gates-v9.md) — Full documentation with detailed gate definitions, usage examples, metrics, and best practices
 - 📄 [**quality-gates-template.md**](./quality-gates-template.md) — Quick copy-paste templates in various formats (standard, compact, minimal, extended)
+- 📄 [**quality-gates-examples.md**](./quality-gates-examples.md) — Real-world examples from feature development, bug fixes, infrastructure changes, and more
 
 **Quick Start:**
 ```markdown
