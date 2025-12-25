@@ -32,6 +32,7 @@
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 🎯 [GIANT Template v3](templates/GIANT_TEMPLATE_V3.md) - Project tracking (GANTT + KANBAN + STATUS)
 
 ---
 
@@ -92,6 +93,7 @@ Run validations locally before opening a PR:
 /templates             # Reusable templates
   .env.example         # Environment variables template
   SERVICE_INFRA_TEMPLATE.md  # New service template
+  GIANT_TEMPLATE_V3.md # Project tracking template (GANTT + KANBAN + STATUS)
 
 /terraform             # Terraform IaC (existing)
   main.tf
