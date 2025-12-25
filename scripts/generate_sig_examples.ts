@@ -18,6 +18,8 @@ function writeSample(filename: string, payload: unknown) {
 
 const beaconSpec = loadSpec('sig.beacon.spec.json');
 const deploySpec = loadSpec('sig.deploy-log.spec.json');
+const orgCapacitySpec = loadSpec('org.capacity.spec.json');
 
 writeSample('sig.beacon.sample.json', beaconSpec.example);
 writeSample('sig.deploy-log.sample.json', deploySpec.example);
+writeSample('org.capacity.sample.json', orgCapacitySpec.example);
