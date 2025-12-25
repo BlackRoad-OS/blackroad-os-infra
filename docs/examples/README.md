@@ -51,9 +51,9 @@ When adding a new example:
 
 ## Related Directories
 
-- `/templates/` - Templates that these examples demonstrate
-- `/docs/playbooks/` - Operational playbooks
-- `/docs/runbooks/` - Incident response runbooks
+- `templates/` - Templates that these examples demonstrate
+- `docs/playbooks/` - Operational playbooks
+- `docs/runbooks/` - Incident response runbooks
 
 ---
 
