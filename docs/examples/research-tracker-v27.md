@@ -8,15 +8,15 @@ Stages: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
 
 ## 📚 RESEARCH TRACKER: ____________________   📅 WEEK: ____________   🚦 STATUS: 🟡
 
-| 🧭 Stages →           | 1️⃣  | 2️⃣  | 3️⃣  | 4️⃣  | 5️⃣  | 6️⃣  | 7️⃣  |
-|----------------------|-----|-----|-----|-----|-----|-----|-----|
-| 📄 Paper-01 __________ | 🟢 | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ |
-| 📄 Paper-02 __________ | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
-| 📄 Paper-03 __________ | 🟡 | 🟡 | 🟡 | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
+| 🧭 Stages →           | 1️⃣  | 2️⃣  | 3️⃣  | 4️⃣  | 5️⃣  | 6️⃣  | 7️⃣  | Notes |
+|----------------------|-----|-----|-----|-----|-----|-----|-----|-------|
+| 📄 Paper-01 __________ | 🟢 | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 Paper-02 __________ | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 Paper-03 __________ | 🟡 | 🟡 | 🟡 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
 | 📄 Paper-04 __________ | 🔴 | 🔴 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | 😭 |
-| 📄 Paper-05 __________ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
-| 📄 Paper-06 __________ | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
-| 📄 Paper-07 __________ | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
+| 📄 Paper-05 __________ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 Paper-06 __________ | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 Paper-07 __________ | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
 
 ---
 
@@ -51,10 +51,10 @@ Stages: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
 
 ### Tips
 
-- Use the 😭 emoji to mark papers that need special attention
+- Use the Notes column to mark papers that need special attention (e.g., 😭 for blocked)
 - Track multiple research projects by creating separate tracker instances
 - Update regularly (weekly recommended) to maintain accuracy
-- Consider adding notes section for each paper below the table
+- Consider adding a detailed notes section for each paper below the table
 
 ---
 
@@ -62,23 +62,23 @@ Stages: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
 
 ### 📚 RESEARCH TRACKER: AI/ML Literature Review   📅 WEEK: 2025-W52   🚦 STATUS: 🟡
 
-| 🧭 Stages →                                  | 1️⃣  | 2️⃣  | 3️⃣  | 4️⃣  | 5️⃣  | 6️⃣  | 7️⃣  |
-|---------------------------------------------|-----|-----|-----|-----|-----|-----|-----|
-| 📄 Attention Is All You Need                 | 🟢 | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ |
-| 📄 BERT: Pre-training of Deep Models         | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
-| 📄 GPT-3: Language Models are Few-Shot       | 🟡 | 🟡 | 🟡 | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
+| 🧭 Stages →                                  | 1️⃣  | 2️⃣  | 3️⃣  | 4️⃣  | 5️⃣  | 6️⃣  | 7️⃣  | Notes |
+|---------------------------------------------|-----|-----|-----|-----|-----|-----|-----|-------|
+| 📄 Attention Is All You Need                 | 🟢 | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 BERT: Pre-training of Deep Models         | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 GPT-3: Language Models are Few-Shot       | 🟡 | 🟡 | 🟡 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
 | 📄 Constitutional AI: Harmlessness from AI   | 🔴 | 🔴 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | 😭 |
-| 📄 ReAct: Synergizing Reasoning and Acting   | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
-| 📄 Retrieval Augmented Generation (RAG)      | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
-| 📄 Chain-of-Thought Prompting                | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ |
+| 📄 ReAct: Synergizing Reasoning and Acting   | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 Retrieval Augmented Generation (RAG)      | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
+| 📄 Chain-of-Thought Prompting                | 🟢 | 🟢 | 🟢 | ⚪️ | ⚪️ | ⚪️ | ⚪️ | |
 
 ---
 
 ## 🔗 Related Resources
 
-- [Research Best Practices](../playbooks/research-workflow.md) (if exists)
 - [Documentation Standards](../ARCHITECTURE.md)
 - [BlackRoad OS Research Pack](../../services/packs/infra.yml)
+- [Playbooks Directory](../playbooks/)
 
 ---
 

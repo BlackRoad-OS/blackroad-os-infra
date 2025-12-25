@@ -11,7 +11,7 @@ This directory contains example templates, sample files, and reference implement
   - Visual progress indicators using emojis
   - Includes usage instructions and filled example
 
-### Signal & Beacon Files
+### Signal & Beacon Files (Existing)
 
 - **[sig.beacon.sample.json](sig.beacon.sample.json)** - Sample signal beacon format
   - Service health status reporting
