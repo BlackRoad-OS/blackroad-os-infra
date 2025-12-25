@@ -5,6 +5,9 @@
 
 ## 📖 Legend
 
+### Pattern Fill Symbols
+These symbols are used to fill the chart patterns:
+
 | Symbol | Meaning | Usage |
 |--------|---------|-------|
 | ⚪️ | Empty/Void | Unfilled space, placeholder |
@@ -13,6 +16,13 @@
 | 🟥 | Pain/Critical | Error, critical, blocked |
 | 🟨 | Caution/Warning | Warning, attention needed |
 | ✨ | Special/Highlight | Featured, special attention |
+
+### Category Markers
+These decorative emojis are used as labels to identify pattern types:
+- 🌊 = Wave patterns
+- 🚪🚦🧱🔐🧪📣🏁✅ = Gate and checkpoint patterns
+- 🌀 = Spiral patterns
+- 🎉 = Celebration/completion markers
 
 ---
 
