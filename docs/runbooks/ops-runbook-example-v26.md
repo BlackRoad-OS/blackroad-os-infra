@@ -19,8 +19,8 @@ This example demonstrates a comprehensive operational runbook tracking template 
 
 ## 🛠 OPS RUNBOOK TEMPLATE
 
-**OPS RUNBOOK**: ____________________   
-**📅 DATE**: ____________   
+**OPS RUNBOOK**: [RUNBOOK_NAME]   
+**📅 DATE**: [YYYY-MM-DD]   
 **🚦 STATUS**: 🟡
 
 ### 🧭 Operational Progress Matrix
