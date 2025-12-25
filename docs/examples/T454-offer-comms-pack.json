@@ -1,0 +1,32 @@
+{
+  "template_id": "T454",
+  "name": "Offer/Comms Pack",
+  "category": "hiring",
+  "description": "Offer letter and communications package preparation",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "prepare_offer_letter",
+      "actor": "hr_coordinator",
+      "required_fields": ["salary", "benefits", "start_date", "job_description"]
+    },
+    {
+      "step": 2,
+      "action": "legal_review",
+      "actor": "legal_team",
+      "required_fields": ["contract_review", "compliance_check"]
+    },
+    {
+      "step": 3,
+      "action": "send_offer",
+      "actor": "hr_coordinator",
+      "required_fields": ["delivery_method", "response_deadline"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠📣"
+  }
+}

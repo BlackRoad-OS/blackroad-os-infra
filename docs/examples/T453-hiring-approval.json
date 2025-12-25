@@ -1,0 +1,32 @@
+{
+  "template_id": "T453",
+  "name": "Hiring Approval",
+  "category": "hiring",
+  "description": "Approval workflow for hiring decision",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "submit_for_approval",
+      "actor": "hr_team",
+      "required_fields": ["candidate_details", "review_summary", "budget_impact"]
+    },
+    {
+      "step": 2,
+      "action": "department_approval",
+      "actor": "department_head",
+      "required_fields": ["approval_decision", "comments"]
+    },
+    {
+      "step": 3,
+      "action": "executive_approval",
+      "actor": "executive_team",
+      "required_fields": ["final_approval", "start_date_approval"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠⭕"
+  }
+}

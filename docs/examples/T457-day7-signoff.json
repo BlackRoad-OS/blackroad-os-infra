@@ -1,0 +1,32 @@
+{
+  "template_id": "T457",
+  "name": "Day-7 Sign-off",
+  "category": "hiring",
+  "description": "First week completion and sign-off workflow",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "conduct_week1_review",
+      "actor": "manager",
+      "required_fields": ["performance_notes", "integration_assessment"]
+    },
+    {
+      "step": 2,
+      "action": "collect_feedback",
+      "actor": "hr_coordinator",
+      "required_fields": ["employee_feedback", "manager_feedback"]
+    },
+    {
+      "step": 3,
+      "action": "approve_continuation",
+      "actor": "manager",
+      "required_fields": ["continuation_decision", "action_items"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠✅"
+  }
+}

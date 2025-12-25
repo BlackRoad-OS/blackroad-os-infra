@@ -1,0 +1,32 @@
+{
+  "template_id": "T459",
+  "name": "Org Chart Update",
+  "category": "hiring",
+  "description": "Organization chart update workflow",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "collect_changes",
+      "actor": "hr_coordinator",
+      "required_fields": ["new_positions", "reporting_structure", "department_changes"]
+    },
+    {
+      "step": 2,
+      "action": "update_org_chart",
+      "actor": "hr_system_admin",
+      "required_fields": ["chart_update", "approval_chain_update"]
+    },
+    {
+      "step": 3,
+      "action": "publish_changes",
+      "actor": "hr_coordinator",
+      "required_fields": ["distribution_list", "communication_plan"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠👥"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "template_id": "T458",
+  "name": "Hiring Closeout",
+  "category": "hiring",
+  "description": "Final hiring process closeout workflow",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "finalize_documentation",
+      "actor": "hr_coordinator",
+      "required_fields": ["employee_file", "signed_documents", "compliance_records"]
+    },
+    {
+      "step": 2,
+      "action": "update_systems",
+      "actor": "hr_system_admin",
+      "required_fields": ["hris_update", "payroll_setup", "org_chart_update"]
+    },
+    {
+      "step": 3,
+      "action": "close_requisition",
+      "actor": "hr_coordinator",
+      "required_fields": ["requisition_status", "closeout_notes"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠🏁"
+  }
+}

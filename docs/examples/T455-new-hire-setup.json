@@ -1,0 +1,32 @@
+{
+  "template_id": "T455",
+  "name": "New Hire Setup",
+  "category": "hiring",
+  "description": "New employee onboarding setup workflow",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "create_accounts",
+      "actor": "it_team",
+      "required_fields": ["email", "workstation", "access_permissions"]
+    },
+    {
+      "step": 2,
+      "action": "prepare_workspace",
+      "actor": "facilities",
+      "required_fields": ["desk_assignment", "equipment_setup"]
+    },
+    {
+      "step": 3,
+      "action": "schedule_orientation",
+      "actor": "hr_coordinator",
+      "required_fields": ["orientation_date", "training_schedule"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠📦"
+  }
+}

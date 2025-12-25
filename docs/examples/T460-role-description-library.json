@@ -1,0 +1,32 @@
+{
+  "template_id": "T460",
+  "name": "Role Description Library",
+  "category": "hiring",
+  "description": "Role description management and library maintenance",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "create_role_description",
+      "actor": "hr_specialist",
+      "required_fields": ["role_title", "responsibilities", "requirements", "competencies"]
+    },
+    {
+      "step": 2,
+      "action": "review_and_approve",
+      "actor": "department_head",
+      "required_fields": ["technical_accuracy", "approval"]
+    },
+    {
+      "step": 3,
+      "action": "publish_to_library",
+      "actor": "hr_coordinator",
+      "required_fields": ["library_category", "version_number", "effective_date"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠📌"
+  }
+}

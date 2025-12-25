@@ -1,0 +1,32 @@
+{
+  "template_id": "T452",
+  "name": "Hiring Review",
+  "category": "hiring",
+  "description": "Review and validation of hiring request",
+  "status": "active",
+  "steps": [
+    {
+      "step": 1,
+      "action": "review_request",
+      "actor": "hr_reviewer",
+      "required_fields": ["request_id", "candidate_profile", "requirements_match"]
+    },
+    {
+      "step": 2,
+      "action": "validate_requirements",
+      "actor": "hr_reviewer",
+      "required_fields": ["skill_assessment", "experience_validation"]
+    },
+    {
+      "step": 3,
+      "action": "provide_recommendation",
+      "actor": "hr_reviewer",
+      "required_fields": ["recommendation", "notes"]
+    }
+  ],
+  "meta": {
+    "version": "1.0.0",
+    "created_at": "2025-12-25T21:33:00Z",
+    "icon": "🛠👀"
+  }
+}
