@@ -32,6 +32,7 @@
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 📊 [Emoji Templates](templates/EMOJI_TEMPLATES.md) - Visual project management templates
 
 ---
 
@@ -92,6 +93,7 @@ Run validations locally before opening a PR:
 /templates             # Reusable templates
   .env.example         # Environment variables template
   SERVICE_INFRA_TEMPLATE.md  # New service template
+  EMOJI_TEMPLATES.md   # Emoji-based visual templates
 
 /terraform             # Terraform IaC (existing)
   main.tf
@@ -379,6 +381,7 @@ See `terraform/` directory for IaC definitions.
 - **Railway Guide**: `railway/README.md`
 - **Workflow Templates**: `github/workflows/README.md`
 - **Service Template**: `templates/SERVICE_INFRA_TEMPLATE.md`
+- **Emoji Templates**: `templates/EMOJI_TEMPLATES.md`
 
 ### Existing Terraform Docs
 - DNS Playbook: `docs/dns-playbook.md`
