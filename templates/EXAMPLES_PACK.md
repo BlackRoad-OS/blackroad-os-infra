@@ -7,6 +7,7 @@
 
 - 🟢 good
 - 🟡 watch
+- 🟠 warning
 - 🔴 bad
 - ⚪️ empty
 
