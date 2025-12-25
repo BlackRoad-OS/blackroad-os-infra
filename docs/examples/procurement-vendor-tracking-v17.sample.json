@@ -1,0 +1,404 @@
+{
+  "pack_version": "v17",
+  "pack_type": "procurement-vendor-tracking",
+  "meta": {
+    "created_at": "2025-12-25T00:00:00Z",
+    "updated_at": "2025-12-25T18:56:00Z",
+    "created_by": "infra-team"
+  },
+  "procurement": {
+    "name": "Q1 Hardware Refresh",
+    "description": "Annual hardware procurement for Q1 2025",
+    "week": "2025-W01",
+    "status": "waiting",
+    "budget": {
+      "allocated": 50000,
+      "spent": 15000,
+      "currency": "USD"
+    }
+  },
+  "step_definitions": [
+    {
+      "step": 1,
+      "label": "Request",
+      "description": "Initial purchase request submitted",
+      "emoji": "1️⃣"
+    },
+    {
+      "step": 2,
+      "label": "Approve",
+      "description": "Manager/finance approval obtained",
+      "emoji": "2️⃣"
+    },
+    {
+      "step": 3,
+      "label": "Quote",
+      "description": "Vendor quote received and reviewed",
+      "emoji": "3️⃣"
+    },
+    {
+      "step": 4,
+      "label": "Order",
+      "description": "Purchase order placed with vendor",
+      "emoji": "4️⃣"
+    },
+    {
+      "step": 5,
+      "label": "Ship",
+      "description": "Item shipped from vendor",
+      "emoji": "5️⃣"
+    },
+    {
+      "step": 6,
+      "label": "Receive",
+      "description": "Item received and inspected",
+      "emoji": "6️⃣"
+    },
+    {
+      "step": 7,
+      "label": "Pay",
+      "description": "Payment processed and completed",
+      "emoji": "7️⃣"
+    }
+  ],
+  "status_legend": {
+    "done": {
+      "emoji": "🟢",
+      "label": "Done",
+      "description": "Step completed successfully"
+    },
+    "waiting": {
+      "emoji": "🟡",
+      "label": "Waiting",
+      "description": "In progress, awaiting action"
+    },
+    "blocked": {
+      "emoji": "🔴",
+      "label": "Blocked",
+      "description": "Issue preventing progress"
+    },
+    "empty": {
+      "emoji": "⚪️",
+      "label": "Empty",
+      "description": "Not yet started"
+    }
+  },
+  "vendors": [
+    {
+      "id": "V1",
+      "icon": "💽",
+      "name": "Storage Drives",
+      "vendor_name": "TechData",
+      "vendor_contact": "sales@techdata.com",
+      "estimated_cost": 5000,
+      "priority": "high",
+      "steps": [
+        {
+          "step": 1,
+          "status": "done",
+          "completed_at": "2025-01-02T10:00:00Z",
+          "completed_by": "alice@blackroad.io"
+        },
+        {
+          "step": 2,
+          "status": "done",
+          "completed_at": "2025-01-03T14:30:00Z",
+          "completed_by": "manager@blackroad.io"
+        },
+        {
+          "step": 3,
+          "status": "done",
+          "completed_at": "2025-01-05T09:15:00Z",
+          "completed_by": "procurement@blackroad.io"
+        },
+        {
+          "step": 4,
+          "status": "empty"
+        },
+        {
+          "step": 5,
+          "status": "empty"
+        },
+        {
+          "step": 6,
+          "status": "empty"
+        },
+        {
+          "step": 7,
+          "status": "empty"
+        }
+      ],
+      "notes": "",
+      "attachments": [
+        {
+          "type": "quote",
+          "url": "https://files.blackroad.io/procurement/techdata-quote-2025-q1.pdf"
+        }
+      ]
+    },
+    {
+      "id": "V2",
+      "icon": "🔌",
+      "name": "Network Cables",
+      "vendor_name": "CDW",
+      "vendor_contact": "orders@cdw.com",
+      "estimated_cost": 1200,
+      "priority": "medium",
+      "steps": [
+        {
+          "step": 1,
+          "status": "done",
+          "completed_at": "2025-01-02T10:00:00Z",
+          "completed_by": "alice@blackroad.io"
+        },
+        {
+          "step": 2,
+          "status": "done",
+          "completed_at": "2025-01-03T14:30:00Z",
+          "completed_by": "manager@blackroad.io"
+        },
+        {
+          "step": 3,
+          "status": "empty"
+        },
+        {
+          "step": 4,
+          "status": "empty"
+        },
+        {
+          "step": 5,
+          "status": "empty"
+        },
+        {
+          "step": 6,
+          "status": "empty"
+        },
+        {
+          "step": 7,
+          "status": "empty"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "V3",
+      "icon": "⚙️",
+      "name": "Server Parts",
+      "vendor_name": "Dell",
+      "vendor_contact": "enterprise@dell.com",
+      "estimated_cost": 25000,
+      "priority": "high",
+      "steps": [
+        {
+          "step": 1,
+          "status": "waiting",
+          "started_at": "2025-01-02T10:00:00Z"
+        },
+        {
+          "step": 2,
+          "status": "waiting"
+        },
+        {
+          "step": 3,
+          "status": "waiting"
+        },
+        {
+          "step": 4,
+          "status": "empty"
+        },
+        {
+          "step": 5,
+          "status": "empty"
+        },
+        {
+          "step": 6,
+          "status": "empty"
+        },
+        {
+          "step": 7,
+          "status": "empty"
+        }
+      ],
+      "notes": "Waiting for enterprise discount approval"
+    },
+    {
+      "id": "V4",
+      "icon": "🧰",
+      "name": "Tool Kit",
+      "vendor_name": "Grainger",
+      "vendor_contact": "support@grainger.com",
+      "estimated_cost": 800,
+      "priority": "low",
+      "steps": [
+        {
+          "step": 1,
+          "status": "blocked",
+          "blocked_reason": "Budget allocation pending",
+          "blocked_at": "2025-01-04T11:00:00Z"
+        },
+        {
+          "step": 2,
+          "status": "blocked",
+          "blocked_reason": "Depends on step 1"
+        },
+        {
+          "step": 3,
+          "status": "empty"
+        },
+        {
+          "step": 4,
+          "status": "empty"
+        },
+        {
+          "step": 5,
+          "status": "empty"
+        },
+        {
+          "step": 6,
+          "status": "empty"
+        },
+        {
+          "step": 7,
+          "status": "empty"
+        }
+      ],
+      "notes": "😭 Requires immediate attention - budget reallocation needed",
+      "alerts": [
+        {
+          "type": "blocked",
+          "message": "Item blocked - needs budget approval",
+          "created_at": "2025-01-04T11:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "V5",
+      "icon": "🔑",
+      "name": "Security Tokens",
+      "vendor_name": "YubiKey",
+      "vendor_contact": "sales@yubico.com",
+      "estimated_cost": 2000,
+      "priority": "medium",
+      "steps": [
+        {
+          "step": 1,
+          "status": "empty"
+        },
+        {
+          "step": 2,
+          "status": "empty"
+        },
+        {
+          "step": 3,
+          "status": "empty"
+        },
+        {
+          "step": 4,
+          "status": "empty"
+        },
+        {
+          "step": 5,
+          "status": "empty"
+        },
+        {
+          "step": 6,
+          "status": "empty"
+        },
+        {
+          "step": 7,
+          "status": "empty"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "V6",
+      "icon": "📺",
+      "name": "Monitors",
+      "vendor_name": "HP",
+      "vendor_contact": "business@hp.com",
+      "estimated_cost": 8000,
+      "priority": "medium",
+      "steps": [
+        {
+          "step": 1,
+          "status": "empty"
+        },
+        {
+          "step": 2,
+          "status": "empty"
+        },
+        {
+          "step": 3,
+          "status": "empty"
+        },
+        {
+          "step": 4,
+          "status": "empty"
+        },
+        {
+          "step": 5,
+          "status": "empty"
+        },
+        {
+          "step": 6,
+          "status": "empty"
+        },
+        {
+          "step": 7,
+          "status": "empty"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "V7",
+      "icon": "🎒",
+      "name": "Laptop Bags",
+      "vendor_name": "Targus",
+      "vendor_contact": "orders@targus.com",
+      "estimated_cost": 600,
+      "priority": "low",
+      "steps": [
+        {
+          "step": 1,
+          "status": "empty"
+        },
+        {
+          "step": 2,
+          "status": "empty"
+        },
+        {
+          "step": 3,
+          "status": "empty"
+        },
+        {
+          "step": 4,
+          "status": "empty"
+        },
+        {
+          "step": 5,
+          "status": "empty"
+        },
+        {
+          "step": 6,
+          "status": "empty"
+        },
+        {
+          "step": 7,
+          "status": "empty"
+        }
+      ],
+      "notes": ""
+    }
+  ],
+  "summary": {
+    "total_vendors": 7,
+    "total_steps_per_vendor": 7,
+    "completed_vendors": 0,
+    "in_progress_vendors": 3,
+    "blocked_vendors": 1,
+    "not_started_vendors": 3,
+    "overall_progress_percent": 12.24
+  }
+}

@@ -1,0 +1,109 @@
+🧩 EXAMPLES PACK v17 (procurement + vendors) — 7 items × 7 steps
+Legend: 🟢 done  🟡 waiting  🔴 blocked  ⚪️ empty
+Steps:  1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+
+🛒 PROCUREMENT: Q1 Hardware Refresh   📅 WEEK: 2025-W01   🚦 STATUS: 🟡
+🧭 Steps →       1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
+
+V1 💽 Storage Drives (TechData)   🟢🟢🟢⚪️⚪️⚪️⚪️
+V2 🔌 Network Cables (CDW)        🟢🟢⚪️⚪️⚪️⚪️⚪️
+V3 ⚙️ Server Parts (Dell)         🟡🟡🟡⚪️⚪️⚪️⚪️
+V4 🧰 Tool Kit (Grainger)         🔴🔴⚪️⚪️⚪️⚪️⚪️   😭
+V5 🔑 Security Tokens (YubiKey)   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V6 📺 Monitors (HP)               ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V7 🎒 Laptop Bags (Targus)        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+
+✅ STEP LABELS (editable)
+1️⃣ Request   - Initial purchase request submitted
+2️⃣ Approve   - Manager/finance approval obtained
+3️⃣ Quote     - Vendor quote received and reviewed
+4️⃣ Order     - Purchase order placed with vendor
+5️⃣ Ship      - Item shipped from vendor
+6️⃣ Receive   - Item received and inspected
+7️⃣ Pay       - Payment processed and completed
+
+---
+
+BLANK TEMPLATE (copy and customize):
+
+🧩 EXAMPLES PACK v17 (procurement + vendors) — 7 items × 7 steps
+Legend: 🟢 done  🟡 waiting  🔴 blocked  ⚪️ empty
+Steps:  1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+
+🛒 PROCUREMENT: ____________________   📅 WEEK: ____________   🚦 STATUS: 🟡
+🧭 Steps →       1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
+
+V1 💽 Vendor/Item __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V2 🔌 Vendor/Item __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V3 ⚙️ Vendor/Item __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V4 🧰 Vendor/Item __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V5 🔑 Vendor/Item __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V6 📺 Vendor/Item __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+V7 🎒 Vendor/Item __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+
+✅ STEP LABELS (edit)
+1️⃣ Request
+2️⃣ Approve
+3️⃣ Quote
+4️⃣ Order
+5️⃣ Ship
+6️⃣ Receive
+7️⃣ Pay
+
+---
+
+ADDITIONAL EXAMPLES:
+
+Example 2: Software Licenses Q1 2025
+
+🧩 EXAMPLES PACK v17 (procurement + vendors) — 7 items × 7 steps
+Legend: 🟢 done  🟡 waiting  🔴 blocked  ⚪️ empty
+Steps:  1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+
+🛒 PROCUREMENT: Software Renewals   📅 WEEK: 2025-W02   🚦 STATUS: 🟢
+🧭 Steps →       1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
+
+V1 💻 GitHub Enterprise           🟢🟢🟢🟢🟢🟢🟢   ✅
+V2 🔐 Auth0 Subscription          🟢🟢🟢🟢🟢🟢⚪️
+V3 ☁️ AWS Credits                 🟢🟢🟢🟢🟢⚪️⚪️
+V4 📊 DataDog APM                 🟢🟢🟢🟢⚪️⚪️⚪️
+V5 🎨 Figma Team Plan             🟢🟢🟢⚪️⚪️⚪️⚪️
+V6 📧 SendGrid Pro                🟢🟢⚪️⚪️⚪️⚪️⚪️
+V7 🤖 OpenAI API Credits          🟢⚪️⚪️⚪️⚪️⚪️⚪️
+
+✅ STEP LABELS (edit)
+1️⃣ Request
+2️⃣ Approve
+3️⃣ Quote
+4️⃣ Order
+5️⃣ Activate
+6️⃣ Configure
+7️⃣ Pay
+
+---
+
+Example 3: Marketing Campaign Materials
+
+🧩 EXAMPLES PACK v17 (procurement + vendors) — 7 items × 7 steps
+Legend: 🟢 done  🟡 waiting  🔴 blocked  ⚪️ empty
+Steps:  1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+
+🛒 PROCUREMENT: Q4 Marketing Collateral   📅 WEEK: 2025-W03   🚦 STATUS: 🟡
+🧭 Steps →       1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣
+
+V1 📘 Brochures (PrintShop)       🟢🟢🟢🟢🟢⚪️⚪️
+V2 👕 T-Shirts (CustomInk)        🟢🟢🟢🟢⚪️⚪️⚪️
+V3 🎪 Trade Show Booth (Expo)    🟡🟡🟡🟡⚪️⚪️⚪️   Long lead time
+V4 📦 Swag Boxes (4imprint)       🟢🟢🟢⚪️⚪️⚪️⚪️
+V5 🎥 Video Production (Agency)   🟢🟢⚪️⚪️⚪️⚪️⚪️
+V6 🖼️ Banner Stands (Vistaprint)  🟢⚪️⚪️⚪️⚪️⚪️⚪️
+V7 💼 Sales Kits (Assembly)       ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+
+✅ STEP LABELS (edit)
+1️⃣ Creative Brief
+2️⃣ Budget Approval
+3️⃣ Vendor Selection
+4️⃣ Artwork Approval
+5️⃣ Production
+6️⃣ Quality Check
+7️⃣ Distribution
