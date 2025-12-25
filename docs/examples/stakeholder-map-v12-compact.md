@@ -15,7 +15,7 @@ Scale:  1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
 💻 Eng Lead    __________   🟢🟢🟢🟢🟢⚪️⚪️   ⚙️ WIP: 🟡
 📣 Comms Lead  __________   🟢🟢🟢⚪️⚪️⚪️⚪️   ✉️ draft: 🟡
 🧪 QA Lead     __________   🟡🟡⚪️⚪️⚪️⚪️⚪️   🧪 load: 🟡
-🎧 Support     __________   🔴🔴⚪️⚪️⚪️⚪️⚪️   😭
+🎧 Support     __________   🔴🔴⚪️⚪️⚪️⚪️⚪️   🚨 issue: 😭
 ```
 
 ## Usage
@@ -47,7 +47,7 @@ Simply copy the template above and fill in:
 💻 Eng Lead    Bob Wilson     🟢🟢🟢🟢🟢🟢🟢   ⚙️ WIP: 🟢
 📣 Comms Lead  Carol Martinez 🟢🟢🟢🟡⚪️⚪️⚪️   ✉️ draft: 🟡
 🧪 QA Lead     David Lee      🟡🟡🟡⚪️⚪️⚪️⚪️   🧪 load: 🟡
-🎧 Support     Emma Davis     🔴🔴🟡⚪️⚪️⚪️⚪️   😭
+🎧 Support     Emma Davis     🔴🔴🟡⚪️⚪️⚪️⚪️   🚨 issue: 😭
 ```
 
 ## Legend Reference
@@ -65,7 +65,7 @@ Simply copy the template above and fill in:
 - **⚙️ WIP** - Work in progress status
 - **✉️ draft** - Communication draft readiness
 - **🧪 load** - Testing/QA workload status
-- **😭** - Critical concern indicator
+- **🚨 issue** - Critical concern indicator
 
 ### Scale (1️⃣-7️⃣)
 - Each position represents a recent touchpoint (typically days or weeks)

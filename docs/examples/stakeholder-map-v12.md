@@ -55,7 +55,7 @@ This stakeholder map template helps track engagement with key stakeholders acros
 ### 🎧 Support
 **Name:** __________   
 **Signals:** 🔴🔴⚪️⚪️⚪️⚪️⚪️   
-**😭**
+**🚨 issue:** 😭
 
 ---
 
@@ -80,7 +80,7 @@ Each stakeholder has 7 signal slots representing:
 - **⚙️ WIP:** Work in progress status
 - **✉️ draft:** Documentation/communication draft status
 - **🧪 load:** Testing/QA workload status
-- **😭:** Critical issue or concern
+- **🚨 issue:** Critical issue or concern
 
 ---
 
@@ -123,7 +123,7 @@ Each stakeholder has 7 signal slots representing:
 ### 🎧 Support
 **Name:** Emma Davis   
 **Signals:** 🔴🔴🟡⚪️⚪️⚪️⚪️   
-**😭**
+**🚨 issue:** 😭
 
 ---
 
