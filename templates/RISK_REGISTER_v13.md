@@ -53,10 +53,12 @@ Legend: 🟢 low  🟡 medium  🟠 high-medium  🔴 high  ⚪️ empty
 
 The 7-emoji scale provides granular risk assessment:
 
-- **Level 1-2**: 🟢🟢⚪️⚪️⚪️⚪️⚪️ (Low) - Minimal concern, routine monitoring
-- **Level 2-3**: 🟡🟡🟡⚪️⚪️⚪️⚪️ (Medium) - Active tracking required, mitigation planned
-- **Level 3-4**: 🟠🟠🟠🟠⚪️⚪️⚪️ (High-Medium) - Significant concern, mitigation in progress
-- **Level 4-5**: 🔴🔴🔴🔴🔴⚪️⚪️ (High) - Critical priority, immediate action needed
-- **Level 6-7**: 🔴🔴🔴🔴🔴🔴🔴 (Very High) - Crisis level, escalation required
+- **Level 1**: 🟢⚪️⚪️⚪️⚪️⚪️⚪️ (Very Low) - No significant concern
+- **Level 2**: 🟢🟢⚪️⚪️⚪️⚪️⚪️ (Low) - Minimal concern, routine monitoring
+- **Level 3**: 🟡🟡🟡⚪️⚪️⚪️⚪️ (Medium) - Active tracking required, mitigation planned
+- **Level 4**: 🟠🟠🟠⚪️⚪️⚪️⚪️ (High-Medium) - Significant concern, mitigation in progress
+- **Level 5**: 🔴🔴⚪️⚪️⚪️⚪️⚪️ (High) - Critical priority, immediate action needed
+- **Level 6**: 🔴🔴🔴⚪️⚪️⚪️⚪️ (Very High) - Urgent escalation required
+- **Level 7**: 🔴🔴🔴🔴⚪️⚪️⚪️ (Critical) - Crisis level, all hands on deck
 
 Use ⚪️ to fill remaining slots up to 7 total indicators.
