@@ -32,6 +32,7 @@
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 🚀 [Release Checklist](templates/RELEASE_CHECKLIST_TEMPLATE.md) - Release planning template
 
 ---
 
@@ -92,6 +93,7 @@ Run validations locally before opening a PR:
 /templates             # Reusable templates
   .env.example         # Environment variables template
   SERVICE_INFRA_TEMPLATE.md  # New service template
+  RELEASE_CHECKLIST_TEMPLATE.md  # Release planning template
 
 /terraform             # Terraform IaC (existing)
   main.tf
