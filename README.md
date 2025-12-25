@@ -32,6 +32,7 @@
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
+- 🧬 [Project Planning Template v10](templates/PROJECT_PLANNING_TEMPLATE_v10.md) - Workflow matrix tracking
 
 ---
 
@@ -92,6 +93,7 @@ Run validations locally before opening a PR:
 /templates             # Reusable templates
   .env.example         # Environment variables template
   SERVICE_INFRA_TEMPLATE.md  # New service template
+  PROJECT_PLANNING_TEMPLATE_v10.md  # Project workflow matrix
 
 /terraform             # Terraform IaC (existing)
   main.tf
