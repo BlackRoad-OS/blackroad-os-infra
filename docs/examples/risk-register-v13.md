@@ -1,5 +1,5 @@
 # 🧩 EXAMPLES PACK v13 (risk register) — 7 risks × 7 signals
-Legend: 🟢 low  🟡 medium  🔴 high  ⚪️ empty
+Legend: 🟢 low  🟡 medium  🟠 high-medium  🔴 high  ⚪️ empty
 
 ⚠️ RISK REGISTER: ____________________   📅 WEEK: ____________   🚦 STATUS: 🟡
 🧭 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
