@@ -25,9 +25,10 @@ This template provides a structured format for tracking 7 experiments across 7 t
 - ⚪️ **empty** — No data yet / not started
 
 ### Signal Strength
-- 📶 **▪️▪️▪️▪️▪️▪️▪️** — Signal bars showing strength (1-7)
-  - ▪️ filled bar (positive signal)
+- 📶 **Signal bars** — Visual representation of progress/confidence (0-7)
+  - ▪️ filled bar (positive signal present)
   - ▫️ empty bar (no signal yet)
+  - Example: ▪️▪️▫️▫️▫️▫️▫️ represents 2/7 strength
 
 ### Experiment Types
 - 🧠 **Hypothesis** — Initial hypothesis being tested
