@@ -1,0 +1,96 @@
+name: "🧩 TEMPIES Issue"
+description: "Emoji Asana issue card (status + progress + deps + risk)"
+title: "🧩 "
+labels: ["tempiES"]
+assignees: []
+body:
+  - type: dropdown
+    id: status
+    attributes:
+      label: "🚦 Status"
+      options: ["🟢 done", "🟡 active", "🔴 blocked", "⚪️ empty", "🏁 shipped"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "🎯 Priority"
+      options: ["🟥 P0", "🟧 P1", "🟨 P2", "🟩 P3", "🟦 P4", "🟪 P5"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: "🔍 Type"
+      options: ["🧩 task", "🐞 bug", "🧪 test", "🔐 security", "🗂 compliance", "🏗 infra", "📣 comms", "🎓 training", "⚠️ risk", "🧾 audit"]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: channel
+    attributes:
+      label: "📣 Channel"
+      options: ["🌐 web", "📱 social", "✉️ email", "💬 text", "📞 call", "🎤 appearance", "📣 ad", "—"]
+    validations:
+      required: false
+
+  - type: textarea
+    id: what
+    attributes:
+      label: "🧾"
+      description: "What is this?"
+      placeholder: "…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: progress
+    attributes:
+      label: "🧭 Progress"
+      value: |
+        🧭 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: true
+
+  - type: textarea
+    id: deps
+    attributes:
+      label: "🔗 Deps / 🧱 Blockers"
+      value: |
+        T1 🔗 ________
+        T2 🔗 ________
+        T3 🔗 ________
+        🧱 ________
+        🧱 ________
+    validations:
+      required: false
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: "⚠️ Risk"
+      value: "L: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  I: 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣  🔥: 🟢/🟡/🟠/🔴  😭⚪️⚪️⚪️⚪️⚪️⚪️"
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "📎 Evidence"
+      value: |
+        - 📎
+        - 📎
+        - 📎
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: done
+    attributes:
+      label: "✅ Done when"
+      options:
+        - label: "✅"
+        - label: "🏁"

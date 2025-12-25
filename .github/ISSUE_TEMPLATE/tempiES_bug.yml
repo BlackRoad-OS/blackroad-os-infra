@@ -1,0 +1,44 @@
+name: "🐞 TEMPIES Bug"
+description: "Emoji bug card"
+title: "🐞 "
+labels: ["tempiES", "🐞 bug"]
+assignees: []
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "🔥 Severity"
+      options: ["🔴 critical", "🟠 high", "🟡 medium", "🟢 low", "⚪️ none", "‼️ urgent"]
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: "🧪 Repro"
+      value: |
+        1️⃣
+        2️⃣
+        3️⃣
+    validations:
+      required: true
+
+  - type: textarea
+    id: progress
+    attributes:
+      label: "🧭 Progress"
+      value: |
+        🧭 1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣
+        ⚪️⚪️⚪️⚪️⚪️⚪️⚪️
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "📎 Evidence"
+      value: |
+        - 📎 logs
+        - 📎 screenshot
+    validations:
+      required: false
