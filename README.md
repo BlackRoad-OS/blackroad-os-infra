@@ -33,6 +33,11 @@
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
 
+### 📚 Examples & Templates
+- 🧩 **[Examples Directory](docs/examples/)** - Templates, patterns, and reference examples
+- 🚦 [Quality Gates v9](docs/examples/quality-gates-v9.md) - 7-gate quality tracking framework
+- 🔔 [SIG Beacon Examples](docs/examples/sig.beacon.sample.json) - Service health beacon format
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
