@@ -1,0 +1,418 @@
+{
+  "version": "v32",
+  "type": "governance-approvals",
+  "metadata": {
+    "approvalBoard": "Default Approval Board",
+    "week": "2025-W52",
+    "overallStatus": "pending",
+    "createdAt": "2025-12-25T20:48:34.048Z"
+  },
+  "gates": [
+    {
+      "id": 1,
+      "name": "Draft",
+      "icon": "1️⃣",
+      "description": "Initial draft stage"
+    },
+    {
+      "id": 2,
+      "name": "Review",
+      "icon": "2️⃣",
+      "description": "Peer review stage"
+    },
+    {
+      "id": 3,
+      "name": "Legal",
+      "icon": "3️⃣",
+      "description": "Legal compliance review"
+    },
+    {
+      "id": 4,
+      "name": "Security",
+      "icon": "4️⃣",
+      "description": "Security assessment"
+    },
+    {
+      "id": 5,
+      "name": "Vote",
+      "icon": "5️⃣",
+      "description": "Team voting stage",
+      "specialIcon": "⭕"
+    },
+    {
+      "id": 6,
+      "name": "Approve",
+      "icon": "6️⃣",
+      "description": "Final approval"
+    },
+    {
+      "id": 7,
+      "name": "Publish",
+      "icon": "7️⃣",
+      "description": "Publication stage"
+    }
+  ],
+  "statusIndicators": {
+    "approved": {
+      "emoji": "🟢",
+      "label": "approved",
+      "description": "Gate passed successfully"
+    },
+    "pending": {
+      "emoji": "🟡",
+      "label": "pending",
+      "description": "Awaiting review or action"
+    },
+    "rejected": {
+      "emoji": "🔴",
+      "label": "rejected",
+      "description": "Gate failed or rejected"
+    },
+    "empty": {
+      "emoji": "⚪️",
+      "label": "empty",
+      "description": "Not yet reached"
+    },
+    "vote": {
+      "emoji": "⭕",
+      "label": "vote",
+      "description": "Currently in voting stage"
+    }
+  },
+  "policies": [
+    {
+      "id": "Policy-01",
+      "name": "Policy-01",
+      "icon": "📜",
+      "description": "First policy",
+      "gateStatuses": [
+        {
+          "gateId": 1,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 2,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 3,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 4,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 5,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 6,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 7,
+          "status": "empty",
+          "emoji": "⚪️"
+        }
+      ],
+      "overallStatus": "in-progress"
+    },
+    {
+      "id": "Policy-02",
+      "name": "Policy-02",
+      "icon": "📜",
+      "description": "Second policy",
+      "gateStatuses": [
+        {
+          "gateId": 1,
+          "status": "pending",
+          "emoji": "🟡"
+        },
+        {
+          "gateId": 2,
+          "status": "pending",
+          "emoji": "🟡"
+        },
+        {
+          "gateId": 3,
+          "status": "pending",
+          "emoji": "🟡"
+        },
+        {
+          "gateId": 4,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 5,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 6,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 7,
+          "status": "empty",
+          "emoji": "⚪️"
+        }
+      ],
+      "overallStatus": "pending"
+    },
+    {
+      "id": "Policy-03",
+      "name": "Policy-03",
+      "icon": "📜",
+      "description": "Third policy",
+      "gateStatuses": [
+        {
+          "gateId": 1,
+          "status": "rejected",
+          "emoji": "🔴"
+        },
+        {
+          "gateId": 2,
+          "status": "rejected",
+          "emoji": "🔴"
+        },
+        {
+          "gateId": 3,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 4,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 5,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 6,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 7,
+          "status": "empty",
+          "emoji": "⚪️"
+        }
+      ],
+      "overallStatus": "rejected",
+      "failureNote": "😭"
+    },
+    {
+      "id": "Policy-04",
+      "name": "Policy-04",
+      "icon": "📜",
+      "description": "Fourth policy",
+      "gateStatuses": [
+        {
+          "gateId": 1,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 2,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 3,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 4,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 5,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 6,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 7,
+          "status": "empty",
+          "emoji": "⚪️"
+        }
+      ],
+      "overallStatus": "in-progress"
+    },
+    {
+      "id": "Policy-05",
+      "name": "Policy-05",
+      "icon": "📜",
+      "description": "Fifth policy",
+      "gateStatuses": [
+        {
+          "gateId": 1,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 2,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 3,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 4,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 5,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 6,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 7,
+          "status": "empty",
+          "emoji": "⚪️"
+        }
+      ],
+      "overallStatus": "not-started"
+    },
+    {
+      "id": "Policy-06",
+      "name": "Policy-06",
+      "icon": "📜",
+      "description": "Sixth policy",
+      "gateStatuses": [
+        {
+          "gateId": 1,
+          "status": "pending",
+          "emoji": "🟡"
+        },
+        {
+          "gateId": 2,
+          "status": "pending",
+          "emoji": "🟡"
+        },
+        {
+          "gateId": 3,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 4,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 5,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 6,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 7,
+          "status": "empty",
+          "emoji": "⚪️"
+        }
+      ],
+      "overallStatus": "pending"
+    },
+    {
+      "id": "Policy-07",
+      "name": "Policy-07",
+      "icon": "📜",
+      "description": "Seventh policy",
+      "gateStatuses": [
+        {
+          "gateId": 1,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 2,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 3,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 4,
+          "status": "approved",
+          "emoji": "🟢"
+        },
+        {
+          "gateId": 5,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 6,
+          "status": "empty",
+          "emoji": "⚪️"
+        },
+        {
+          "gateId": 7,
+          "status": "empty",
+          "emoji": "⚪️"
+        }
+      ],
+      "overallStatus": "in-progress"
+    }
+  ],
+  "visualization": {
+    "header": "🧩 EXAMPLES PACK v32 (governance / approvals) — 7 items × 7 gates",
+    "legend": "Legend: 🟢 approved  🟡 pending  🔴 rejected  ⚪️ empty  ⭕ vote",
+    "board": [
+      "👩‍⚖️ APPROVAL BOARD: ____________________   📅 WEEK: ____________   🚦 STATUS: 🟡",
+      "🧭 Gates →         1️⃣  2️⃣  3️⃣  4️⃣  5️⃣  6️⃣  7️⃣",
+      "",
+      "📜 Policy-01 __________   🟢🟢🟢⚪️⚪️⚪️⚪️",
+      "📜 Policy-02 __________   🟡🟡🟡⚪️⚪️⚪️⚪️",
+      "📜 Policy-03 __________   🔴🔴⚪️⚪️⚪️⚪️⚪️   😭",
+      "📜 Policy-04 __________   🟢🟢⚪️⚪️⚪️⚪️⚪️",
+      "📜 Policy-05 __________   ⚪️⚪️⚪️⚪️⚪️⚪️⚪️",
+      "📜 Policy-06 __________   🟡🟡⚪️⚪️⚪️⚪️⚪️",
+      "📜 Policy-07 __________   🟢🟢🟢🟢⚪️⚪️⚪️",
+      "",
+      "✅ GATE LABELS (edit)",
+      "1️⃣ Draft",
+      "2️⃣ Review",
+      "3️⃣ Legal",
+      "4️⃣ Security",
+      "5️⃣ Vote ⭕",
+      "6️⃣ Approve",
+      "7️⃣ Publish"
+    ]
+  }
+}
