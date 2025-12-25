@@ -215,12 +215,6 @@ This pack provides visual templates and org charts for understanding the regulat
 
 ---
 
-## Next Steps
-
-Ready for **v44**: An emoji-only "Books & Records + Advertising/Comms" mega-board (BD + IA side-by-side) with 7×7 checkrails.
-
----
-
 ## References
 
 This examples pack is derived from:
