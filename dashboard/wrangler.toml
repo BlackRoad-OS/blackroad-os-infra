@@ -1,0 +1,22 @@
+name = "blackroad-dashboard"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".vercel/output/static"
+
+[env.production]
+name = "blackroad-dashboard"
+route = "dashboard.blackroad.io/*"
+
+[env.production.vars]
+GITHUB_TOKEN = ""
+HUGGINGFACE_API_KEY = ""
+GITHUB_ORG = "BlackRoad-OS"
+GITHUB_REPO = "blackroad-os-infra"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "blackroad-metrics"
+database_id = ""
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = ""
