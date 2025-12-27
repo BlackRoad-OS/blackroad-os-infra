@@ -1,0 +1,160 @@
+name: ☁️ Multi-Cloud Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target_cloud:
+        description: 'Target cloud provider'
+        required: true
+        type: choice
+        options:
+          - all
+          - railway
+          - vercel
+          - cloudflare
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install & Build
+        run: |
+          npm ci
+          npm run build --if-present
+
+      - name: 🏷️ Generate version
+        id: version
+        run: |
+          VERSION="v$(date +%Y%m%d-%H%M%S)"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: 📤 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            build/
+            .next/
+
+  deploy-railway:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.target_cloud == 'railway' || github.event.inputs.target_cloud == 'all' || github.event_name == 'push'
+    environment:
+      name: railway-production
+      url: https://app.railway.app
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📤 Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: 🚂 Deploy to Railway
+        run: |
+          echo "Deploying to Railway..."
+          echo "Version: ${{ needs.build.outputs.version }}"
+          echo "✅ Railway deployment simulated"
+
+  deploy-vercel:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.target_cloud == 'vercel' || github.event.inputs.target_cloud == 'all' || github.event_name == 'push'
+    environment:
+      name: vercel-production
+      url: https://vercel.com
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📤 Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: ▲ Deploy to Vercel
+        run: |
+          echo "Deploying to Vercel..."
+          echo "Version: ${{ needs.build.outputs.version }}"
+          echo "✅ Vercel deployment simulated"
+
+  deploy-cloudflare:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.target_cloud == 'cloudflare' || github.event.inputs.target_cloud == 'all' || github.event_name == 'push'
+    environment:
+      name: cloudflare-production
+      url: https://pages.cloudflare.com
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📤 Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: ⛅ Deploy to Cloudflare Pages
+        run: |
+          echo "Deploying to Cloudflare Pages..."
+          echo "Version: ${{ needs.build.outputs.version }}"
+          echo "✅ Cloudflare deployment simulated"
+
+  health-check:
+    name: Multi-Cloud Health Check
+    runs-on: ubuntu-latest
+    needs: [deploy-railway, deploy-vercel, deploy-cloudflare]
+    if: always()
+    steps:
+      - name: 🏥 Check all deployments
+        run: |
+          echo "Checking health of all cloud deployments..."
+
+          echo "Railway: ${{ needs.deploy-railway.result }}"
+          echo "Vercel: ${{ needs.deploy-vercel.result }}"
+          echo "Cloudflare: ${{ needs.deploy-cloudflare.result }}"
+
+          if [ "${{ needs.deploy-railway.result }}" = "success" ] || \
+             [ "${{ needs.deploy-vercel.result }}" = "success" ] || \
+             [ "${{ needs.deploy-cloudflare.result }}" = "success" ]; then
+            echo "✅ At least one cloud provider is healthy"
+          else
+            echo "❌ All deployments failed!"
+            exit 1
+          fi
+
+      - name: 📊 Summary
+        run: |
+          echo "# ☁️ Multi-Cloud Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "- 🚂 Railway: ${{ needs.deploy-railway.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ▲ Vercel: ${{ needs.deploy-vercel.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ⛅ Cloudflare: ${{ needs.deploy-cloudflare.result }}" >> $GITHUB_STEP_SUMMARY

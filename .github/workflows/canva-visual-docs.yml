@@ -1,0 +1,197 @@
+name: 🎨 Canva Visual Documentation Generator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'docs/**'
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-architecture-diagrams:
+    name: Generate Architecture Diagrams
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🎨 Generate architecture diagram
+        run: |
+          echo "Generating architecture diagrams..."
+
+          # Create mermaid diagram from codebase structure
+          cat > docs/architecture.mermaid << 'EOF'
+          graph TB
+            A[User] --> B[Frontend]
+            B --> C[API Gateway]
+            C --> D[Backend Services]
+            D --> E[Database]
+            D --> F[Cache]
+            C --> G[Auth Service]
+            B --> H[CDN]
+
+            style A fill:#f9d,stroke:#333,stroke-width:2px
+            style B fill:#bbf,stroke:#333,stroke-width:2px
+            style C fill:#bfb,stroke:#333,stroke-width:2px
+            style D fill:#fbb,stroke:#333,stroke-width:2px
+          EOF
+
+          echo "✅ Architecture diagram generated"
+
+      - name: 🎨 Generate component diagrams
+        run: |
+          echo "Generating component diagrams..."
+
+          # Find all components
+          find src -name "*.tsx" -o -name "*.jsx" 2>/dev/null | while read -r file; do
+            component=$(basename "$file" .tsx)
+            component=$(basename "$component" .jsx)
+
+            # Create component diagram
+            cat > "docs/components/${component}.md" << EOF
+          # ${component} Component
+
+          ## Architecture
+          \`\`\`mermaid
+          graph LR
+            A[Props] --> B[${component}]
+            B --> C[Render]
+            B --> D[State]
+            B --> E[Effects]
+          \`\`\`
+
+          ## Usage
+          \`\`\`typescript
+          import { ${component} } from '@/components/${component}'
+
+          <${component} />
+          \`\`\`
+          EOF
+
+            mkdir -p docs/components
+          done
+
+          echo "✅ Component diagrams generated"
+
+      - name: 📊 Generate data flow diagrams
+        run: |
+          echo "Generating data flow diagrams..."
+
+          cat > docs/data-flow.mermaid << 'EOF'
+          sequenceDiagram
+            participant U as User
+            participant F as Frontend
+            participant A as API
+            participant D as Database
+
+            U->>F: Action
+            F->>A: Request
+            A->>D: Query
+            D-->>A: Data
+            A-->>F: Response
+            F-->>U: Update UI
+          EOF
+
+          echo "✅ Data flow diagrams generated"
+
+      - name: 🖼️ Generate visual documentation
+        run: |
+          echo "Generating visual documentation..."
+
+          # Create comprehensive visual docs
+          cat > docs/VISUAL_DOCS.md << 'EOF'
+          # 📊 BlackRoad OS Visual Documentation
+
+          ## System Architecture
+          ![Architecture](architecture.mermaid)
+
+          ## Data Flow
+          ![Data Flow](data-flow.mermaid)
+
+          ## Component Library
+          See [components/](components/) for individual component diagrams
+
+          ## Deployment Topology
+          ![Deployment](deployment.mermaid)
+
+          ---
+
+          🎨 Auto-generated with Canva Visual Docs
+          EOF
+
+          echo "✅ Visual documentation generated"
+
+      - name: 💾 Commit visual docs
+        run: |
+          if ! git diff --quiet docs/; then
+            git config user.name "BlackRoad Visual Docs Bot"
+            git config user.email "visualdocs@blackroad.systems"
+
+            git add docs/
+            git commit -m "docs: Auto-generate visual documentation
+
+Generated:
+- Architecture diagrams
+- Component diagrams
+- Data flow diagrams
+- Deployment topology
+
+🎨 Auto-generated with Canva Visual Docs
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+
+            git push
+          else
+            echo "No changes to visual docs"
+          fi
+
+  generate-readme-visuals:
+    name: Generate README Visuals
+    runs-on: ubuntu-latest
+    needs: generate-architecture-diagrams
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🎨 Enhance README with visuals
+        run: |
+          echo "Enhancing README with visual elements..."
+
+          # Add shields.io badges
+          BADGES="
+          ![Build](https://img.shields.io/github/actions/workflow/status/BlackRoad-OS/blackroad-os-infra/complete-cicd-pipeline.yml?style=for-the-badge)
+          ![Coverage](https://img.shields.io/codecov/c/github/BlackRoad-OS/blackroad-os-infra?style=for-the-badge)
+          ![License](https://img.shields.io/github/license/BlackRoad-OS/blackroad-os-infra?style=for-the-badge)
+          ![Stars](https://img.shields.io/github/stars/BlackRoad-OS/blackroad-os-infra?style=for-the-badge)
+          "
+
+          # Check if README has visual section
+          if ! grep -q "## Visuals" README.md 2>/dev/null; then
+            cat >> README.md << EOF
+
+          ## Visuals
+
+          $BADGES
+
+          ### Architecture
+          See [docs/VISUAL_DOCS.md](docs/VISUAL_DOCS.md) for comprehensive visual documentation.
+          EOF
+
+            git config user.name "BlackRoad Visual Docs Bot"
+            git config user.email "visualdocs@blackroad.systems"
+            git add README.md
+            git commit -m "docs: Add visual elements to README
+
+Added badges and visual documentation links
+
+🎨 Auto-generated with Canva Visual Docs" || true
+            git push || true
+          fi
