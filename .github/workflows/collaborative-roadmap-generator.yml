@@ -1,0 +1,65 @@
+name: Collaborative Roadmap Generator
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'  # Monthly on 1st
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  generate-roadmap:
+    name: Generate Community Roadmap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build roadmap from community input
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get top voted features
+            const { data: features } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'feature-request',
+              state: 'open',
+              per_page: 50,
+              sort: 'reactions-+1'
+            });
+
+            const roadmap = `## 🗺️ Community-Driven Roadmap
+
+            **Generated:** ${new Date().toISOString().split('T')[0]}
+
+            This roadmap is built from YOUR feedback and votes!
+
+            ### 🚀 Next Quarter (High Priority)
+
+            ${features.slice(0, 5).map((f, i) =>
+              `${i + 1}. [${f.title}](#${f.number}) - ${f.reactions['+1'] || 0} votes`
+            ).join('\n')}
+
+            ### 📅 Future (Under Consideration)
+
+            ${features.slice(5, 15).map((f, i) =>
+              `${i + 1}. [${f.title}](#${f.number}) - ${f.reactions['+1'] || 0} votes`
+            ).join('\n')}
+
+            ### 💡 How to Influence the Roadmap
+
+            1. Vote on feature requests
+            2. Share your use cases
+            3. Engage in discussions
+            4. Submit suggestions
+
+            ---
+            🤖 Built by the community, for the community!
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🗺️ Community Roadmap - ' + new Date().toISOString().split('T')[0].substring(0, 7),
+              body: roadmap,
+              labels: ['roadmap', 'community']
+            });

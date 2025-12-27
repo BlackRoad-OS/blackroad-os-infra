@@ -1,0 +1,331 @@
+name: Community Feedback Aggregator
+
+on:
+  issues:
+    types: [opened, labeled, commented]
+  pull_request_target:
+    types: [opened]
+  discussion:
+    types: [created, answered]
+  schedule:
+    - cron: '0 0 * * *'  # Daily aggregation
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+  discussions: write
+
+jobs:
+  collect-feedback:
+    name: Collect Community Feedback
+    runs-on: ubuntu-latest
+    outputs:
+      feedback_count: ${{ steps.collect.outputs.count }}
+      themes: ${{ steps.collect.outputs.themes }}
+      sentiment: ${{ steps.collect.outputs.sentiment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aggregate feedback from all sources
+        id: collect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const feedback = {
+              issues: [],
+              prs: [],
+              discussions: [],
+              comments: []
+            };
+
+            // Collect recent issues with feedback labels
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'feedback,suggestion,feature-request',
+              state: 'all',
+              per_page: 50,
+              sort: 'created',
+              direction: 'desc'
+            });
+
+            feedback.issues = issues.slice(0, 20);
+
+            // Detect themes
+            const themes = {};
+            const sentiments = { positive: 0, neutral: 0, negative: 0 };
+
+            for (const item of feedback.issues) {
+              const text = (item.title + ' ' + item.body).toLowerCase();
+
+              // Theme detection
+              if (text.includes('performance') || text.includes('speed') || text.includes('slow')) {
+                themes.performance = (themes.performance || 0) + 1;
+              }
+              if (text.includes('ui') || text.includes('ux') || text.includes('interface')) {
+                themes.ui = (themes.ui || 0) + 1;
+              }
+              if (text.includes('feature') || text.includes('add') || text.includes('new')) {
+                themes.features = (themes.features || 0) + 1;
+              }
+              if (text.includes('bug') || text.includes('error') || text.includes('broken')) {
+                themes.bugs = (themes.bugs || 0) + 1;
+              }
+              if (text.includes('docs') || text.includes('documentation')) {
+                themes.docs = (themes.docs || 0) + 1;
+              }
+
+              // Sentiment detection
+              if (text.includes('love') || text.includes('great') || text.includes('awesome') || text.includes('👍') || text.includes('🎉')) {
+                sentiments.positive++;
+              } else if (text.includes('hate') || text.includes('terrible') || text.includes('awful') || text.includes('👎')) {
+                sentiments.negative++;
+              } else {
+                sentiments.neutral++;
+              }
+            }
+
+            const topThemes = Object.entries(themes)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+              .map(([theme, count]) => `${theme}:${count}`)
+              .join(',');
+
+            const totalSentiment = sentiments.positive + sentiments.neutral + sentiments.negative;
+            const sentimentScore = totalSentiment > 0
+              ? Math.round((sentiments.positive / totalSentiment) * 100)
+              : 50;
+
+            core.setOutput('count', feedback.issues.length);
+            core.setOutput('themes', topThemes || 'none');
+            core.setOutput('sentiment', sentimentScore);
+
+            console.log(`Collected ${feedback.issues.length} feedback items`);
+            console.log(`Top themes: ${topThemes}`);
+            console.log(`Sentiment score: ${sentimentScore}%`);
+
+  categorize-feedback:
+    name: Categorize & Prioritize
+    runs-on: ubuntu-latest
+    needs: collect-feedback
+    outputs:
+      high_priority: ${{ steps.categorize.outputs.high }}
+      medium_priority: ${{ steps.categorize.outputs.medium }}
+      quick_wins: ${{ steps.categorize.outputs.quick }}
+    steps:
+      - name: Categorize feedback
+        id: categorize
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'feedback',
+              state: 'open',
+              per_page: 100
+            });
+
+            const highPriority = [];
+            const mediumPriority = [];
+            const quickWins = [];
+
+            for (const issue of issues) {
+              const reactions = issue.reactions['+1'] || 0;
+              const comments = issue.comments || 0;
+              const text = (issue.title + ' ' + issue.body).toLowerCase();
+
+              // High priority: many reactions or critical keywords
+              if (reactions > 10 || text.includes('critical') || text.includes('urgent')) {
+                highPriority.push(issue.number);
+              }
+              // Quick wins: labeled or simple fixes
+              else if (text.includes('simple') || text.includes('easy') || issue.labels.some(l => l.name === 'good-first-issue')) {
+                quickWins.push(issue.number);
+              }
+              // Medium priority: everything else
+              else {
+                mediumPriority.push(issue.number);
+              }
+            }
+
+            core.setOutput('high', highPriority.join(','));
+            core.setOutput('medium', mediumPriority.join(','));
+            core.setOutput('quick', quickWins.join(','));
+
+            console.log(`High priority: ${highPriority.length}`);
+            console.log(`Medium priority: ${mediumPriority.length}`);
+            console.log(`Quick wins: ${quickWins.length}`);
+
+  create-feedback-digest:
+    name: Create Community Feedback Digest
+    runs-on: ubuntu-latest
+    needs: [collect-feedback, categorize-feedback]
+    steps:
+      - name: Generate digest
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const themes = '${{ needs.collect-feedback.outputs.themes }}';
+            const sentiment = '${{ needs.collect-feedback.outputs.sentiment }}';
+            const count = '${{ needs.collect-feedback.outputs.feedback_count }}';
+            const highPriority = '${{ needs.categorize-feedback.outputs.high_priority }}'.split(',').filter(x => x);
+            const quickWins = '${{ needs.categorize-feedback.outputs.quick_wins }}'.split(',').filter(x => x);
+
+            const digest = `## 💬 Community Feedback Digest
+
+            **Generated:** ${new Date().toISOString().split('T')[0]}
+
+            ### 📊 Overview
+
+            - **Total Feedback Items:** ${count}
+            - **Community Sentiment:** ${sentiment}% positive
+            - **Top Themes:** ${themes.split(',').map(t => {
+              const [theme, num] = t.split(':');
+              return `**${theme}** (${num})`;
+            }).join(', ')}
+
+            ### 🎯 Prioritization
+
+            #### High Priority Items (${highPriority.length})
+            ${highPriority.slice(0, 5).map(n => `- #${n}`).join('\n') || '- None'}
+
+            #### Quick Wins (${quickWins.length})
+            ${quickWins.slice(0, 5).map(n => `- #${n}`).join('\n') || '- None'}
+
+            ### 📈 Insights
+
+            **Community Wants:**
+            ${themes.split(',').map(t => {
+              const [theme] = t.split(':');
+              return `- More focus on **${theme}**`;
+            }).join('\n')}
+
+            **Sentiment Analysis:**
+            ${sentiment >= 75 ? '🎉 Community is very happy!' :
+              sentiment >= 50 ? '😊 Community is generally positive' :
+              sentiment >= 25 ? '😐 Mixed feelings from community' :
+              '😞 Community needs attention'}
+
+            ### 🚀 Recommended Actions
+
+            1. Address high priority items first
+            2. Implement quick wins for immediate impact
+            3. Focus on top themes: ${themes.split(',').map(t => t.split(':')[0]).join(', ')}
+            4. Respond to all feedback within 48 hours
+
+            ### 💡 Community Input Welcome!
+
+            We value YOUR voice! Help us prioritize by:
+            - 👍 Reacting to issues that matter to you
+            - 💬 Adding comments with your perspective
+            - 🏷️ Labeling with feedback/suggestion tags
+
+            ---
+            🤖 Auto-generated Community Feedback Digest
+            `;
+
+            // Create or update digest issue
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'feedback-digest',
+              state: 'open'
+            });
+
+            if (existingIssues.length > 0) {
+              // Update existing
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues[0].number,
+                body: digest
+              });
+              console.log(`Updated feedback digest #${existingIssues[0].number}`);
+            } else {
+              // Create new
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '💬 Community Feedback Digest - ' + new Date().toISOString().split('T')[0],
+                body: digest,
+                labels: ['feedback-digest', 'community']
+              });
+              console.log(`Created feedback digest #${issue.data.number}`);
+            }
+
+  engage-contributors:
+    name: Engage with Contributors
+    runs-on: ubuntu-latest
+    needs: collect-feedback
+    steps:
+      - name: Thank contributors
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get recent feedback issues
+            const { data: recentFeedback } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'feedback,suggestion',
+              state: 'open',
+              per_page: 10,
+              sort: 'created',
+              direction: 'desc'
+            });
+
+            // Thank recent contributors who haven't been responded to
+            for (const issue of recentFeedback) {
+              if (issue.comments === 0 && !issue.labels.some(l => l.name === 'acknowledged')) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `Thank you for your feedback! 🙏
+
+                  We really appreciate you taking the time to share your thoughts. Your input helps us build a better product for everyone.
+
+                  Our team will review this and get back to you soon. In the meantime:
+                  - 👍 React to this issue if you're also interested
+                  - 💬 Add any additional context in comments
+                  - 📢 Share with others who might benefit
+
+                  We're listening! 👂
+
+                  ---
+                  🤖 Community Feedback Team`
+                });
+
+                // Add acknowledged label
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: ['acknowledged']
+                }).catch(() => {});
+
+                console.log(`Acknowledged feedback #${issue.number}`);
+              }
+            }
+
+  feedback-summary:
+    name: Feedback Summary
+    runs-on: ubuntu-latest
+    needs: [collect-feedback, categorize-feedback]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 💬 Community Feedback Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Collection Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Feedback Items: **${{ needs.collect-feedback.outputs.feedback_count }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Top Themes: ${{ needs.collect-feedback.outputs.themes }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Community Sentiment: **${{ needs.collect-feedback.outputs.sentiment }}%** positive" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Prioritization" >> $GITHUB_STEP_SUMMARY
+          echo "- High Priority: ${{ needs.categorize-feedback.outputs.high_priority }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Quick Wins: ${{ needs.categorize-feedback.outputs.quick_wins }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the Community Feedback Digest issue for full details!" >> $GITHUB_STEP_SUMMARY
