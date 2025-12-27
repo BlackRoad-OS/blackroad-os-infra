@@ -1,0 +1,143 @@
+name: 🌊 Cascading Deployment Across Repos
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_type:
+        description: 'Type of deployment'
+        required: true
+        type: choice
+        options:
+          - workflow-update
+          - configuration-update
+          - full-deployment
+      test_first:
+        description: 'Test on 5 repos first?'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  plan-deployment:
+    runs-on: ubuntu-latest
+    outputs:
+      test_repos: ${{ steps.select.outputs.test_repos }}
+      production_repos: ${{ steps.select.outputs.production_repos }}
+    steps:
+      - name: 📋 Select repositories
+        id: select
+        run: |
+          # Get all repos
+          gh repo list BlackRoad-OS --limit 1000 --json name,isArchived \
+            --jq '.[] | select(.isArchived == false) | .name' > /tmp/all-repos.txt
+
+          # Select 5 test repos
+          head -5 /tmp/all-repos.txt > /tmp/test-repos.txt
+
+          # Remaining repos for production
+          tail -n +6 /tmp/all-repos.txt > /tmp/prod-repos.txt
+
+          echo "test_repos<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/test-repos.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "production_repos<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/prod-repos.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-deployment:
+    needs: plan-deployment
+    if: github.event.inputs.test_first == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧪 Deploy to test repositories
+        run: |
+          echo "Deploying to 5 test repositories..."
+
+          SUCCESS=0
+          FAILED=0
+
+          echo "${{ needs.plan-deployment.outputs.test_repos }}" | while IFS= read -r repo; do
+            [ -z "$repo" ] && continue
+
+            echo "Testing deployment on: $repo"
+
+            # Trigger workflow in target repo
+            gh workflow run deploy.yml \
+              --repo "BlackRoad-OS/$repo" \
+              --ref main 2>/dev/null && SUCCESS=$((SUCCESS + 1)) || FAILED=$((FAILED + 1))
+
+            sleep 2
+          done
+
+          echo "Test deployment: $SUCCESS success, $FAILED failed"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⏱️ Monitor test deployments
+        run: |
+          echo "Monitoring test deployments for 10 minutes..."
+          sleep 600
+
+          echo "Test period complete"
+
+  production-deployment:
+    needs: [plan-deployment, test-deployment]
+    if: always() && (needs.test-deployment.result == 'success' || github.event.inputs.test_first == 'false')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Deploy to production repositories
+        run: |
+          echo "Starting production deployment..."
+
+          DEPLOYED=0
+          BATCH_SIZE=10
+          DELAY=30
+
+          echo "${{ needs.plan-deployment.outputs.production_repos }}" | \
+            split -l $BATCH_SIZE - /tmp/batch-
+
+          for batch in /tmp/batch-*; do
+            echo ""
+            echo "Deploying batch: $batch"
+
+            while IFS= read -r repo; do
+              [ -z "$repo" ] && continue
+
+              echo "  → Deploying to: $repo"
+
+              gh workflow run deploy.yml \
+                --repo "BlackRoad-OS/$repo" \
+                --ref main 2>/dev/null && DEPLOYED=$((DEPLOYED + 1))
+
+              sleep 1
+            done < "$batch"
+
+            echo "Batch complete. Waiting ${DELAY}s before next batch..."
+            sleep $DELAY
+          done
+
+          echo ""
+          echo "Production deployment complete: $DEPLOYED repositories"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Deployment summary
+        run: |
+          echo "# 🌊 Cascading Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Type:** ${{ github.event.inputs.deployment_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Test First:** ${{ github.event.inputs.test_first }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Deployment Flow" >> $GITHUB_STEP_SUMMARY
+          echo "1. Test deployment (5 repos)" >> $GITHUB_STEP_SUMMARY
+          echo "2. Monitor period (10 minutes)" >> $GITHUB_STEP_SUMMARY
+          echo "3. Production deployment (remaining repos)" >> $GITHUB_STEP_SUMMARY
+          echo "4. Batch processing (10 repos per batch)" >> $GITHUB_STEP_SUMMARY

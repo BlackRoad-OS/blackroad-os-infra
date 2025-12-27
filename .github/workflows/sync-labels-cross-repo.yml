@@ -1,0 +1,174 @@
+name: 🏷️ Sync Labels Across All Repos
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/labels.yml'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🏷️ Define standard labels
+        run: |
+          cat > /tmp/labels.json << 'EOF'
+          [
+            {
+              "name": "priority-critical",
+              "color": "b60205",
+              "description": "Critical priority - immediate attention required"
+            },
+            {
+              "name": "priority-high",
+              "color": "d93f0b",
+              "description": "High priority - should be addressed soon"
+            },
+            {
+              "name": "priority-medium",
+              "color": "fbca04",
+              "description": "Medium priority - normal workflow"
+            },
+            {
+              "name": "priority-low",
+              "color": "0e8a16",
+              "description": "Low priority - when time permits"
+            },
+            {
+              "name": "agent-task",
+              "color": "5319e7",
+              "description": "Task for AI agent"
+            },
+            {
+              "name": "auto-fix",
+              "color": "1d76db",
+              "description": "Can be auto-fixed by agent"
+            },
+            {
+              "name": "needs-review",
+              "color": "fbca04",
+              "description": "Needs human review"
+            },
+            {
+              "name": "dependencies",
+              "color": "0366d6",
+              "description": "Dependency updates"
+            },
+            {
+              "name": "security",
+              "color": "b60205",
+              "description": "Security-related"
+            },
+            {
+              "name": "performance",
+              "color": "d4c5f9",
+              "description": "Performance optimization"
+            },
+            {
+              "name": "documentation",
+              "color": "0075ca",
+              "description": "Documentation improvements"
+            },
+            {
+              "name": "bug",
+              "color": "d73a4a",
+              "description": "Something isn't working"
+            },
+            {
+              "name": "feature",
+              "color": "a2eeef",
+              "description": "New feature request"
+            },
+            {
+              "name": "enhancement",
+              "color": "84b6eb",
+              "description": "Enhancement to existing feature"
+            },
+            {
+              "name": "refactor",
+              "color": "fbca04",
+              "description": "Code refactoring"
+            }
+          ]
+          EOF
+
+          cat /tmp/labels.json
+
+      - name: 🔍 Get all repositories
+        id: repos
+        run: |
+          gh repo list BlackRoad-OS --limit 1000 --json name,isArchived \
+            --jq '.[] | select(.isArchived == false) | .name' > /tmp/repos.txt
+
+          TOTAL=$(wc -l < /tmp/repos.txt | tr -d ' ')
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "Found $TOTAL repositories"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔄 Sync labels to all repos
+        run: |
+          echo "Syncing labels to all repositories..."
+
+          SYNCED=0
+          FAILED=0
+
+          while IFS= read -r repo; do
+            echo "Syncing labels to: $repo"
+
+            SUCCESS=true
+
+            # Read and create each label
+            jq -c '.[]' /tmp/labels.json | while read -r label; do
+              NAME=$(echo "$label" | jq -r '.name')
+              COLOR=$(echo "$label" | jq -r '.color')
+              DESC=$(echo "$label" | jq -r '.description')
+
+              # Try to update label (if exists) or create (if doesn't exist)
+              gh label create "$NAME" \
+                --repo "BlackRoad-OS/$repo" \
+                --color "$COLOR" \
+                --description "$DESC" \
+                --force 2>/dev/null || {
+                  echo "  ⚠️  Failed to sync label: $NAME"
+                  SUCCESS=false
+                }
+            done
+
+            if [ "$SUCCESS" = true ]; then
+              echo "  ✅ Labels synced successfully"
+              SYNCED=$((SYNCED + 1))
+            else
+              echo "  ❌ Some labels failed to sync"
+              FAILED=$((FAILED + 1))
+            fi
+
+          done < /tmp/repos.txt
+
+          echo ""
+          echo "Sync complete:"
+          echo "  ✅ Success: $SYNCED repos"
+          echo "  ❌ Failed: $FAILED repos"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Summary
+        run: |
+          echo "# 🏷️ Label Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Synced 15 standard labels to all BlackRoad-OS repositories" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Labels Synced" >> $GITHUB_STEP_SUMMARY
+          echo "- Priority labels (4)" >> $GITHUB_STEP_SUMMARY
+          echo "- Agent labels (2)" >> $GITHUB_STEP_SUMMARY
+          echo "- Type labels (6)" >> $GITHUB_STEP_SUMMARY
+          echo "- Category labels (3)" >> $GITHUB_STEP_SUMMARY

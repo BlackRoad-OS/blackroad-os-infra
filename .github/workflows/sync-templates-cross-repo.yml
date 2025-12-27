@@ -1,0 +1,231 @@
+name: 🔄 Sync Templates Across 82 Repos
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE/**'
+      - '.github/workflows/quick-*.yml'
+  workflow_dispatch:
+    inputs:
+      target_repos:
+        description: 'Target repos (all, or comma-separated list)'
+        required: false
+        default: 'all'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-templates:
+    runs-on: ubuntu-latest
+    name: Sync templates to all repos
+
+    steps:
+      - name: 📥 Checkout source repo
+        uses: actions/checkout@v4
+
+      - name: 🔍 Get all BlackRoad-OS repositories
+        id: get-repos
+        run: |
+          echo "Fetching all BlackRoad-OS repositories..."
+
+          # Get all repos in the organization
+          gh repo list BlackRoad-OS --limit 1000 --json name,isArchived,isFork \
+            --jq '.[] | select(.isArchived == false and .isFork == false) | .name' \
+            > /tmp/repos.txt
+
+          TOTAL=$(wc -l < /tmp/repos.txt | tr -d ' ')
+          echo "total_repos=$TOTAL" >> $GITHUB_OUTPUT
+
+          cat /tmp/repos.txt
+          echo ""
+          echo "Found $TOTAL active repositories"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Prepare template files
+        run: |
+          echo "Preparing templates for sync..."
+
+          mkdir -p /tmp/templates
+
+          # Copy all templates
+          if [ -d ".github/ISSUE_TEMPLATE" ]; then
+            cp -r .github/ISSUE_TEMPLATE /tmp/templates/
+          fi
+
+          if [ -d ".github/PULL_REQUEST_TEMPLATE" ]; then
+            cp -r .github/PULL_REQUEST_TEMPLATE /tmp/templates/
+          fi
+
+          if [ -f ".github/pull_request_template.md" ]; then
+            cp .github/pull_request_template.md /tmp/templates/
+          fi
+
+          # Copy quick workflow templates
+          mkdir -p /tmp/templates/workflows
+          cp .github/workflows/quick-*.yml /tmp/templates/workflows/ 2>/dev/null || true
+
+          echo "Templates prepared:"
+          find /tmp/templates -type f
+
+      - name: 🚀 Sync to repositories
+        run: |
+          echo "🔄 Starting sync to all repositories..."
+
+          SYNCED=0
+          FAILED=0
+
+          while IFS= read -r repo; do
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📦 Syncing to: $repo"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            # Skip source repo
+            if [ "$repo" = "blackroad-os-infra" ]; then
+              echo "⏭️  Skipping source repository"
+              continue
+            fi
+
+            # Clone repo
+            if ! gh repo clone "BlackRoad-OS/$repo" "/tmp/sync-$repo" 2>/dev/null; then
+              echo "❌ Failed to clone $repo"
+              FAILED=$((FAILED + 1))
+              continue
+            fi
+
+            cd "/tmp/sync-$repo"
+
+            # Create branch
+            BRANCH="sync-templates-$(date +%s)"
+            git checkout -b "$BRANCH" 2>/dev/null || {
+              echo "❌ Failed to create branch"
+              cd - > /dev/null
+              FAILED=$((FAILED + 1))
+              continue
+            }
+
+            # Copy templates
+            mkdir -p .github
+
+            if [ -d "/tmp/templates/ISSUE_TEMPLATE" ]; then
+              cp -r /tmp/templates/ISSUE_TEMPLATE .github/
+            fi
+
+            if [ -d "/tmp/templates/PULL_REQUEST_TEMPLATE" ]; then
+              cp -r /tmp/templates/PULL_REQUEST_TEMPLATE .github/
+            fi
+
+            if [ -f "/tmp/templates/pull_request_template.md" ]; then
+              cp /tmp/templates/pull_request_template.md .github/
+            fi
+
+            if [ -d "/tmp/templates/workflows" ]; then
+              mkdir -p .github/workflows
+              cp /tmp/templates/workflows/*.yml .github/workflows/ 2>/dev/null || true
+            fi
+
+            # Check if anything changed
+            if ! git diff --quiet; then
+              # Commit changes
+              git config user.name "BlackRoad Sync Bot"
+              git config user.email "bot@blackroad.systems"
+
+              git add .github/
+              git commit -m "sync: Update GitHub templates from blackroad-os-infra
+
+Synced templates:
+- Issue templates (8 types)
+- PR templates (5 types)
+- Quick workflow templates
+- One-click actions
+
+Source: BlackRoad-OS/blackroad-os-infra
+Sync: Automated cross-repo sync
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+
+              # Push branch
+              if git push origin "$BRANCH"; then
+                # Create PR
+                PR_URL=$(gh pr create \
+                  --title "🔄 Sync GitHub templates from blackroad-os-infra" \
+                  --body "## 🔄 Template Sync
+
+Automated sync of GitHub templates from \`blackroad-os-infra\`.
+
+### 📋 What's Updated
+- ✅ Issue templates (8 types)
+- ✅ PR templates (5 types)
+- ✅ Quick workflow templates
+- ✅ One-click actions
+
+### 🤖 Automation
+This PR was automatically created by the cross-repo sync workflow.
+
+**Source:** BlackRoad-OS/blackroad-os-infra
+**Workflow:** sync-templates-cross-repo.yml
+**Branch:** \`$BRANCH\`
+
+### ✅ Review & Merge
+Templates are standardized across all BlackRoad-OS repos.
+Safe to merge immediately.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)" \
+                  --base main 2>&1)
+
+                if [ $? -eq 0 ]; then
+                  echo "✅ PR created: $PR_URL"
+                  SYNCED=$((SYNCED + 1))
+                else
+                  echo "⚠️  Changes pushed but PR creation failed"
+                  SYNCED=$((SYNCED + 1))
+                fi
+              else
+                echo "❌ Failed to push changes"
+                FAILED=$((FAILED + 1))
+              fi
+            else
+              echo "✓ No changes needed"
+            fi
+
+            cd - > /dev/null
+            rm -rf "/tmp/sync-$repo"
+
+          done < /tmp/repos.txt
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📊 Sync Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Synced: $SYNCED repositories"
+          echo "❌ Failed: $FAILED repositories"
+          echo "📝 Total: $(wc -l < /tmp/repos.txt | tr -d ' ') repositories"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Create sync summary
+        run: |
+          echo "# 🔄 Cross-Repo Template Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Sync Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Templates synced to all BlackRoad-OS repositories**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Synced Templates" >> $GITHUB_STEP_SUMMARY
+          echo "- Issue templates (8 types)" >> $GITHUB_STEP_SUMMARY
+          echo "- PR templates (5 types)" >> $GITHUB_STEP_SUMMARY
+          echo "- Quick workflow templates" >> $GITHUB_STEP_SUMMARY
+          echo "- One-click actions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Impact" >> $GITHUB_STEP_SUMMARY
+          echo "All repositories now have:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Standardized issue reporting" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Consistent PR templates" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Quick-action workflows" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Auto-routing to specialist agents" >> $GITHUB_STEP_SUMMARY

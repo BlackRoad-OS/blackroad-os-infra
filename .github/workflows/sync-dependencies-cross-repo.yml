@@ -1,0 +1,102 @@
+name: 📦 Sync Dependencies Across Repos
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays
+  workflow_dispatch:
+    inputs:
+      dependency_type:
+        description: 'Dependency type to update'
+        required: true
+        type: choice
+        options:
+          - all
+          - npm
+          - python
+          - go
+          - rust
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-npm-dependencies:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.dependency_type == 'npm' || github.event.inputs.dependency_type == 'all' || github.event.schedule
+    name: Sync NPM Dependencies
+
+    steps:
+      - name: 🔍 Find NPM repositories
+        id: find-npm
+        run: |
+          echo "Finding repositories with package.json..."
+
+          gh repo list BlackRoad-OS --limit 1000 --json name \
+            --jq '.[].name' > /tmp/all-repos.txt
+
+          > /tmp/npm-repos.txt
+
+          while IFS= read -r repo; do
+            # Check if repo has package.json
+            if gh api "repos/BlackRoad-OS/$repo/contents/package.json" \
+              --jq '.name' 2>/dev/null | grep -q "package.json"; then
+              echo "$repo" >> /tmp/npm-repos.txt
+            fi
+          done < /tmp/all-repos.txt
+
+          TOTAL=$(wc -l < /tmp/npm-repos.txt | tr -d ' ')
+          echo "total_repos=$TOTAL" >> $GITHUB_OUTPUT
+          echo "Found $TOTAL NPM repositories"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔄 Update NPM dependencies
+        run: |
+          echo "Updating NPM dependencies across repositories..."
+
+          UPDATED=0
+
+          while IFS= read -r repo; do
+            echo "Processing: $repo"
+
+            # Clone repo
+            gh repo clone "BlackRoad-OS/$repo" "/tmp/$repo" 2>/dev/null || continue
+            cd "/tmp/$repo"
+
+            # Create update branch
+            BRANCH="deps/npm-update-$(date +%s)"
+            git checkout -b "$BRANCH"
+
+            # Update dependencies
+            if [ -f "package.json" ]; then
+              npm update 2>/dev/null || true
+
+              if ! git diff --quiet package.json; then
+                git config user.name "BlackRoad Dependency Bot"
+                git config user.email "deps@blackroad.systems"
+
+                git add package.json package-lock.json 2>/dev/null || git add package.json
+                git commit -m "deps: Update NPM dependencies
+
+Automated dependency update via cross-repo sync
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+
+                git push origin "$BRANCH"
+
+                gh pr create \
+                  --title "⬆️ Update NPM dependencies" \
+                  --body "Automated NPM dependency update" \
+                  --label "dependencies" \
+                  --base main 2>/dev/null && UPDATED=$((UPDATED + 1))
+              fi
+            fi
+
+            cd - > /dev/null
+            rm -rf "/tmp/$repo"
+          done < /tmp/npm-repos.txt
+
+          echo "Updated $UPDATED repositories"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
