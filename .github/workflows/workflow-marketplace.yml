@@ -1,0 +1,443 @@
+name: 🏪 Workflow Template Marketplace
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Marketplace action'
+        required: true
+        type: choice
+        options:
+          - browse
+          - install
+          - publish
+          - update-catalog
+      template:
+        description: 'Template name (for install/publish)'
+        required: false
+      target_repo:
+        description: 'Target repository (for install)'
+        required: false
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 3 AM
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  build-catalog:
+    name: Build Template Catalog
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'update-catalog' || github.event.inputs.action == 'browse' || github.event_name == 'schedule'
+    outputs:
+      catalog: ${{ steps.build.outputs.catalog }}
+      template_count: ${{ steps.build.outputs.count }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Build workflow catalog
+        id: build
+        run: |
+          echo "Building workflow template catalog..."
+
+          mkdir -p .github/workflow-templates
+
+          cat > /tmp/build-catalog.py << 'EOF'
+import os
+import yaml
+import json
+import hashlib
+
+catalog = {
+    'version': '1.0',
+    'categories': {},
+    'templates': [],
+}
+
+template_dir = '.github/workflow-templates'
+
+if not os.path.exists(template_dir):
+    os.makedirs(template_dir)
+
+# Scan workflow templates
+for filename in os.listdir(template_dir):
+    if not filename.endswith('.yml') and not filename.endswith('.yaml'):
+        continue
+
+    filepath = os.path.join(template_dir, filename)
+
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read()
+            workflow_data = yaml.safe_load(content)
+
+            # Extract metadata
+            template = {
+                'id': filename.replace('.yml', '').replace('.yaml', ''),
+                'name': workflow_data.get('name', filename),
+                'description': workflow_data.get('description', ''),
+                'category': workflow_data.get('category', 'general'),
+                'tags': workflow_data.get('tags', []),
+                'author': workflow_data.get('author', 'BlackRoad'),
+                'version': workflow_data.get('version', '1.0.0'),
+                'required_secrets': workflow_data.get('required_secrets', []),
+                'required_permissions': workflow_data.get('required_permissions', []),
+                'dependencies': workflow_data.get('dependencies', []),
+                'compatible_repos': workflow_data.get('compatible_repos', 'all'),
+                'popularity': 0,
+                'installs': 0,
+                'hash': hashlib.sha256(content.encode()).hexdigest()[:8],
+            }
+
+            catalog['templates'].append(template)
+
+            # Update category
+            category = template['category']
+            if category not in catalog['categories']:
+                catalog['categories'][category] = []
+
+            catalog['categories'][category].append(template['id'])
+
+    except Exception as e:
+        print(f"Error processing {filename}: {e}")
+
+# Also scan main workflows for potential templates
+workflow_dir = '.github/workflows'
+for filename in os.listdir(workflow_dir):
+    if not filename.endswith('.yml') and not filename.endswith('.yaml'):
+        continue
+
+    filepath = os.path.join(workflow_dir, filename)
+
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read()
+
+            # Check for template marker
+            if 'template: true' in content or 'marketplace: enabled' in content:
+                workflow_data = yaml.safe_load(content)
+
+                template = {
+                    'id': filename.replace('.yml', '').replace('.yaml', ''),
+                    'name': workflow_data.get('name', filename),
+                    'description': workflow_data.get('description', ''),
+                    'category': workflow_data.get('category', 'general'),
+                    'tags': workflow_data.get('tags', []),
+                    'author': workflow_data.get('author', 'BlackRoad'),
+                    'version': workflow_data.get('version', '1.0.0'),
+                    'required_secrets': workflow_data.get('required_secrets', []),
+                    'required_permissions': workflow_data.get('required_permissions', []),
+                    'dependencies': workflow_data.get('dependencies', []),
+                    'compatible_repos': workflow_data.get('compatible_repos', 'all'),
+                    'source': 'workflow',
+                    'popularity': 0,
+                    'installs': 0,
+                    'hash': hashlib.sha256(content.encode()).hexdigest()[:8],
+                }
+
+                catalog['templates'].append(template)
+
+                category = template['category']
+                if category not in catalog['categories']:
+                    catalog['categories'][category] = []
+
+                if template['id'] not in catalog['categories'][category]:
+                    catalog['categories'][category'].append(template['id'])
+
+    except Exception as e:
+        print(f"Error processing workflow {filename}: {e}")
+
+# Sort templates by category and name
+catalog['templates'].sort(key=lambda x: (x['category'], x['name']))
+
+# Output
+print(f"Built catalog with {len(catalog['templates'])} templates")
+print(f"Categories: {', '.join(catalog['categories'].keys())}")
+
+with open('/tmp/workflow-catalog.json', 'w') as f:
+    json.dump(catalog, f, indent=2)
+
+# Generate markdown catalog
+with open('/tmp/workflow-catalog.md', 'w') as f:
+    f.write('# 🏪 Workflow Template Marketplace\n\n')
+    f.write(f"**Total Templates:** {len(catalog['templates'])}\n\n")
+
+    for category, template_ids in sorted(catalog['categories'].items()):
+        f.write(f"## {category.title()}\n\n")
+
+        cat_templates = [t for t in catalog['templates'] if t['id'] in template_ids]
+
+        for template in cat_templates:
+            f.write(f"### {template['name']}\n")
+            f.write(f"**ID:** `{template['id']}`\n")
+
+            if template.get('description'):
+                f.write(f"{template['description']}\n\n")
+
+            f.write(f"- **Version:** {template['version']}\n")
+            f.write(f"- **Author:** {template['author']}\n")
+
+            if template.get('tags'):
+                f.write(f"- **Tags:** {', '.join(template['tags'])}\n")
+
+            if template.get('required_secrets'):
+                f.write(f"- **Required Secrets:** {', '.join(template['required_secrets'])}\n")
+
+            f.write(f"\n**Install:**\n")
+            f.write(f"```bash\n")
+            f.write(f"gh workflow run workflow-marketplace.yml \\\n")
+            f.write(f"  -f action=install \\\n")
+            f.write(f"  -f template={template['id']} \\\n")
+            f.write(f"  -f target_repo=your-repo\n")
+            f.write(f"```\n\n")
+
+print("\nCatalog generated successfully")
+EOF
+
+          python3 /tmp/build-catalog.py
+
+          TEMPLATE_COUNT=$(jq '.templates | length' /tmp/workflow-catalog.json)
+          CATALOG=$(cat /tmp/workflow-catalog.json | jq -c .)
+
+          echo "catalog=$CATALOG" >> $GITHUB_OUTPUT
+          echo "count=$TEMPLATE_COUNT" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "Catalog Contents:"
+          cat /tmp/workflow-catalog.md | head -50
+
+      - name: 💾 Save catalog
+        run: |
+          mkdir -p docs/marketplace
+
+          cp /tmp/workflow-catalog.json docs/marketplace/catalog.json
+          cp /tmp/workflow-catalog.md docs/marketplace/README.md
+
+          if git diff --quiet docs/marketplace/; then
+            echo "No catalog changes"
+            exit 0
+          fi
+
+          git config user.name "BlackRoad Marketplace Bot"
+          git config user.email "marketplace@blackroad.systems"
+
+          git add docs/marketplace/
+          git commit -m "docs: Update workflow marketplace catalog
+
+Updated catalog with ${{ steps.build.outputs.count }} templates.
+
+🤖 Auto-generated by Workflow Marketplace" || true
+
+          git push || true
+
+  browse-templates:
+    name: Browse Available Templates
+    runs-on: ubuntu-latest
+    needs: build-catalog
+    if: github.event.inputs.action == 'browse'
+    steps:
+      - name: 📚 Display catalog
+        run: |
+          CATALOG='${{ needs.build-catalog.outputs.catalog }}'
+
+          echo "$CATALOG" | jq -r '
+            "# 🏪 Workflow Template Marketplace\n",
+            "**Total Templates:** \(.templates | length)\n",
+            "\n## Categories\n",
+            (.categories | to_entries | map("\n### \(.key | ascii_upcase)\n\n" +
+              (.value | map("- `\(.)`") | join("\n"))
+            ) | join("\n")),
+            "\n\n## All Templates\n",
+            (.templates | map(
+              "\n### \(.name)\n" +
+              "**ID:** `\(.id)`\n" +
+              "**Category:** \(.category)\n" +
+              "**Version:** \(.version)\n" +
+              (if .description then "**Description:** \(.description)\n" else "" end) +
+              (if .tags | length > 0 then "**Tags:** \(.tags | join(", "))\n" else "" end)
+            ) | join("\n"))
+          '
+
+      - name: 📊 Generate browse summary
+        run: |
+          CATALOG='${{ needs.build-catalog.outputs.catalog }}'
+
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🏪 Workflow Template Marketplace
+
+          ## Available Templates
+
+          **Total:** ${{ needs.build-catalog.outputs.template_count }}
+
+          ## Categories
+          EOF
+
+          echo "$CATALOG" | jq -r '.categories | to_entries | map("- **\(.key):** \(.value | length) templates") | join("\n")' \
+            >> $GITHUB_STEP_SUMMARY
+
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+
+          ## How to Install
+
+          ```bash
+          gh workflow run workflow-marketplace.yml \
+            -f action=install \
+            -f template=<template-id> \
+            -f target_repo=<your-repo>
+          ```
+
+          View full catalog: `docs/marketplace/README.md`
+          EOF
+
+  install-template:
+    name: Install Template to Repository
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'install'
+    steps:
+      - name: 📥 Checkout source
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: 📥 Checkout target
+        uses: actions/checkout@v4
+        with:
+          repository: BlackRoad-OS/${{ github.event.inputs.target_repo }}
+          path: target
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Install template
+        run: |
+          echo "Installing template: ${{ github.event.inputs.template }}"
+          echo "Target repository: ${{ github.event.inputs.target_repo }}"
+
+          TEMPLATE_ID="${{ github.event.inputs.template }}"
+
+          # Find template file
+          TEMPLATE_FILE=""
+
+          if [ -f "source/.github/workflow-templates/${TEMPLATE_ID}.yml" ]; then
+            TEMPLATE_FILE="source/.github/workflow-templates/${TEMPLATE_ID}.yml"
+          elif [ -f "source/.github/workflows/${TEMPLATE_ID}.yml" ]; then
+            TEMPLATE_FILE="source/.github/workflows/${TEMPLATE_ID}.yml"
+          else
+            echo "❌ Template not found: $TEMPLATE_ID"
+            exit 1
+          fi
+
+          echo "Found template: $TEMPLATE_FILE"
+
+          # Create target directory
+          mkdir -p target/.github/workflows
+
+          # Copy template
+          cp "$TEMPLATE_FILE" "target/.github/workflows/${TEMPLATE_ID}.yml"
+
+          echo "✅ Template installed: ${TEMPLATE_ID}.yml"
+
+      - name: 📝 Commit installation
+        run: |
+          cd target
+
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git config user.name "BlackRoad Marketplace Bot"
+          git config user.email "marketplace@blackroad.systems"
+
+          git add .github/workflows/
+
+          git commit -m "feat: Install workflow template '${{ github.event.inputs.template }}'
+
+Installed from BlackRoad Workflow Marketplace.
+
+Template: ${{ github.event.inputs.template }}
+Source: blackroad-os-infra
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+          git push
+
+          echo "✅ Template installed and pushed to ${{ github.event.inputs.target_repo }}"
+
+      - name: 📊 Create installation summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # ✅ Template Installation Complete
+
+          **Template:** `${{ github.event.inputs.template }}`
+          **Repository:** `${{ github.event.inputs.target_repo }}`
+
+          The workflow has been installed and is now available in the target repository.
+
+          View workflow: https://github.com/BlackRoad-OS/${{ github.event.inputs.target_repo }}/blob/main/.github/workflows/${{ github.event.inputs.template }}.yml
+          EOF
+
+  publish-template:
+    name: Publish New Template
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'publish'
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📤 Publish template
+        run: |
+          echo "Publishing template: ${{ github.event.inputs.template }}"
+
+          TEMPLATE_ID="${{ github.event.inputs.template }}"
+          SOURCE_FILE=".github/workflows/${TEMPLATE_ID}.yml"
+
+          if [ ! -f "$SOURCE_FILE" ]; then
+            echo "❌ Source workflow not found: $SOURCE_FILE"
+            exit 1
+          fi
+
+          # Copy to templates directory
+          mkdir -p .github/workflow-templates
+
+          cp "$SOURCE_FILE" ".github/workflow-templates/${TEMPLATE_ID}.yml"
+
+          echo "✅ Template published: ${TEMPLATE_ID}.yml"
+
+          # Update catalog
+          gh workflow run workflow-marketplace.yml -f action=update-catalog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  generate-marketplace-stats:
+    name: Generate Marketplace Statistics
+    runs-on: ubuntu-latest
+    needs: build-catalog
+    if: always()
+    steps:
+      - name: 📊 Generate statistics
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🏪 Workflow Marketplace Statistics
+
+          ## Overview
+
+          **Templates Available:** ${{ needs.build-catalog.outputs.template_count }}
+          **Action:** ${{ github.event.inputs.action || 'catalog-update' }}
+          **Status:** ${{ job.status }}
+
+          ## Marketplace Features
+
+          - ✅ Browse templates by category
+          - ✅ One-click installation
+          - ✅ Automatic catalog updates
+          - ✅ Version tracking
+          - ✅ Dependency management
+
+          ---
+
+          🏪 **Workflow marketplace makes automation reusable!**
+          EOF

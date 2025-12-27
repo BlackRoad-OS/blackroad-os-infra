@@ -1,0 +1,392 @@
+name: 🔄 Cross-Repository Workflow Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/**'
+      - '.github/workflow-templates/**'
+      - 'scripts/sync-workflows.sh'
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: 'Repositories to sync (comma-separated, or "all")'
+        required: false
+        default: 'all'
+      workflows:
+        description: 'Workflows to sync (comma-separated, or "all")'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry run (no actual changes)'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly at 2 AM Sunday
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  discover-repositories:
+    name: Discover Target Repositories
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.discover.outputs.repos }}
+      repo_count: ${{ steps.discover.outputs.count }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔍 Discover repositories
+        id: discover
+        run: |
+          echo "Discovering BlackRoad repositories..."
+
+          # Get all repos from BlackRoad-OS organization
+          gh repo list BlackRoad-OS \
+            --limit 1000 \
+            --json name,isArchived,isDisabled,isEmpty \
+            > /tmp/all-repos.json
+
+          # Filter out archived, disabled, and empty repos
+          cat /tmp/all-repos.json | \
+            jq '[.[] | select(.isArchived == false and .isDisabled == false and .isEmpty == false) | .name]' \
+            > /tmp/active-repos.json
+
+          REPO_COUNT=$(jq 'length' /tmp/active-repos.json)
+
+          echo "Found $REPO_COUNT active repositories"
+
+          # If specific repos requested, filter
+          if [ "${{ github.event.inputs.repos }}" != "all" ] && [ -n "${{ github.event.inputs.repos }}" ]; then
+            echo "Filtering to requested repos: ${{ github.event.inputs.repos }}"
+
+            # Create filter array
+            IFS=',' read -ra REQUESTED_REPOS <<< "${{ github.event.inputs.repos }}"
+            FILTER_JSON=$(printf '%s\n' "${REQUESTED_REPOS[@]}" | jq -R . | jq -s .)
+
+            # Filter repos
+            jq --argjson filter "$FILTER_JSON" '[.[] | select(. as $repo | $filter | index($repo))]' \
+              /tmp/active-repos.json > /tmp/filtered-repos.json
+
+            REPO_COUNT=$(jq 'length' /tmp/filtered-repos.json)
+            echo "Filtered to $REPO_COUNT repositories"
+
+            cat /tmp/filtered-repos.json > /tmp/target-repos.json
+          else
+            cat /tmp/active-repos.json > /tmp/target-repos.json
+          fi
+
+          # Output for next job
+          REPOS=$(cat /tmp/target-repos.json | jq -c .)
+          echo "repos=$REPOS" >> $GITHUB_OUTPUT
+          echo "count=$REPO_COUNT" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "Target repositories:"
+          cat /tmp/target-repos.json | jq -r '.[]' | head -20
+          if [ "$REPO_COUNT" -gt 20 ]; then
+            echo "... and $((REPO_COUNT - 20)) more"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  analyze-workflows:
+    name: Analyze Workflow Templates
+    runs-on: ubuntu-latest
+    outputs:
+      workflows: ${{ steps.analyze.outputs.workflows }}
+      workflow_count: ${{ steps.analyze.outputs.count }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📊 Analyze workflow templates
+        id: analyze
+        run: |
+          echo "Analyzing workflow templates..."
+
+          # Create workflow template directory if it doesn't exist
+          mkdir -p .github/workflow-templates
+
+          # Find all syncable workflows
+          cat > /tmp/analyze-workflows.py << 'EOF'
+import os
+import yaml
+import json
+
+workflow_dir = '.github/workflows'
+template_dir = '.github/workflow-templates'
+
+syncable_workflows = []
+
+# Check existing workflows for sync metadata
+for filename in os.listdir(workflow_dir):
+    if not filename.endswith('.yml') and not filename.endswith('.yaml'):
+        continue
+
+    filepath = os.path.join(workflow_dir, filename)
+
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read()
+
+            # Check for sync marker
+            if 'sync: enabled' in content or 'syncable: true' in content:
+                workflow_data = yaml.safe_load(content)
+
+                syncable_workflows.append({
+                    'name': filename,
+                    'path': filepath,
+                    'sync_to': workflow_data.get('sync_to', 'all'),
+                    'required': workflow_data.get('required', False),
+                    'category': workflow_data.get('category', 'general'),
+                })
+    except Exception as e:
+        print(f"Error analyzing {filename}: {e}")
+
+# Check workflow templates
+if os.path.exists(template_dir):
+    for filename in os.listdir(template_dir):
+        if not filename.endswith('.yml') and not filename.endswith('.yaml'):
+            continue
+
+        filepath = os.path.join(template_dir, filename)
+
+        try:
+            with open(filepath, 'r') as f:
+                workflow_data = yaml.safe_load(f.read())
+
+                syncable_workflows.append({
+                    'name': filename,
+                    'path': filepath,
+                    'sync_to': workflow_data.get('sync_to', 'all'),
+                    'required': workflow_data.get('required', False),
+                    'category': workflow_data.get('category', 'general'),
+                    'template': True,
+                })
+        except Exception as e:
+            print(f"Error analyzing template {filename}: {e}")
+
+# Output results
+print(f"Found {len(syncable_workflows)} syncable workflows")
+
+with open('/tmp/syncable-workflows.json', 'w') as f:
+    json.dump(syncable_workflows, f, indent=2)
+
+for wf in syncable_workflows:
+    print(f"  - {wf['name']} → {wf['sync_to']} ({wf['category']})")
+EOF
+
+          python3 /tmp/analyze-workflows.py
+
+          # If specific workflows requested, filter
+          if [ "${{ github.event.inputs.workflows }}" != "all" ] && [ -n "${{ github.event.inputs.workflows }}" ]; then
+            echo "Filtering to requested workflows: ${{ github.event.inputs.workflows }}"
+
+            # Filter workflows
+            IFS=',' read -ra REQUESTED_WF <<< "${{ github.event.inputs.workflows }}"
+            FILTER_JSON=$(printf '%s\n' "${REQUESTED_WF[@]}" | jq -R . | jq -s .)
+
+            jq --argjson filter "$FILTER_JSON" \
+              '[.[] | select(.name as $name | $filter | index($name))]' \
+              /tmp/syncable-workflows.json > /tmp/filtered-workflows.json
+
+            cat /tmp/filtered-workflows.json > /tmp/target-workflows.json
+          else
+            cat /tmp/syncable-workflows.json > /tmp/target-workflows.json
+          fi
+
+          WORKFLOW_COUNT=$(jq 'length' /tmp/target-workflows.json)
+          WORKFLOWS=$(cat /tmp/target-workflows.json | jq -c .)
+
+          echo "workflows=$WORKFLOWS" >> $GITHUB_OUTPUT
+          echo "count=$WORKFLOW_COUNT" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "Will sync $WORKFLOW_COUNT workflows"
+
+  sync-workflows:
+    name: Sync Workflows to Repositories
+    runs-on: ubuntu-latest
+    needs: [discover-repositories, analyze-workflows]
+    if: needs.analyze-workflows.outputs.workflow_count > 0
+    strategy:
+      max-parallel: 5
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJson(needs.discover-repositories.outputs.repos) }}
+    steps:
+      - name: 📥 Checkout source (infra)
+        uses: actions/checkout@v4
+        with:
+          path: infra
+
+      - name: 📥 Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: BlackRoad-OS/${{ matrix.repo }}
+          path: target
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔄 Sync workflows
+        run: |
+          cd target
+
+          echo "Syncing workflows to ${{ matrix.repo }}..."
+
+          # Create .github/workflows if it doesn't exist
+          mkdir -p .github/workflows
+
+          WORKFLOWS='${{ needs.analyze-workflows.outputs.workflows }}'
+
+          SYNCED=0
+          SKIPPED=0
+          FAILED=0
+
+          echo "$WORKFLOWS" | jq -c '.[]' | while read -r workflow; do
+            NAME=$(echo "$workflow" | jq -r '.name')
+            SOURCE_PATH=$(echo "$workflow" | jq -r '.path')
+            SYNC_TO=$(echo "$workflow" | jq -r '.sync_to')
+            CATEGORY=$(echo "$workflow" | jq -r '.category')
+
+            # Check if this repo should receive this workflow
+            if [ "$SYNC_TO" != "all" ]; then
+              # Check if repo matches sync target
+              if ! echo "$SYNC_TO" | grep -q "${{ matrix.repo }}"; then
+                echo "⏭️  Skipping $NAME (not targeted for ${{ matrix.repo }})"
+                SKIPPED=$((SKIPPED + 1))
+                continue
+              fi
+            fi
+
+            echo "📋 Syncing: $NAME"
+
+            # Copy workflow
+            if cp "../infra/$SOURCE_PATH" ".github/workflows/$NAME"; then
+              echo "✅ Synced: $NAME"
+              SYNCED=$((SYNCED + 1))
+            else
+              echo "❌ Failed to sync: $NAME"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          echo ""
+          echo "Sync Summary for ${{ matrix.repo }}:"
+          echo "  Synced: $SYNCED"
+          echo "  Skipped: $SKIPPED"
+          echo "  Failed: $FAILED"
+
+          # Save summary
+          cat > /tmp/sync-summary.txt << EOF
+Synced: $SYNCED
+Skipped: $SKIPPED
+Failed: $FAILED
+EOF
+
+      - name: 📝 Commit changes
+        if: ${{ !inputs.dry_run }}
+        run: |
+          cd target
+
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "No changes to commit for ${{ matrix.repo }}"
+            exit 0
+          fi
+
+          git config user.name "BlackRoad Workflow Sync Bot"
+          git config user.email "workflow-sync@blackroad.systems"
+
+          git add .github/workflows/
+
+          SUMMARY=$(cat /tmp/sync-summary.txt)
+
+          git commit -m "chore: Sync workflows from blackroad-os-infra
+
+$SUMMARY
+
+Auto-synced by Cross-Repository Workflow Sync system.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+
+          if [ "${{ github.event.inputs.dry_run }}" != "true" ]; then
+            git push
+            echo "✅ Pushed changes to ${{ matrix.repo }}"
+          else
+            echo "🔍 DRY RUN: Would have pushed changes to ${{ matrix.repo }}"
+          fi
+
+      - name: 📊 Create summary
+        run: |
+          SUMMARY=$(cat /tmp/sync-summary.txt || echo "No summary available")
+
+          echo "## ${{ matrix.repo }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+  generate-sync-report:
+    name: Generate Sync Report
+    runs-on: ubuntu-latest
+    needs: [discover-repositories, analyze-workflows, sync-workflows]
+    if: always()
+    steps:
+      - name: 📊 Generate comprehensive report
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🔄 Cross-Repository Workflow Sync Report
+
+          ## Summary
+
+          **Repositories:** ${{ needs.discover-repositories.outputs.repo_count }}
+          **Workflows:** ${{ needs.analyze-workflows.outputs.workflow_count }}
+          **Status:** ${{ needs.sync-workflows.result }}
+
+          ## Sync Details
+
+          - **Mode:** ${{ github.event.inputs.dry_run == 'true' && '🔍 Dry Run' || '✅ Live Sync' }}
+          - **Triggered by:** ${{ github.event_name }}
+          - **Target repos:** ${{ github.event.inputs.repos || 'all' }}
+          - **Target workflows:** ${{ github.event.inputs.workflows || 'all' }}
+
+          ## Results
+
+          | Status | Count |
+          |--------|-------|
+          | Repositories processed | ${{ needs.discover-repositories.outputs.repo_count }} |
+          | Workflows synced | ${{ needs.analyze-workflows.outputs.workflow_count }} |
+          | Sync jobs | ${{ needs.sync-workflows.result }} |
+
+          ---
+
+          🔄 **Cross-repository sync keeps all repos up to date!**
+          EOF
+
+      - name: 📝 Create tracking issue
+        if: failure()
+        run: |
+          gh issue create \
+            --title "⚠️  Cross-Repository Workflow Sync Failed" \
+            --body "## Workflow Sync Failure
+
+**Run:** ${{ github.run_id }}
+**Repositories:** ${{ needs.discover-repositories.outputs.repo_count }}
+**Workflows:** ${{ needs.analyze-workflows.outputs.workflow_count }}
+
+Please investigate the failed sync jobs.
+
+🤖 Auto-generated sync failure alert" \
+            --label "workflow,sync,needs-attention"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
