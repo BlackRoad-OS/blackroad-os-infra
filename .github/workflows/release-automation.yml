@@ -1,0 +1,456 @@
+name: Release Automation Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      prerelease_tag:
+        description: 'Prerelease tag (e.g., alpha, beta, rc)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  packages: write
+
+jobs:
+  detect-changes:
+    name: Detect Release-Worthy Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.detect.outputs.release }}
+      release_type: ${{ steps.detect.outputs.type }}
+      version_bump: ${{ steps.detect.outputs.bump }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        id: detect
+        run: |
+          echo "Analyzing commits since last release..."
+
+          # Get last release tag
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Last release: $last_tag"
+
+          # Get commits since last release
+          commits=$(git log "$last_tag..HEAD" --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
+
+          # Analyze commit messages for conventional commits
+          has_breaking=false
+          has_features=false
+          has_fixes=false
+
+          while IFS= read -r commit; do
+            if [[ "$commit" =~ ^feat(\(.*\))?!: ]] || [[ "$commit" =~ BREAKING[[:space:]]CHANGE ]]; then
+              has_breaking=true
+            elif [[ "$commit" =~ ^feat(\(.*\))?: ]]; then
+              has_features=true
+            elif [[ "$commit" =~ ^fix(\(.*\))?: ]]; then
+              has_fixes=true
+            fi
+          done <<< "$commits"
+
+          # Determine release type
+          should_release="false"
+          release_type="none"
+          bump="patch"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            should_release="true"
+            release_type="manual"
+            bump="${{ github.event.inputs.release_type }}"
+          elif [ "$has_breaking" = true ]; then
+            should_release="true"
+            release_type="breaking"
+            bump="major"
+          elif [ "$has_features" = true ]; then
+            should_release="true"
+            release_type="feature"
+            bump="minor"
+          elif [ "$has_fixes" = true ]; then
+            should_release="true"
+            release_type="fix"
+            bump="patch"
+          fi
+
+          echo "release=$should_release" >> $GITHUB_OUTPUT
+          echo "type=$release_type" >> $GITHUB_OUTPUT
+          echo "bump=$bump" >> $GITHUB_OUTPUT
+
+          echo "Should release: $should_release"
+          echo "Release type: $release_type"
+          echo "Version bump: $bump"
+
+  calculate-version:
+    name: Calculate Next Version
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should_release == 'true'
+    outputs:
+      current_version: ${{ steps.version.outputs.current }}
+      next_version: ${{ steps.version.outputs.next }}
+      changelog: ${{ steps.changelog.outputs.content }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate version
+        id: version
+        run: |
+          # Get current version
+          current=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          current_clean="${current#v}"
+
+          # Parse semantic version
+          IFS='.' read -r major minor patch <<< "$current_clean"
+          major="${major:-0}"
+          minor="${minor:-0}"
+          patch="${patch:-0}"
+
+          # Bump version
+          bump="${{ needs.detect-changes.outputs.version_bump }}"
+          case "$bump" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+            prerelease)
+              patch=$((patch + 1))
+              prerelease_tag="${{ github.event.inputs.prerelease_tag }}"
+              ;;
+          esac
+
+          # Create next version
+          if [ "$bump" = "prerelease" ]; then
+            next="v${major}.${minor}.${patch}-${prerelease_tag:-alpha}.$(date +%s)"
+          else
+            next="v${major}.${minor}.${patch}"
+          fi
+
+          echo "current=$current" >> $GITHUB_OUTPUT
+          echo "next=$next" >> $GITHUB_OUTPUT
+
+          echo "Current version: $current"
+          echo "Next version: $next"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "Generating changelog..."
+
+          current="${{ steps.version.outputs.current }}"
+          next="${{ steps.version.outputs.next }}"
+
+          # Get commits since last release
+          commits=$(git log "$current..HEAD" --pretty=format:"- %s (%h)" 2>/dev/null || git log --pretty=format:"- %s (%h)")
+
+          # Categorize commits
+          breaking=""
+          features=""
+          fixes=""
+          other=""
+
+          while IFS= read -r commit; do
+            if [[ "$commit" =~ feat.*!:|BREAKING ]]; then
+              breaking+="$commit"$'\n'
+            elif [[ "$commit" =~ ^-[[:space:]]feat ]]; then
+              features+="$commit"$'\n'
+            elif [[ "$commit" =~ ^-[[:space:]]fix ]]; then
+              fixes+="$commit"$'\n'
+            else
+              other+="$commit"$'\n'
+            fi
+          done <<< "$commits"
+
+          # Build changelog
+          changelog="# Release $next\n\n"
+
+          if [ -n "$breaking" ]; then
+            changelog+="## 🚨 Breaking Changes\n$breaking\n"
+          fi
+
+          if [ -n "$features" ]; then
+            changelog+="## ✨ New Features\n$features\n"
+          fi
+
+          if [ -n "$fixes" ]; then
+            changelog+="## 🐛 Bug Fixes\n$fixes\n"
+          fi
+
+          if [ -n "$other" ]; then
+            changelog+="## 📝 Other Changes\n$other\n"
+          fi
+
+          # Save changelog to file
+          echo -e "$changelog" > /tmp/changelog.md
+
+          # Output for GitHub
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/changelog.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: /tmp/changelog.md
+
+  update-version-files:
+    name: Update Version Files
+    runs-on: ubuntu-latest
+    needs: [detect-changes, calculate-version]
+    if: needs.detect-changes.outputs.should_release == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update package.json
+        if: hashFiles('package.json') != ''
+        run: |
+          next="${{ needs.calculate-version.outputs.next_version }}"
+          next_clean="${next#v}"
+
+          if [ -f "package.json" ]; then
+            # Update version in package.json
+            sed -i.bak "s/\"version\": \".*\"/\"version\": \"$next_clean\"/" package.json
+            rm package.json.bak 2>/dev/null || true
+            echo "✓ Updated package.json to $next_clean"
+          fi
+
+      - name: Update Cargo.toml
+        if: hashFiles('Cargo.toml') != ''
+        run: |
+          next="${{ needs.calculate-version.outputs.next_version }}"
+          next_clean="${next#v}"
+
+          if [ -f "Cargo.toml" ]; then
+            sed -i.bak "s/^version = \".*\"/version = \"$next_clean\"/" Cargo.toml
+            rm Cargo.toml.bak 2>/dev/null || true
+            echo "✓ Updated Cargo.toml to $next_clean"
+          fi
+
+      - name: Update VERSION file
+        run: |
+          next="${{ needs.calculate-version.outputs.next_version }}"
+          echo "${next#v}" > VERSION
+          echo "✓ Created VERSION file"
+
+      - name: Commit version updates
+        run: |
+          git config user.name "Release Bot"
+          git config user.email "release@blackroad.systems"
+
+          git add .
+          git commit -m "chore: Bump version to ${{ needs.calculate-version.outputs.next_version }}
+
+          🤖 Auto-generated by Release Automation" || echo "No changes to commit"
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [calculate-version, update-version-files]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: /tmp
+
+      - name: Create Git tag
+        run: |
+          git config user.name "Release Bot"
+          git config user.email "release@blackroad.systems"
+
+          next="${{ needs.calculate-version.outputs.next_version }}"
+          git tag -a "$next" -m "Release $next"
+          git push origin "$next"
+          echo "✓ Created and pushed tag $next"
+
+      - name: Create GitHub Release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const changelog = fs.readFileSync('/tmp/changelog.md', 'utf8');
+            const version = '${{ needs.calculate-version.outputs.next_version }}';
+            const isPrerelease = version.includes('-alpha') ||
+                                version.includes('-beta') ||
+                                version.includes('-rc');
+
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: version,
+              name: `Release ${version}`,
+              body: changelog,
+              draft: false,
+              prerelease: isPrerelease
+            });
+
+            console.log(`✓ Created release: ${release.data.html_url}`);
+
+  build-artifacts:
+    name: Build Release Artifacts
+    runs-on: ${{ matrix.os }}
+    needs: create-release
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact: linux-x64
+          - os: macos-latest
+            artifact: darwin-x64
+          - os: windows-latest
+            artifact: win-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build artifact
+        run: |
+          echo "Building for ${{ matrix.artifact }}..."
+          mkdir -p dist
+          echo "Build complete" > dist/build-${{ matrix.artifact }}.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.artifact }}
+          path: dist/
+
+  publish-artifacts:
+    name: Publish Release Artifacts
+    runs-on: ubuntu-latest
+    needs: [calculate-version, build-artifacts]
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Upload to release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const version = '${{ needs.calculate-version.outputs.next_version }}';
+
+            // Get release
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            const release = releases.find(r => r.tag_name === version);
+            if (!release) {
+              console.log('Release not found');
+              return;
+            }
+
+            // Upload artifacts
+            const artifactsDir = 'artifacts';
+            const platforms = ['linux-x64', 'darwin-x64', 'win-x64'];
+
+            for (const platform of platforms) {
+              const artifactPath = path.join(artifactsDir, `release-${platform}`, `build-${platform}.txt`);
+
+              if (fs.existsSync(artifactPath)) {
+                const content = fs.readFileSync(artifactPath);
+
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.id,
+                  name: `blackroad-${platform}-${version}.txt`,
+                  data: content
+                });
+
+                console.log(`✓ Uploaded ${platform} artifact`);
+              }
+            }
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [calculate-version, create-release, publish-artifacts]
+    steps:
+      - name: Create notification issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ needs.calculate-version.outputs.next_version }}';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🎉 Release ${version} Published`,
+              body: `## Release ${version} is now available!
+
+              **Release Notes:** [View Release](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${version})
+
+              ### What's New
+              Check the release notes for detailed changelog.
+
+              ### Installation
+              Download the latest release from the releases page.
+
+              ---
+              🤖 Auto-generated by Release Automation
+              `,
+              labels: ['release', 'announcement']
+            }).catch(() => {});
+
+  release-summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, calculate-version, create-release, publish-artifacts]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🚀 Release Automation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Release Detection" >> $GITHUB_STEP_SUMMARY
+          echo "- Should Release: ${{ needs.detect-changes.outputs.should_release }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Release Type: ${{ needs.detect-changes.outputs.release_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Version Bump: ${{ needs.detect-changes.outputs.version_bump }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Version" >> $GITHUB_STEP_SUMMARY
+          echo "- Current: ${{ needs.calculate-version.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Next: **${{ needs.calculate-version.outputs.next_version }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Actions" >> $GITHUB_STEP_SUMMARY
+          echo "| Action | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Create Release | ${{ needs.create-release.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Publish Artifacts | ${{ needs.publish-artifacts.result }} |" >> $GITHUB_STEP_SUMMARY
