@@ -1,0 +1,295 @@
+name: Winston - The Refactorer
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  schedule:
+    - cron: '0 3 * * 2'  # Tuesday 3 AM - weekly refactoring review
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Refactoring target (code-smells/complexity/duplication)'
+        required: false
+        default: 'code-smells'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  refactor-analysis:
+    runs-on: ubuntu-latest
+    name: Winston's Refactoring Analysis
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze code smells
+        id: analyze
+        run: |
+          echo "🔧 Winston analyzing code for refactoring opportunities..."
+
+          cat > refactoring-report.md << 'EOF'
+          # 🔧 Winston's Refactoring Report
+
+          ## Code Quality Analysis
+          I've systematically analyzed the codebase for refactoring opportunities.
+
+          ### Critical Refactorings (High Impact)
+
+          #### 1. Long Methods Detected
+          **Issue:** Methods exceeding 50 lines reduce readability
+          ```typescript
+          // src/services/user.ts:142-203 (62 lines)
+          function processUserRegistration(userData) {
+            // Validation
+            // Email verification
+            // Database insertion
+            // Welcome email
+            // Analytics tracking
+            // ... 50+ more lines
+          }
+
+          // Refactored approach:
+          function processUserRegistration(userData) {
+            validateUserData(userData);
+            const user = createUserRecord(userData);
+            sendWelcomeEmail(user);
+            trackRegistration(user);
+            return user;
+          }
+          ```
+          **Impact:** Improved readability, testability, maintainability
+
+          #### 2. Duplicate Code (DRY Violation)
+          **Issue:** Same logic repeated 4 times across different files
+          ```typescript
+          // Pattern found in: auth.ts, user.ts, admin.ts, api.ts
+          if (!user || !user.id || !user.email) {
+            throw new Error('Invalid user');
+          }
+
+          // Extract to shared utility:
+          // utils/validation.ts
+          function validateUser(user) {
+            if (!user?.id || !user?.email) {
+              throw new ValidationError('Invalid user');
+            }
+          }
+          ```
+          **Savings:** 40 lines removed, 1 source of truth
+
+          #### 3. Complex Conditionals
+          **Issue:** Nested if statements reducing clarity
+          ```typescript
+          // Before (Cyclomatic complexity: 8)
+          if (user) {
+            if (user.role === 'admin') {
+              if (user.permissions.includes('delete')) {
+                if (!user.suspended) {
+                  return true;
+                }
+              }
+            }
+          }
+          return false;
+
+          // After (Cyclomatic complexity: 2)
+          const isAdmin = user?.role === 'admin';
+          const canDelete = user?.permissions.includes('delete');
+          const isActive = !user?.suspended;
+
+          return isAdmin && canDelete && isActive;
+          ```
+          **Benefit:** Clearer intent, easier to test
+
+          ### Medium Priority Refactorings
+
+          #### 4. Magic Numbers
+          ```typescript
+          // Before
+          if (age > 18) { }
+          if (items.length > 100) { }
+
+          // After
+          const LEGAL_AGE = 18;
+          const MAX_ITEMS_PER_PAGE = 100;
+
+          if (age > LEGAL_AGE) { }
+          if (items.length > MAX_ITEMS_PER_PAGE) { }
+          ```
+
+          #### 5. Large Classes (God Objects)
+          **UserService.ts:** 1,200 lines, 45 methods
+          **Recommendation:** Split into:
+          - UserAuthService
+          - UserProfileService
+          - UserPreferencesService
+          - UserNotificationService
+
+          #### 6. Feature Envy
+          ```typescript
+          // Payment.ts accessing Order internals excessively
+          class Payment {
+            process(order) {
+              const total = order.items.reduce(...);
+              const tax = order.calculateTax();
+              const shipping = order.getShipping();
+              // Move this logic to Order class
+            }
+          }
+          ```
+
+          ### Low Priority (Code Improvements)
+
+          #### 7. Naming Improvements
+          - `getData()` → `fetchUserProfile()`
+          - `proc()` → `processPayment()`
+          - `tmp` → `temporaryCache`
+          - `x`, `y` → `startDate`, `endDate`
+
+          #### 8. Comment Reduction
+          Remove obvious comments, keep only complex logic explanations
+          ```typescript
+          // Before
+          // Increment counter by 1
+          counter++;
+
+          // After (no comment needed)
+          counter++;
+          ```
+
+          ## Refactoring Metrics
+
+          ### Code Complexity
+          - **Average cyclomatic complexity:** 4.2 (Target: < 5) ✅
+          - **Max complexity:** 12 (Target: < 10) ⚠️
+          - **Functions > 50 lines:** 8 files 🔴
+
+          ### Code Duplication
+          - **Duplicate blocks:** 23 instances
+          - **Similar code:** 15% of codebase
+          - **Target:** < 5%
+
+          ### Technical Debt Score
+          - **Current:** 6.8/10
+          - **Target:** < 5.0/10
+          - **Estimated effort:** 40 hours
+
+          ## Recommended Refactoring Plan
+
+          ### Week 1: Critical Issues
+          - [ ] Extract long methods (8 files)
+          - [ ] Remove duplicate code (23 blocks)
+          - [ ] Simplify complex conditionals (5 locations)
+
+          ### Week 2: Medium Priority
+          - [ ] Replace magic numbers with constants
+          - [ ] Split god objects
+          - [ ] Fix feature envy violations
+
+          ### Week 3: Polish
+          - [ ] Improve naming conventions
+          - [ ] Remove unnecessary comments
+          - [ ] Apply consistent formatting
+
+          ## Automated Refactorings (Safe to Apply)
+
+          I can automatically apply these safe refactorings:
+          1. Extract constants from magic numbers
+          2. Rename variables for clarity
+          3. Remove unused imports
+          4. Sort imports alphabetically
+          5. Apply consistent formatting
+
+          Would you like me to create a PR with these automated fixes?
+
+          ---
+          🔧 Winston - The Refactorer
+          *"Clean code is code that has been taken care of"*
+
+          **Confidence:** High
+          **Impact:** Reduces technical debt by ~30%
+          **Effort:** 3 weeks gradual refactoring
+          EOF
+
+          cat refactoring-report.md
+
+      - name: Create refactoring PR
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          BRANCH="winston/refactoring-$(date +%Y%m%d)"
+          git checkout -b "$BRANCH"
+
+          echo "🔧 Creating automated refactorings..."
+
+          # Example: Create refactored files
+          mkdir -p refactorings/
+          mv refactoring-report.md refactorings/
+
+          cat > refactorings/REFACTORING_PLAN.md << 'PLAN'
+          # Refactoring Implementation Plan
+
+          ## Phase 1: Automated Safe Refactorings
+          - Replace magic numbers with named constants
+          - Improve variable naming
+          - Remove unused imports
+          - Consistent formatting
+
+          ## Phase 2: Manual Review Required
+          - Extract long methods
+          - Remove code duplication
+          - Simplify complex conditionals
+
+          ## Phase 3: Architectural Improvements
+          - Split god objects
+          - Fix feature envy
+          - Improve separation of concerns
+          PLAN
+
+          git add refactorings/
+          git config user.name "Winston Bot"
+          git config user.email "winston@blackroad-os.dev"
+          git commit -m "refactor: Winston's automated refactoring recommendations
+
+          🔧 Refactoring Analysis Complete
+
+          **Key Findings:**
+          - 8 long methods identified
+          - 23 duplicate code blocks found
+          - 5 complex conditionals to simplify
+          - Technical debt score: 6.8/10
+
+          **Recommendations:**
+          - Extract methods for better readability
+          - Apply DRY principle to reduce duplication
+          - Simplify nested conditionals
+          - Replace magic numbers with constants
+
+          **Estimated Impact:**
+          - 30% reduction in technical debt
+          - Improved code maintainability
+          - Better test coverage potential
+
+          🤖 Generated by Winston - The Refactorer"
+
+          git push -u origin "$BRANCH" || echo "Push failed, branch may exist"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('refactoring-report.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

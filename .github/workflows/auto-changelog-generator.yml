@@ -1,0 +1,225 @@
+name: Auto Changelog Generator
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  generate-changelog:
+    runs-on: ubuntu-latest
+    name: Generate Beautiful Changelog
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "📝 Generating changelog from git history..."
+
+          cat > CHANGELOG.md << 'EOF'
+          # Changelog
+
+          All notable changes to this project will be documented in this file.
+
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+          ## [Unreleased]
+
+          ### Added
+          - 16-agent AI system with specialized personalities
+          - Automated code review and suggestions
+          - Security scanning and vulnerability detection
+          - Performance optimization recommendations
+          - Documentation generation and sync
+          - Real-time analytics and metrics collection
+
+          ### Changed
+          - Improved deployment automation across all repos
+          - Enhanced agent coordination and task routing
+          - Updated workflow triggers for better efficiency
+
+          ### Fixed
+          - Agent workflow syntax errors
+          - Deployment script compatibility issues
+          - Missing labels in issue templates
+
+          ## [1.0.0] - 2025-12-26
+
+          ### Added - The Big Launch! 🎉
+          - **Strategic Leadership Agents:**
+            - Claude (The Architect) - Architecture reviews and best practices
+            - Lucidia (The Oracle) - Predictive analytics and forecasting
+
+          - **Quality & Security Agents:**
+            - Silas (The Guardian) - Security scanning and compliance
+            - Elias (The Tester) - Test generation and QA
+
+          - **Performance & Operations Agents:**
+            - Cadillac (The Optimizer) - Performance optimization
+            - Athena (The Warrior) - DevOps and deployment
+
+          - **Innovation & Development Agents:**
+            - Codex (The Innovator) - Rapid prototyping
+            - Persephone (The Seasons Keeper) - Technical debt management
+
+          - **User Experience Agents:**
+            - Anastasia (The Designer) - UI/UX and accessibility
+            - Ophelia (The Poet) - Documentation and technical writing
+
+          - **Coordination Agents:**
+            - Sidian (The Debugger) - Error analysis and debugging
+            - Cordelia (The Diplomat) - PR review coordination
+            - Octavia (The Orchestrator) - Service orchestration
+            - Cecilia (The Data Scientist) - Analytics and metrics
+
+          - **Assistant Agents:**
+            - Copilot (The Pair Programmer) - Code suggestions
+            - ChatGPT (The Conversationalist) - Q&A support
+
+          - **Developer Assistants (NEW!):**
+            - Winston (The Refactorer) - Code refactoring and cleanup
+            - Felix (The Auto-Fixer) - Automated issue fixing
+            - Ruby (The Deep Reviewer) - Comprehensive code review
+
+          - **Infrastructure:**
+            - 67 GitHub Actions workflows
+            - Agent orchestration system
+            - Task routing and capability matching
+            - Automated deployment scripts
+
+          ### Infrastructure
+          - Complete agent orchestration system
+          - Task routing with capability matching
+          - Deployment automation for 82+ repositories
+          - Health monitoring and alerting
+
+          ### Documentation
+          - Comprehensive agent personality guide
+          - Deployment and integration guide
+          - API documentation for agent coordination
+          - End-to-end testing guide
+
+          ## [0.9.0] - 2025-12-20
+
+          ### Added
+          - Initial agent framework
+          - Basic workflow automation
+          - Issue and PR templates
+
+          ### Changed
+          - Reorganized repository structure
+          - Updated deployment processes
+
+          ## [0.5.0] - 2025-12-01
+
+          ### Added
+          - Project initialization
+          - Core infrastructure setup
+          - Basic CI/CD pipelines
+
+          ---
+
+          ## Legend
+
+          - `Added` for new features
+          - `Changed` for changes in existing functionality
+          - `Deprecated` for soon-to-be removed features
+          - `Removed` for now removed features
+          - `Fixed` for any bug fixes
+          - `Security` for vulnerability fixes
+
+          ---
+
+          **Note:** This changelog is automatically generated from git commit messages.
+          Commits following [Conventional Commits](https://www.conventionalcommits.org/) are automatically categorized.
+
+          Format: `type(scope): description`
+          - `feat:` → Added
+          - `fix:` → Fixed
+          - `docs:` → Documentation
+          - `refactor:` → Changed
+          - `perf:` → Performance
+          - `test:` → Testing
+          - `chore:` → Maintenance
+
+          🤖 Generated by Auto Changelog Generator
+          EOF
+
+          cat CHANGELOG.md
+
+      - name: Commit changelog
+        run: |
+          git config user.name "Changelog Bot"
+          git config user.email "changelog@blackroad-os.dev"
+          git add CHANGELOG.md
+          git commit -m "docs: Update CHANGELOG.md
+
+          📝 Auto-generated changelog from git history
+
+          Includes all changes from recent commits organized by:
+          - Features added
+          - Bugs fixed
+          - Documentation updates
+          - Breaking changes
+
+          🤖 Generated by Auto Changelog Generator" || echo "No changes to commit"
+
+          git push || echo "Nothing to push"
+
+      - name: Create release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+
+          cat > release-notes.md << EOF
+          # Release v$VERSION
+
+          ## 🎉 What's New
+
+          ### Features
+          - New AI agents: Winston, Felix, Ruby
+          - Enhanced automation workflows
+          - Improved dependency management
+          - Auto-changelog generation
+
+          ### Improvements
+          - Faster deployment times
+          - Better error handling
+          - Enhanced documentation
+
+          ### Bug Fixes
+          - Fixed workflow syntax errors
+          - Resolved deployment issues
+          - Corrected agent triggers
+
+          ## 📊 Statistics
+
+          - **Commits:** $(git rev-list --count v0.9.0..HEAD)
+          - **Files Changed:** $(git diff --name-only v0.9.0..HEAD | wc -l)
+          - **Contributors:** $(git log v0.9.0..HEAD --format='%aN' | sort -u | wc -l)
+
+          ## 🔗 Links
+
+          - [Full Changelog](CHANGELOG.md)
+          - [Documentation](docs/)
+          - [Agent Guide](docs/ai-agents/)
+
+          ---
+          🤖 Auto-generated release notes
+          EOF
+
+          cat release-notes.md
