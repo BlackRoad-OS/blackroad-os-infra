@@ -1,0 +1,101 @@
+name: '🏥 Health Check'
+description: 'Calculate system health score and status'
+author: 'BlackRoad OS'
+
+inputs:
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+
+outputs:
+  health-score:
+    description: 'Health score (0-100)'
+    value: ${{ steps.calculate.outputs.score }}
+  status:
+    description: 'Health status (healthy/warning/degraded/critical)'
+    value: ${{ steps.calculate.outputs.status }}
+  issues:
+    description: 'JSON array of health issues'
+    value: ${{ steps.calculate.outputs.issues }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 📊 Calculate Health Score
+      id: calculate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        echo "🏥 Calculating system health..."
+
+        # Get issue counts
+        CRITICAL_ISSUES=$(gh issue list --label "priority-critical" --json number | jq 'length')
+        OPEN_ISSUES=$(gh issue list --json number | jq 'length')
+
+        # Get PR counts
+        OPEN_PRS=$(gh pr list --json number | jq 'length')
+        READY_PRS=$(gh pr list --search "review:approved" --json number | jq 'length')
+
+        # Calculate health score
+        SCORE=100
+
+        # Deduct for critical issues (10 points each)
+        SCORE=$((SCORE - (CRITICAL_ISSUES * 10)))
+
+        # Deduct for too many open issues
+        if [ $OPEN_ISSUES -gt 20 ]; then
+          SCORE=$((SCORE - 10))
+        fi
+
+        # Deduct for too many open PRs
+        if [ $OPEN_PRS -gt 10 ]; then
+          SCORE=$((SCORE - 10))
+        fi
+
+        # Deduct for PRs waiting to merge
+        if [ $READY_PRS -gt 5 ]; then
+          SCORE=$((SCORE - 5))
+        fi
+
+        # Ensure score is between 0 and 100
+        if [ $SCORE -lt 0 ]; then SCORE=0; fi
+        if [ $SCORE -gt 100 ]; then SCORE=100; fi
+
+        # Determine status
+        if [ $SCORE -ge 90 ]; then
+          STATUS="🟢 healthy"
+        elif [ $SCORE -ge 70 ]; then
+          STATUS="🟡 warning"
+        elif [ $SCORE -ge 50 ]; then
+          STATUS="🟠 degraded"
+        else
+          STATUS="🔴 critical"
+        fi
+
+        # Build issues array
+        ISSUES="[]"
+        if [ $CRITICAL_ISSUES -gt 0 ]; then
+          ISSUES=$(echo $ISSUES | jq ". + [\"$CRITICAL_ISSUES critical issues open\"]")
+        fi
+        if [ $OPEN_ISSUES -gt 20 ]; then
+          ISSUES=$(echo $ISSUES | jq ". + [\"$OPEN_ISSUES open issues (high)\"]")
+        fi
+        if [ $OPEN_PRS -gt 10 ]; then
+          ISSUES=$(echo $ISSUES | jq ". + [\"$OPEN_PRS open PRs (high)\"]")
+        fi
+        if [ $READY_PRS -gt 5 ]; then
+          ISSUES=$(echo $ISSUES | jq ". + [\"$READY_PRS PRs ready to merge\"]")
+        fi
+
+        echo "score=$SCORE" >> $GITHUB_OUTPUT
+        echo "status=$STATUS" >> $GITHUB_OUTPUT
+        echo "issues=$ISSUES" >> $GITHUB_OUTPUT
+
+        echo "✅ Health Score: $SCORE/100"
+        echo "   Status: $STATUS"
+        echo "   Issues: $ISSUES"
+
+branding:
+  icon: 'heart'
+  color: 'red'

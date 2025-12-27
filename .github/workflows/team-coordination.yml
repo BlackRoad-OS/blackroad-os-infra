@@ -1,0 +1,240 @@
+name: 👥 Team Coordination
+
+on:
+  issues:
+    types: [opened, assigned]
+  pull_request:
+    types: [opened, review_requested]
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9 AM
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  coordinate_teams:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 👥 Team Coordination Analysis
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('👥 TEAM COORDINATION ACTIVATED');
+
+            const teams = {
+              'core-team': {
+                members: ['claude-bot', 'ruby-bot', 'winston-bot'],
+                focus: 'Architecture & Code Quality',
+                capacity: 10
+              },
+              'security-team': {
+                members: ['silas-bot'],
+                focus: 'Security & Compliance',
+                capacity: 5
+              },
+              'performance-team': {
+                members: ['cadillac-bot'],
+                focus: 'Performance Optimization',
+                capacity: 5
+              },
+              'devops-team': {
+                members: ['athena-bot'],
+                focus: 'Infrastructure & Deployment',
+                capacity: 8
+              },
+              'qa-team': {
+                members: ['elias-bot'],
+                focus: 'Testing & Quality Assurance',
+                capacity: 6
+              },
+              'docs-team': {
+                members: ['ophelia-bot'],
+                focus: 'Documentation',
+                capacity: 4
+              },
+              'innovation-team': {
+                members: ['codex-bot'],
+                focus: 'New Features & Innovation',
+                capacity: 6
+              },
+              'support-team': {
+                members: ['chatgpt-bot'],
+                focus: 'User Support & Questions',
+                capacity: 10
+              },
+              'data-team': {
+                members: ['cecilia-bot'],
+                focus: 'Analytics & Data Science',
+                capacity: 4
+              }
+            };
+
+            // ========================================
+            // TEAM WORKLOAD ANALYSIS
+            // ========================================
+            const workload = {};
+            for (const [teamName, team] of Object.entries(teams)) {
+              workload[teamName] = {
+                assigned: 0,
+                members: team.members,
+                capacity: team.capacity,
+                utilization: 0
+              };
+            }
+
+            // Get all open issues
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            // Count assignments per team
+            for (const issue of issues) {
+              if (issue.assignees && issue.assignees.length > 0) {
+                for (const assignee of issue.assignees) {
+                  for (const [teamName, team] of Object.entries(teams)) {
+                    if (team.members.includes(assignee.login)) {
+                      workload[teamName].assigned++;
+                    }
+                  }
+                }
+              }
+            }
+
+            // Calculate utilization
+            for (const [teamName, data] of Object.entries(workload)) {
+              data.utilization = Math.round((data.assigned / data.capacity) * 100);
+            }
+
+            // ========================================
+            // IDENTIFY OVERLOADED TEAMS
+            // ========================================
+            const overloadedTeams = [];
+            const underutilizedTeams = [];
+
+            for (const [teamName, data] of Object.entries(workload)) {
+              if (data.utilization > 80) {
+                overloadedTeams.push({ name: teamName, ...data });
+              } else if (data.utilization < 30) {
+                underutilizedTeams.push({ name: teamName, ...data });
+              }
+            }
+
+            // ========================================
+            // AUTO-REBALANCING
+            // ========================================
+            if (overloadedTeams.length > 0) {
+              console.log(`⚠️ Found ${overloadedTeams.length} overloaded teams`);
+
+              for (const team of overloadedTeams) {
+                // Create alert issue
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `⚠️ Team Overload Alert: ${team.name}`,
+                  body: `## Team Overload Detected!
+
+**Team:** ${team.name}
+**Current Load:** ${team.assigned}/${team.capacity} (${team.utilization}%)
+**Status:** 🔴 Overloaded
+
+### Current Workload:
+- Assigned tasks: ${team.assigned}
+- Team capacity: ${team.capacity}
+- Utilization: ${team.utilization}%
+
+### Recommendations:
+1. Review and prioritize tasks
+2. Consider reassigning lower-priority tasks
+3. Request additional resources if needed
+
+### Members:
+${team.members.map(m => `- @${m}`).join('\n')}
+
+---
+🤖 Auto-generated by Team Coordination System`,
+                  labels: ['team-alert', 'high-priority']
+                });
+              }
+            }
+
+            // ========================================
+            // GENERATE TEAM DASHBOARD
+            // ========================================
+            const dashboard = `# 👥 Team Coordination Dashboard
+
+**Last Updated:** ${new Date().toISOString()}
+
+## Team Workload Overview
+
+| Team | Members | Assigned | Capacity | Utilization | Status |
+|------|---------|----------|----------|-------------|--------|
+${Object.entries(workload).map(([name, data]) => {
+  let status = '🟢';
+  if (data.utilization > 80) status = '🔴';
+  else if (data.utilization > 60) status = '🟠';
+  else if (data.utilization > 40) status = '🟡';
+  return `| ${teams[name].focus} | ${data.members.length} | ${data.assigned} | ${data.capacity} | ${data.utilization}% | ${status} |`;
+}).join('\n')}
+
+## Teams
+
+${Object.entries(teams).map(([name, team]) => `### ${team.focus}
+**Members:** ${team.members.map(m => `@${m}`).join(', ')}
+**Capacity:** ${team.capacity} concurrent tasks
+**Current Load:** ${workload[name].assigned}/${team.capacity} (${workload[name].utilization}%)
+`).join('\n')}
+
+## Alerts
+
+${overloadedTeams.length > 0 ? `### 🔴 Overloaded Teams
+${overloadedTeams.map(t => `- **${t.name}**: ${t.utilization}% utilization`).join('\n')}` : '✅ No overloaded teams'}
+
+${underutilizedTeams.length > 0 ? `### 🟢 Available Capacity
+${underutilizedTeams.map(t => `- **${t.name}**: ${t.utilization}% utilization (${t.capacity - t.assigned} tasks available)`).join('\n')}` : ''}
+
+## Team Routing Rules
+
+- **Security issues** → Security Team (@silas-bot)
+- **Performance issues** → Performance Team (@cadillac-bot)
+- **Infrastructure/DevOps** → DevOps Team (@athena-bot)
+- **Tests failing** → QA Team (@elias-bot)
+- **Documentation** → Docs Team (@ophelia-bot)
+- **New features** → Innovation Team (@codex-bot)
+- **Questions** → Support Team (@chatgpt-bot)
+- **Data/Analytics** → Data Team (@cecilia-bot)
+- **Architecture/Code Review** → Core Team (@claude-bot @ruby-bot @winston-bot)
+
+---
+🤖 Auto-generated by Team Coordination System
+`;
+
+            const fs = require('fs');
+            fs.writeFileSync('TEAM_DASHBOARD.md', dashboard);
+
+            console.log('\n📊 Team Coordination Summary:');
+            console.log(`Total Teams: ${Object.keys(teams).length}`);
+            console.log(`Overloaded: ${overloadedTeams.length}`);
+            console.log(`Underutilized: ${underutilizedTeams.length}`);
+
+            return {
+              teams: Object.keys(teams).length,
+              overloaded: overloadedTeams.length,
+              underutilized: underutilizedTeams.length,
+              workload
+            };
+
+      - name: 📊 Commit Team Dashboard
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add TEAM_DASHBOARD.md || true
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore: Update team coordination dashboard [skip ci]"
+          git push || echo "No changes to push"

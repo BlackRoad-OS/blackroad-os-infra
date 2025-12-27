@@ -1,13 +1,68 @@
 # BlackRoad OS Code Owners
-* @alexa
+# This file defines who owns what code and gets auto-assigned for reviews
+
+# Default owners for everything
+* @alexa @claude-bot @ruby-bot
+
+# Security - Always requires Silas
+**/*security* @silas-bot
+**/*auth* @silas-bot
+**/*jwt* @silas-bot
+**/*password* @silas-bot
+.github/workflows/*security* @silas-bot
+.env* @alexa @silas-bot
+*secret* @alexa @silas-bot
+
+# Performance - Always requires Cadillac
+**/*performance* @cadillac-bot
+**/*optimize* @cadillac-bot
+**/*cache* @cadillac-bot
+
+# Infrastructure - Athena's domain
+.github/workflows/ @athena-bot
+**/Dockerfile @athena-bot
+**/docker-compose.yml @athena-bot
+**/k8s/ @athena-bot
+**/kubernetes/ @athena-bot
+**/.railway/ @athena-bot
+railway*.json @alexa @athena-bot
+railway*.toml @alexa @athena-bot
+
+# Documentation - Ophelia's specialty
+*.md @ophelia-bot
+**/docs/ @ophelia-bot
+**/README* @ophelia-bot
+**/CONTRIBUTING* @ophelia-bot
+
+# Tests - Elias owns all testing
+**/*.test.* @elias-bot
+**/*.spec.* @elias-bot
+**/tests/ @elias-bot
+**/__tests__/ @elias-bot
+**/test/ @elias-bot
+
+# Data & Analytics - Cecilia's area
+**/analytics/ @cecilia-bot
+**/metrics/ @cecilia-bot
+**/stats/ @cecilia-bot
 
 # Python services
-*.py @alexa
+*.py @alexa @felix-bot
 
-# Railway configurations
-railway*.json @alexa
-railway*.toml @alexa
+# Agent configurations
+.github/workflows/agents/ @claude-bot @octavia-bot
+agents/ @claude-bot @octavia-bot
 
-# Security-sensitive files
-.env* @alexa
-*secret* @alexa
+# Issue & PR templates
+.github/ISSUE_TEMPLATE/ @claude-bot @cordelia-bot
+.github/PULL_REQUEST_TEMPLATE/ @claude-bot @cordelia-bot
+
+# GitHub Actions
+.github/actions/ @athena-bot @claude-bot
+
+# Dependencies
+package.json @felix-bot @athena-bot
+package-lock.json @felix-bot @athena-bot
+yarn.lock @felix-bot @athena-bot
+Gemfile @felix-bot @athena-bot
+requirements.txt @felix-bot @athena-bot

@@ -1,0 +1,114 @@
+name: '🎯 Smart Route'
+description: 'Intelligently route issues/PRs to the right agent based on content'
+author: 'BlackRoad OS'
+
+inputs:
+  type:
+    description: 'Type of item to route (issue or pr)'
+    required: true
+  title:
+    description: 'Title of the issue/PR'
+    required: true
+  body:
+    description: 'Body content'
+    required: false
+    default: ''
+  labels:
+    description: 'Comma-separated list of labels'
+    required: false
+    default: ''
+
+outputs:
+  agent:
+    description: 'Assigned agent'
+    value: ${{ steps.route.outputs.agent }}
+  priority:
+    description: 'Determined priority level'
+    value: ${{ steps.route.outputs.priority }}
+  confidence:
+    description: 'Routing confidence (0-100)'
+    value: ${{ steps.route.outputs.confidence }}
+  reasoning:
+    description: 'Routing reasoning'
+    value: ${{ steps.route.outputs.reasoning }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🧠 Intelligent Routing Analysis
+      id: route
+      shell: bash
+      run: |
+        echo "🎯 Smart Routing: ${{ inputs.type }}"
+
+        TITLE=$(echo "${{ inputs.title }}" | tr '[:upper:]' '[:lower:]')
+        BODY=$(echo "${{ inputs.body }}" | tr '[:upper:]' '[:lower:]')
+        LABELS="${{ inputs.labels }}"
+
+        AGENT="agent-marketplace"
+        PRIORITY="medium"
+        CONFIDENCE=50
+        REASONING="Default routing"
+
+        # Security Detection
+        if [[ "$TITLE" == *"security"* ]] || [[ "$TITLE" == *"vulnerability"* ]] || [[ "$TITLE" == *"cve"* ]]; then
+          AGENT="silas-bot"
+          PRIORITY="critical"
+          CONFIDENCE=99
+          REASONING="Security issue detected"
+
+        # Performance Detection
+        elif [[ "$TITLE" == *"slow"* ]] || [[ "$TITLE" == *"performance"* ]] || [[ "$TITLE" == *"optimize"* ]]; then
+          AGENT="cadillac-bot"
+          PRIORITY="high"
+          CONFIDENCE=90
+          REASONING="Performance issue detected"
+
+        # Bug Detection
+        elif [[ "$LABELS" == *"bug"* ]] || [[ "$TITLE" == *"bug"* ]] || [[ "$TITLE" == *"error"* ]]; then
+          AGENT="felix-bot"
+          PRIORITY="high"
+          CONFIDENCE=95
+          REASONING="Bug detected"
+
+        # Feature Request
+        elif [[ "$LABELS" == *"feature"* ]] || [[ "$TITLE" == *"feature"* ]] || [[ "$TITLE" == *"add "* ]]; then
+          AGENT="codex-bot"
+          PRIORITY="medium"
+          CONFIDENCE=85
+          REASONING="Feature request detected"
+
+        # Refactoring
+        elif [[ "$TITLE" == *"refactor"* ]] || [[ "$TITLE" == *"cleanup"* ]]; then
+          AGENT="winston-bot"
+          PRIORITY="low"
+          CONFIDENCE=90
+          REASONING="Refactoring needed"
+
+        # Documentation
+        elif [[ "$LABELS" == *"documentation"* ]] || [[ "$TITLE" == *"docs"* ]]; then
+          AGENT="ophelia-bot"
+          PRIORITY="low"
+          CONFIDENCE=95
+          REASONING="Documentation update"
+
+        # Question
+        elif [[ "$TITLE" == *"how to"* ]] || [[ "$TITLE" == *"question"* ]]; then
+          AGENT="chatgpt-bot"
+          PRIORITY="low"
+          CONFIDENCE=90
+          REASONING="Question detected"
+        fi
+
+        echo "agent=$AGENT" >> $GITHUB_OUTPUT
+        echo "priority=$PRIORITY" >> $GITHUB_OUTPUT
+        echo "confidence=$CONFIDENCE" >> $GITHUB_OUTPUT
+        echo "reasoning=$REASONING" >> $GITHUB_OUTPUT
+
+        echo "✅ Routed to: $AGENT (confidence: $CONFIDENCE%)"
+        echo "   Priority: $PRIORITY"
+        echo "   Reasoning: $REASONING"
+
+branding:
+  icon: 'target'
+  color: 'purple'
