@@ -1,0 +1,372 @@
+name: AI Pair Programming Assistant
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  pull_request_review_comment:
+    types: [created]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to assist with'
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  analyze-pr-context:
+    name: Analyze PR Context
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    outputs:
+      language: ${{ steps.analyze.outputs.language }}
+      complexity: ${{ steps.analyze.outputs.complexity }}
+      patterns: ${{ steps.analyze.outputs.patterns }}
+      suggestions_count: ${{ steps.analyze.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Analyze code changes
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request || await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt('${{ github.event.inputs.pr_number || context.payload.pull_request.number }}')
+            }).then(r => r.data);
+
+            // Get changed files
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            // Detect primary language
+            const langCount = {};
+            files.forEach(f => {
+              const ext = f.filename.split('.').pop();
+              langCount[ext] = (langCount[ext] || 0) + 1;
+            });
+
+            const language = Object.entries(langCount)
+              .sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
+
+            // Estimate complexity
+            const totalChanges = pr.additions + pr.deletions;
+            let complexity = 'low';
+            if (totalChanges > 500) complexity = 'high';
+            else if (totalChanges > 200) complexity = 'medium';
+
+            // Detect patterns
+            const patterns = [];
+            const prBody = (pr.body || '').toLowerCase();
+            const prTitle = pr.title.toLowerCase();
+
+            if (prBody.includes('refactor') || prTitle.includes('refactor')) patterns.push('refactoring');
+            if (prBody.includes('bug') || prTitle.includes('fix')) patterns.push('bugfix');
+            if (prBody.includes('feature') || prTitle.includes('feat')) patterns.push('feature');
+            if (files.some(f => f.filename.includes('test'))) patterns.push('has-tests');
+
+            core.setOutput('language', language);
+            core.setOutput('complexity', complexity);
+            core.setOutput('patterns', patterns.join(','));
+            core.setOutput('count', files.length);
+
+            console.log(`Language: ${language}, Complexity: ${complexity}, Patterns: ${patterns.join(',')}`);
+
+  provide-code-suggestions:
+    name: Provide Code Suggestions
+    runs-on: ubuntu-latest
+    needs: analyze-pr-context
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate suggestions
+        id: suggest
+        run: |
+          language="${{ needs.analyze-pr-context.outputs.language }}"
+          complexity="${{ needs.analyze-pr-context.outputs.complexity }}"
+          patterns="${{ needs.analyze-pr-context.outputs.patterns }}"
+
+          echo "Generating AI pair programming suggestions..."
+
+          suggestions=""
+
+          # Language-specific suggestions
+          case "$language" in
+            ts|js)
+              suggestions+="### TypeScript/JavaScript Suggestions\n\n"
+              suggestions+="- ✅ Consider using \`const\` instead of \`let\` for immutable variables\n"
+              suggestions+="- ✅ Add type annotations for better type safety\n"
+              suggestions+="- ✅ Extract magic numbers into named constants\n"
+              suggestions+="- ✅ Use optional chaining (\`?.\`) for safer property access\n"
+              suggestions+="- ✅ Consider async/await over Promise chains\n\n"
+              ;;
+            py)
+              suggestions+="### Python Suggestions\n\n"
+              suggestions+="- ✅ Add type hints for function parameters and returns\n"
+              suggestions+="- ✅ Use list comprehensions for cleaner code\n"
+              suggestions+="- ✅ Consider dataclasses for data structures\n"
+              suggestions+="- ✅ Add docstrings to public functions\n"
+              suggestions+="- ✅ Use context managers (\`with\`) for resource handling\n\n"
+              ;;
+            go)
+              suggestions+="### Go Suggestions\n\n"
+              suggestions+="- ✅ Check errors immediately after they occur\n"
+              suggestions+="- ✅ Use defer for cleanup operations\n"
+              suggestions+="- ✅ Avoid naked returns in long functions\n"
+              suggestions+="- ✅ Use interfaces for loose coupling\n"
+              suggestions+="- ✅ Consider table-driven tests\n\n"
+              ;;
+          esac
+
+          # Pattern-based suggestions
+          if [[ "$patterns" == *"refactoring"* ]]; then
+            suggestions+="### Refactoring Best Practices\n\n"
+            suggestions+="- 📦 Keep functions small and focused (Single Responsibility)\n"
+            suggestions+="- 🔄 Extract repeated code into reusable functions\n"
+            suggestions+="- 📝 Update documentation to reflect changes\n"
+            suggestions+="- ✅ Ensure tests still pass after refactoring\n\n"
+          fi
+
+          if [[ "$patterns" == *"bugfix"* ]]; then
+            suggestions+="### Bug Fix Checklist\n\n"
+            suggestions+="- 🐛 Add a test that reproduces the bug\n"
+            suggestions+="- 🔍 Verify the fix doesn't introduce new issues\n"
+            suggestions+="- 📝 Document the root cause in comments\n"
+            suggestions+="- ✅ Check for similar bugs elsewhere\n\n"
+          fi
+
+          # Complexity-based suggestions
+          if [ "$complexity" = "high" ]; then
+            suggestions+="### High Complexity Warning\n\n"
+            suggestions+="- ⚠️ Large PR detected - consider breaking into smaller PRs\n"
+            suggestions+="- 🔍 Add extra comments for complex logic\n"
+            suggestions+="- ✅ Ensure comprehensive test coverage\n"
+            suggestions+="- 👥 Request review from multiple team members\n\n"
+          fi
+
+          # General best practices
+          suggestions+="### General Best Practices\n\n"
+          suggestions+="- 📝 Keep commit messages clear and descriptive\n"
+          suggestions+="- ✅ Run linter and formatter before committing\n"
+          suggestions+="- 🧪 Add tests for new functionality\n"
+          suggestions+="- 📚 Update documentation as needed\n"
+          suggestions+="- 🔒 Review for security vulnerabilities\n"
+
+          echo "suggestions<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$suggestions" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post suggestions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const suggestions = `${{ steps.suggest.outputs.suggestions }}`;
+            const pr = context.payload.pull_request || { number: parseInt('${{ github.event.inputs.pr_number }}') };
+
+            const comment = `## 🤖 AI Pair Programming Assistant
+
+            I've analyzed your PR and have some suggestions to help you write better code!
+
+            ${suggestions}
+
+            ### 💡 Pro Tips
+
+            - Run \`npm run lint\` or \`pylint\` to catch common issues
+            - Use \`git commit --amend\` to clean up commit history
+            - Test edge cases and error conditions
+            - Keep PRs focused on a single concern
+
+            ### 📊 PR Stats
+
+            - Language: **${{ needs.analyze-pr-context.outputs.language }}**
+            - Complexity: **${{ needs.analyze-pr-context.outputs.complexity }}**
+            - Files Changed: **${{ needs.analyze-pr-context.outputs.suggestions_count }}**
+
+            ---
+            🤖 I'm here to help! Reply to this comment if you have questions.
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: comment
+            });
+
+  answer-questions:
+    name: Answer Developer Questions
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
+    steps:
+      - name: Detect question
+        id: detect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment.body;
+            const isQuestion = comment.includes('?') ||
+                             comment.toLowerCase().includes('how') ||
+                             comment.toLowerCase().includes('why') ||
+                             comment.toLowerCase().includes('what');
+
+            const mentionsBot = comment.includes('@ai-assistant') ||
+                              comment.toLowerCase().includes('claude');
+
+            if (isQuestion && mentionsBot) {
+              core.setOutput('should_respond', 'true');
+            } else {
+              core.setOutput('should_respond', 'false');
+            }
+
+      - name: Generate answer
+        if: steps.detect.outputs.should_respond == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const question = context.payload.comment.body;
+
+            // Simple pattern matching for common questions
+            let answer = "I'll help you with that! ";
+
+            if (question.toLowerCase().includes('how to test')) {
+              answer += `
+              Here's how to add tests:
+
+              **Unit Tests:**
+              \`\`\`javascript
+              describe('MyFunction', () => {
+                test('should work correctly', () => {
+                  expect(myFunction(input)).toBe(expected);
+                });
+              });
+              \`\`\`
+
+              **Integration Tests:**
+              Test the full workflow end-to-end.
+
+              **Run Tests:**
+              \`\`\`bash
+              npm test
+              \`\`\`
+              `;
+            } else if (question.toLowerCase().includes('error') || question.toLowerCase().includes('bug')) {
+              answer += `
+              To debug this issue:
+
+              1. **Check the stack trace** - Identify where the error occurs
+              2. **Add console.log** - Log values at key points
+              3. **Use debugger** - Set breakpoints in your IDE
+              4. **Review recent changes** - What changed that might cause this?
+              5. **Check dependencies** - Are all packages up to date?
+
+              Share more details and I can provide specific guidance!
+              `;
+            } else if (question.toLowerCase().includes('best practice')) {
+              answer += `
+              Here are some best practices:
+
+              - **Keep functions small** - Each function should do one thing well
+              - **Use meaningful names** - Code should be self-documenting
+              - **Write tests** - Aim for 80%+ coverage
+              - **Handle errors** - Always validate inputs and catch exceptions
+              - **Document complex logic** - Help future developers understand
+              - **Refactor regularly** - Don't let technical debt accumulate
+              `;
+            } else {
+              answer += `
+              I'd be happy to help! For the best assistance:
+
+              1. Share the specific code or error
+              2. Describe what you expected to happen
+              3. Explain what actually happened
+              4. Include relevant context
+
+              I can help with:
+              - Code review and suggestions
+              - Debugging assistance
+              - Best practices
+              - Testing strategies
+              - Architecture decisions
+              `;
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `🤖 **AI Pair Programming Assistant**\n\n${answer}\n\n---\n*Ask me anything about your code!*`
+            });
+
+  provide-real-time-feedback:
+    name: Provide Real-Time Feedback
+    runs-on: ubuntu-latest
+    needs: analyze-pr-context
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check code quality
+        run: |
+          echo "Running real-time code quality checks..."
+
+          # Check for common issues
+          issues_found=0
+
+          # Check for console.log in production code
+          if find . -name "*.ts" -o -name "*.js" | xargs grep -l "console.log" --exclude-dir=node_modules 2>/dev/null | grep -v test; then
+            echo "⚠️ Found console.log statements - consider using a proper logger"
+            ((issues_found++))
+          fi
+
+          # Check for TODO comments
+          todo_count=$(find . -name "*.ts" -o -name "*.js" | xargs grep -c "TODO\|FIXME" --exclude-dir=node_modules 2>/dev/null | awk -F: '{sum+=$2} END {print sum}')
+          if [ "$todo_count" -gt 0 ]; then
+            echo "📝 Found $todo_count TODO/FIXME comments - track these in issues"
+          fi
+
+          # Check for long files
+          find . -name "*.ts" -o -name "*.js" | while read file; do
+            lines=$(wc -l < "$file" 2>/dev/null || echo 0)
+            if [ "$lines" -gt 500 ]; then
+              echo "📏 $file is $lines lines - consider splitting into smaller modules"
+              ((issues_found++))
+            fi
+          done
+
+          echo "Quality check complete. Issues found: $issues_found"
+
+  pair-programming-summary:
+    name: Pair Programming Summary
+    runs-on: ubuntu-latest
+    needs: [analyze-pr-context, provide-code-suggestions, provide-real-time-feedback]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🤖 AI Pair Programming Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Code Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "- Language: **${{ needs.analyze-pr-context.outputs.language }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Complexity: **${{ needs.analyze-pr-context.outputs.complexity }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Patterns: ${{ needs.analyze-pr-context.outputs.patterns }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Assistance Provided" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Code suggestions posted" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Quality feedback provided" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Best practices shared" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the PR comments for detailed suggestions!" >> $GITHUB_STEP_SUMMARY
