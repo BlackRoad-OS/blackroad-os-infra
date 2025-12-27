@@ -137,6 +137,18 @@ agents:
     priority: low
     pack: research-lab
 
+  gaia:
+    type: specialist
+    description: "Truth verification and hash generation agent"
+    capabilities:
+      - hash_generation
+      - truth_manifest_creation
+      - component_verification
+      - integrity_validation
+    endpoints:
+      - gaia.blackroad.systems
+    priority: critical
+
 # -----------------------------------------------------------------------------
 # Communication Protocols
 # -----------------------------------------------------------------------------
@@ -175,6 +187,10 @@ routing:
     storage: archive
     financial: finance_agent
     legal: legal_agent
+    hash_generation: gaia
+    truth_manifest_creation: gaia
+    component_verification: gaia
+    integrity_validation: gaia
 
   # Load balancing
   load_balancing:

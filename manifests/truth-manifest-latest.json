@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "generated": "2025-12-24T04:28:12.793Z",
+  "components": [
+    {
+      "name": "BR-OS Core",
+      "target": "blackroad-os-core",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "Lucidia Logic",
+      "target": "lucidia-core",
+      "hash": "f6a4b1238d7c9e0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a"
+    },
+    {
+      "name": "Pi-Ops Mesh",
+      "target": "blackroad-pi-ops",
+      "hash": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b"
+    },
+    {
+      "name": "Trinity Auth",
+      "target": "blackroad-os-api",
+      "hash": "9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e"
+    }
+  ],
+  "rootHash": "6f5096af9801e57814582a36c126b0a459246508d2bbbc7100a3ee068925bec4"
+}

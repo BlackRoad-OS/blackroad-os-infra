@@ -513,6 +513,15 @@ if (require.main === module) {
     priority: 'high',
   });
 
+  orchestrator.registerAgent({
+    id: 'gaia-001',
+    name: 'Gaia',
+    type: 'specialist',
+    capabilities: ['hash_generation', 'truth_manifest_creation', 'component_verification', 'integrity_validation'],
+    endpoints: ['gaia.blackroad.systems'],
+    priority: 'critical',
+  });
+
   // Start orchestrator
   orchestrator.start();
 
