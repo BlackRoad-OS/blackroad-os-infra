@@ -33,6 +33,9 @@
 - 🧭 [Environments](environments/environments.yml) - Environment definitions
 - 🧬 [Service Template](templates/SERVICE_INFRA_TEMPLATE.md) - New service template
 
+### 📦 Examples & Templates
+- 🧑‍🤝‍🧑 [Examples Pack v104](docs/examples/EXAMPLES_PACK_v104.md) - Org ladder (7×7 grid) + approval flow templates
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
