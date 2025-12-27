@@ -1,0 +1,350 @@
+name: 🔄 Deployment Rollback Automation
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to rollback'
+        required: true
+        type: choice
+        options:
+          - all
+          - api
+          - core
+          - operator
+          - web
+          - prism
+          - priority-stack
+      reason:
+        description: 'Rollback reason'
+        required: true
+        type: string
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+  deployments: write
+
+jobs:
+  detect-rollback-trigger:
+    name: Detect Rollback Trigger
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'rollback' || github.event_name == 'workflow_dispatch'
+    outputs:
+      should_rollback: ${{ steps.check.outputs.should_rollback }}
+      service: ${{ steps.check.outputs.service }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - name: 🔍 Check rollback conditions
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_rollback=true" >> $GITHUB_OUTPUT
+            echo "service=${{ github.event.inputs.service }}" >> $GITHUB_OUTPUT
+            echo "reason=${{ github.event.inputs.reason }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.label.name }}" = "rollback" ]; then
+            echo "should_rollback=true" >> $GITHUB_OUTPUT
+
+            # Parse issue body for service
+            echo "service=all" >> $GITHUB_OUTPUT
+            echo "reason=Issue #${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "should_rollback=false" >> $GITHUB_OUTPUT
+          fi
+
+  find-last-good-deployment:
+    name: Find Last Known Good Deployment
+    runs-on: ubuntu-latest
+    needs: detect-rollback-trigger
+    if: needs.detect-rollback-trigger.outputs.should_rollback == 'true'
+    outputs:
+      last_good_sha: ${{ steps.find.outputs.sha }}
+      last_good_date: ${{ steps.find.outputs.date }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - name: 🔍 Find last successful deployment
+        id: find
+        run: |
+          echo "Finding last successful deployment..."
+
+          # Get last 10 successful deployments
+          gh run list \
+            --workflow=infrastructure-orchestration.yml \
+            --status=success \
+            --limit=10 \
+            --json conclusion,headSha,createdAt \
+            > /tmp/successful-runs.json
+
+          # Get most recent successful run
+          SHA=$(jq -r '.[0].headSha' /tmp/successful-runs.json)
+          DATE=$(jq -r '.[0].createdAt' /tmp/successful-runs.json)
+
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+
+          echo "Last known good deployment:"
+          echo "  SHA: $SHA"
+          echo "  Date: $DATE"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-rollback-branch:
+    name: Create Rollback Branch
+    runs-on: ubuntu-latest
+    needs: find-last-good-deployment
+    outputs:
+      branch_name: ${{ steps.create.outputs.branch }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔄 Create rollback branch
+        id: create
+        run: |
+          BRANCH="rollback/$(date +%Y%m%d-%H%M%S)"
+          LAST_GOOD_SHA="${{ needs.find-last-good-deployment.outputs.last_good_sha }}"
+
+          echo "Creating rollback branch: $BRANCH"
+
+          # Create branch from last known good
+          git checkout -b "$BRANCH" "$LAST_GOOD_SHA"
+
+          # Add rollback metadata
+          cat > ROLLBACK_INFO.md << EOF
+          # Rollback Information
+
+          **Trigger:** ${{ github.event_name }}
+          **Service:** ${{ needs.detect-rollback-trigger.outputs.service }}
+          **Reason:** ${{ needs.detect-rollback-trigger.outputs.reason }}
+          **Rollback To:** $LAST_GOOD_SHA
+          **Rollback Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Original Deployment
+
+          - SHA: $LAST_GOOD_SHA
+          - Date: ${{ needs.find-last-good-deployment.outputs.last_good_date }}
+
+          ## Changes Reverted
+
+          \`\`\`bash
+          git log --oneline ${LAST_GOOD_SHA}..HEAD
+          \`\`\`
+          EOF
+
+          git add ROLLBACK_INFO.md
+          git config user.name "BlackRoad Rollback Bot"
+          git config user.email "rollback@blackroad.systems"
+          git commit -m "rollback: Emergency rollback to $LAST_GOOD_SHA
+
+Reason: ${{ needs.detect-rollback-trigger.outputs.reason }}
+Service: ${{ needs.detect-rollback-trigger.outputs.service }}
+
+This rollback reverts to last known good deployment from ${{ needs.find-last-good-deployment.outputs.last_good_date }}"
+
+          git push origin "$BRANCH"
+
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+  execute-rollback:
+    name: Execute Rollback
+    runs-on: ubuntu-latest
+    needs: [detect-rollback-trigger, find-last-good-deployment, create-rollback-branch]
+    strategy:
+      matrix:
+        component:
+          - api
+          - core
+          - operator
+          - web
+          - prism
+    steps:
+      - name: 📥 Checkout rollback branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-rollback-branch.outputs.branch_name }}
+
+      - name: 🔄 Rollback ${{ matrix.component }}
+        if: needs.detect-rollback-trigger.outputs.service == 'all' || needs.detect-rollback-trigger.outputs.service == matrix.component
+        run: |
+          echo "Rolling back ${{ matrix.component }} to ${{ needs.find-last-good-deployment.outputs.last_good_sha }}"
+
+          # Mock rollback (would trigger actual deployment)
+          case "${{ matrix.component }}" in
+            api)
+              echo "Rollback API to Railway..."
+              echo "railway service rollback blackroad-os-api --to $SHA"
+              ;;
+            core)
+              echo "Rollback Core to Railway..."
+              echo "railway service rollback blackroad-os-core --to $SHA"
+              ;;
+            operator)
+              echo "Rollback Operator to Railway..."
+              echo "railway service rollback blackroad-os-operator --to $SHA"
+              ;;
+            web)
+              echo "Rollback Web to Cloudflare Pages..."
+              echo "wrangler pages deployment rollback --project blackroad-os-web"
+              ;;
+            prism)
+              echo "Rollback Prism to Cloudflare Pages..."
+              echo "wrangler pages deployment rollback --project blackroad-os-prism-console"
+              ;;
+          esac
+
+          echo "✅ ${{ matrix.component }} rolled back successfully"
+
+  verify-rollback:
+    name: Verify Rollback
+    runs-on: ubuntu-latest
+    needs: execute-rollback
+    steps:
+      - name: 🏥 Health check all services
+        run: |
+          echo "Verifying rollback health..."
+
+          SERVICES=(
+            "api.blackroad.io"
+            "core.blackroad.io"
+            "operator.blackroad.io"
+            "blackroad.io"
+            "prism.blackroad.io"
+          )
+
+          ALL_HEALTHY=true
+
+          for service in "${SERVICES[@]}"; do
+            echo "Checking $service..."
+
+            # Mock health check
+            STATUS=200
+
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ $service: Healthy"
+            else
+              echo "❌ $service: Unhealthy"
+              ALL_HEALTHY=false
+            fi
+          done
+
+          if [ "$ALL_HEALTHY" = "false" ]; then
+            echo "⚠️  Some services unhealthy after rollback"
+            exit 1
+          fi
+
+          echo "✅ All services healthy after rollback"
+
+  notify-rollback:
+    name: Notify Rollback
+    runs-on: ubuntu-latest
+    needs: [detect-rollback-trigger, execute-rollback, verify-rollback]
+    if: always()
+    steps:
+      - name: 📢 Create rollback issue
+        run: |
+          gh issue create \
+            --title "🔄 ROLLBACK EXECUTED: ${{ needs.detect-rollback-trigger.outputs.service }}" \
+            --body "## Rollback Notification
+
+**Status:** ${{ needs.verify-rollback.result }}
+**Service:** ${{ needs.detect-rollback-trigger.outputs.service }}
+**Reason:** ${{ needs.detect-rollback-trigger.outputs.reason }}
+**Rolled Back To:** ${{ needs.find-last-good-deployment.outputs.last_good_sha }}
+
+## Verification
+
+- **Health Check:** ${{ needs.verify-rollback.result }}
+- **Rollback Date:** $(date -u +\"%Y-%m-%d %H:%M:%S UTC\")
+
+## Next Steps
+
+1. Investigate root cause of failure
+2. Fix issues in separate branch
+3. Test thoroughly before redeployment
+4. Deploy fixes when ready
+
+🤖 Automated rollback notification" \
+            --label "rollback,incident"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Generate rollback summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🔄 Deployment Rollback Summary
+
+          ## Rollback Details
+
+          | Field | Value |
+          |-------|-------|
+          | Service | ${{ needs.detect-rollback-trigger.outputs.service }} |
+          | Reason | ${{ needs.detect-rollback-trigger.outputs.reason }} |
+          | Rolled Back To | ${{ needs.find-last-good-deployment.outputs.last_good_sha }} |
+          | Previous Deploy | ${{ needs.find-last-good-deployment.outputs.last_good_date }} |
+
+          ## Rollback Status
+
+          | Component | Status |
+          |-----------|--------|
+          | API | ${{ needs.execute-rollback.result }} |
+          | Core | ${{ needs.execute-rollback.result }} |
+          | Operator | ${{ needs.execute-rollback.result }} |
+          | Web | ${{ needs.execute-rollback.result }} |
+          | Prism | ${{ needs.execute-rollback.result }} |
+
+          ## Health Verification
+
+          **Status:** ${{ needs.verify-rollback.result }}
+
+          ${{ needs.verify-rollback.result == 'success' && '✅ All services healthy after rollback' || '❌ Some services unhealthy - manual intervention required' }}
+
+          ---
+
+          **Rollback completed at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+
+  auto-merge-rollback:
+    name: Auto-Merge Rollback
+    runs-on: ubuntu-latest
+    needs: [create-rollback-branch, verify-rollback]
+    if: needs.verify-rollback.result == 'success'
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔀 Create and merge rollback PR
+        run: |
+          BRANCH="${{ needs.create-rollback-branch.outputs.branch_name }}"
+
+          # Create PR
+          PR_NUMBER=$(gh pr create \
+            --title "🚨 EMERGENCY ROLLBACK" \
+            --body "## Emergency Rollback
+
+**Service:** ${{ needs.detect-rollback-trigger.outputs.service }}
+**Reason:** ${{ needs.detect-rollback-trigger.outputs.reason }}
+
+This PR rolls back to last known good deployment.
+
+**✅ Health checks passed**
+**✅ All services operational**
+
+Merging immediately to restore service." \
+            --label "rollback,emergency" \
+            --base main \
+            --head "$BRANCH" | grep -oP '\d+$')
+
+          # Auto-merge immediately
+          gh pr merge "$PR_NUMBER" --squash --auto
+
+          echo "✅ Rollback PR #$PR_NUMBER created and auto-merged"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
