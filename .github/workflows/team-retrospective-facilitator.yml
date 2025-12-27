@@ -1,0 +1,720 @@
+name: Team Retrospective Facilitator
+
+on:
+  schedule:
+    - cron: '0 16 * * 5'  # Every Friday at 4 PM UTC
+  workflow_dispatch:
+    inputs:
+      retrospective_type:
+        description: 'Type of retrospective'
+        required: true
+        type: choice
+        options:
+          - weekly-sprint          # Weekly sprint retrospective
+          - monthly-review         # Monthly team review
+          - quarterly-deep-dive    # Quarterly deep reflection
+          - project-postmortem     # Post-project analysis
+          - incident-review        # Incident retrospective
+          - success-celebration    # Celebrate wins
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  gather-retrospective-data:
+    name: Gather Retrospective Data
+    runs-on: ubuntu-latest
+    outputs:
+      data_summary: ${{ steps.gather.outputs.summary }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Collect retrospective data
+        id: gather
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('📊 Gathering Retrospective Data\n');
+            
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            // Get PRs from last week
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              sort: 'updated',
+              direction: 'desc',
+              per_page: 100
+            });
+            
+            const recentPRs = prs.data.filter(pr => 
+              new Date(pr.created_at) > oneWeekAgo
+            );
+            
+            const mergedPRs = recentPRs.filter(pr => pr.merged_at);
+            const openPRs = recentPRs.filter(pr => pr.state === 'open');
+            
+            console.log('📈 Activity Summary:');
+            console.log(`  PRs created: ${recentPRs.length}`);
+            console.log(`  PRs merged: ${mergedPRs.length}`);
+            console.log(`  PRs still open: ${openPRs.length}\n`);
+            
+            // Get workflow runs
+            const runs = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              created: `>=${oneWeekAgo.toISOString()}`,
+              per_page: 100
+            });
+            
+            const successRuns = runs.data.workflow_runs.filter(r => r.conclusion === 'success');
+            const failedRuns = runs.data.workflow_runs.filter(r => r.conclusion === 'failure');
+            const successRate = (successRuns.length / runs.data.workflow_runs.length * 100).toFixed(1);
+            
+            console.log('🔧 Workflow Performance:');
+            console.log(`  Total runs: ${runs.data.workflow_runs.length}`);
+            console.log(`  Success rate: ${successRate}%`);
+            console.log(`  Failed runs: ${failedRuns.length}\n`);
+            
+            // Get issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              since: oneWeekAgo.toISOString(),
+              per_page: 100
+            });
+            
+            const newIssues = issues.data.filter(i => !i.pull_request);
+            const closedIssues = newIssues.filter(i => i.closed_at);
+            
+            console.log('🎯 Issues:');
+            console.log(`  New issues: ${newIssues.length}`);
+            console.log(`  Closed issues: ${closedIssues.length}\n`);
+            
+            const summary = {
+              prs: recentPRs.length,
+              merged: mergedPRs.length,
+              successRate: successRate,
+              issues: newIssues.length,
+              closed: closedIssues.length
+            };
+            
+            core.setOutput('summary', JSON.stringify(summary));
+            return summary;
+
+  generate-reflection-prompts:
+    name: Generate Reflection Prompts
+    runs-on: ubuntu-latest
+    needs: gather-retrospective-data
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create reflection questions
+        run: |
+          cat > retrospective-questions.md << 'EOFQUESTIONS'
+          # 🔄 Team Retrospective - $(date +%Y-%m-%d)
+          
+          ## What Went Well? ✅
+          
+          **Reflection Questions:**
+          1. What achievements are you most proud of this week?
+          2. What processes or practices worked exceptionally well?
+          3. Which collaboration moments stand out as particularly effective?
+          4. What positive surprises did you experience?
+          5. What skills or knowledge did you develop?
+          
+          **Prompts for Deep Reflection:**
+          - Think about a moment when you felt energized and productive. What made it special?
+          - What teamwork patterns emerged that we should continue?
+          - Which decisions turned out better than expected? Why?
+          
+          ---
+          
+          ## What Could Be Better? 🔧
+          
+          **Reflection Questions:**
+          1. What obstacles or blockers did you encounter?
+          2. What processes felt inefficient or frustrating?
+          3. Where did communication break down?
+          4. What opportunities did we miss?
+          5. What would you change if you could redo the week?
+          
+          **Prompts for Deep Reflection:**
+          - Think about a frustrating moment. What was the root cause?
+          - What patterns of difficulty keep recurring?
+          - What assumptions turned out to be incorrect?
+          
+          ---
+          
+          ## What Did We Learn? 📚
+          
+          **Reflection Questions:**
+          1. What new insights did you gain about our codebase?
+          2. What did you learn about our team dynamics?
+          3. What technical discoveries did you make?
+          4. What did failures teach us?
+          5. What assumptions were challenged or confirmed?
+          
+          **Prompts for Deep Reflection:**
+          - What surprised you most this week?
+          - What would you explain differently to a new team member now?
+          - What mental models shifted for you?
+          
+          ---
+          
+          ## What Actions Should We Take? 🎯
+          
+          **Reflection Questions:**
+          1. What should we start doing?
+          2. What should we stop doing?
+          3. What should we continue doing?
+          4. What experiments should we try?
+          5. What skills do we need to develop?
+          
+          **Prompts for Deep Reflection:**
+          - If you could implement one change tomorrow, what would it be?
+          - What small improvement would have the biggest impact?
+          - What would make next week 10% better?
+          
+          ---
+          
+          ## Team Appreciation 💙
+          
+          **Reflection Questions:**
+          1. Who helped you overcome a challenge?
+          2. What contributions deserve recognition?
+          3. What acts of collaboration stood out?
+          4. Who went above and beyond?
+          5. What are you grateful for?
+          
+          **Prompts for Deep Reflection:**
+          - Share a specific moment when someone's help made a difference
+          - What invisible work should we acknowledge?
+          - How has someone's growth impressed you?
+          
+          ---
+          
+          ## Personal Growth 🌱
+          
+          **Reflection Questions:**
+          1. What skill did you practice or improve?
+          2. What comfort zone did you step out of?
+          3. What feedback did you receive and act on?
+          4. What are you learning about yourself?
+          5. What growth goal will you set for next week?
+          
+          **Prompts for Deep Reflection:**
+          - What felt difficult at the start of the week but easier by the end?
+          - What would your past self from a month ago be proud of?
+          - What growth challenge excites you?
+          
+          ---
+          
+          ## Looking Forward 🔮
+          
+          **Reflection Questions:**
+          1. What are you most excited about for next week?
+          2. What concerns or anxieties do you have?
+          3. What preparation would help you succeed?
+          4. What support do you need from the team?
+          5. What would make next week meaningful?
+          
+          **Prompts for Deep Reflection:**
+          - Paint a picture of an ideal next week. What does it look like?
+          - What single focus would make the biggest difference?
+          - How can we better support each other?
+          
+          ---
+          
+          ## Metrics & Data 📊
+          
+          **This Week's Numbers:**
+          - PRs Created: [AUTO-FILLED]
+          - PRs Merged: [AUTO-FILLED]
+          - Workflow Success Rate: [AUTO-FILLED]%
+          - Issues Created: [AUTO-FILLED]
+          - Issues Closed: [AUTO-FILLED]
+          
+          **Reflection on Metrics:**
+          - What do these numbers tell us?
+          - What story is hidden in the data?
+          - What trends are emerging?
+          - Which metrics matter most?
+          - What metrics should we track differently?
+          
+          ---
+          
+          ## Action Items
+          
+          From our reflection, we commit to:
+          
+          1. **Start:** _____________________
+          2. **Stop:** _____________________
+          3. **Continue:** _____________________
+          4. **Experiment:** _____________________
+          5. **Learn:** _____________________
+          
+          **Who:** _____________________
+          **When:** _____________________
+          **How we'll measure success:** _____________________
+          
+          ---
+          
+          **Next Retrospective:** $(date -d '+7 days' +%Y-%m-%d)
+          
+          *Remember: This is a safe space for honest reflection and growth.* 💙
+          EOFQUESTIONS
+          
+          echo "✅ Reflection questions generated"
+
+  create-retrospective-board:
+    name: Create Retrospective Board
+    runs-on: ubuntu-latest
+    needs: gather-retrospective-data
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate retrospective board
+        run: |
+          cat > retrospective-board.md << 'EOFBOARD'
+          # 📋 Retrospective Board
+          
+          ## 🌟 What Went Well (Successes)
+          
+          ```
+          ┌────────────────────────────────────────┐
+          │                                        │
+          │  Drop your success cards here!         │
+          │                                        │
+          │  Examples:                             │
+          │  • Shipped feature X ahead of schedule │
+          │  • Great collaboration on PR review    │
+          │  • Solved tricky bug together          │
+          │                                        │
+          └────────────────────────────────────────┘
+          ```
+          
+          ---
+          
+          ## 🔧 What Could Be Better (Improvements)
+          
+          ```
+          ┌────────────────────────────────────────┐
+          │                                        │
+          │  Drop your improvement ideas here!     │
+          │                                        │
+          │  Examples:                             │
+          │  • Meetings could be more focused      │
+          │  • Need better documentation           │
+          │  • CI pipeline is too slow             │
+          │                                        │
+          └────────────────────────────────────────┘
+          ```
+          
+          ---
+          
+          ## 💡 Action Items (Next Steps)
+          
+          ```
+          ┌────────────────────────────────────────┐
+          │                                        │
+          │  What concrete actions will we take?   │
+          │                                        │
+          │  Examples:                             │
+          │  • [Alice] Set up linting by Monday    │
+          │  • [Bob] Document deployment process   │
+          │  • [Team] Try mob programming session  │
+          │                                        │
+          └────────────────────────────────────────┘
+          ```
+          
+          ---
+          
+          ## 🙏 Appreciation (Thank You)
+          
+          ```
+          ┌────────────────────────────────────────┐
+          │                                        │
+          │  Who helped you this week?             │
+          │                                        │
+          │  Examples:                             │
+          │  • Thanks @alice for debugging help!   │
+          │  • @bob's PR reviews are so helpful    │
+          │  • Team stayed late to help with demo  │
+          │                                        │
+          └────────────────────────────────────────┘
+          ```
+          
+          ---
+          
+          ## 📚 Lessons Learned
+          
+          ```
+          ┌────────────────────────────────────────┐
+          │                                        │
+          │  What did we learn?                    │
+          │                                        │
+          │  Examples:                             │
+          │  • Learned about React hooks           │
+          │  • Discovered better testing approach  │
+          │  • Realized importance of early review │
+          │                                        │
+          └────────────────────────────────────────┘
+          ```
+          
+          ---
+          
+          ## 🎯 Focus for Next Week
+          
+          ```
+          ┌────────────────────────────────────────┐
+          │                                        │
+          │  What's our main priority?             │
+          │                                        │
+          │  This week we focus on:                │
+          │  1. _____________________________      │
+          │  2. _____________________________      │
+          │  3. _____________________________      │
+          │                                        │
+          └────────────────────────────────────────┘
+          ```
+          
+          EOFBOARD
+          
+          echo "✅ Retrospective board created"
+
+  facilitation-guide:
+    name: Create Facilitation Guide
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate facilitator guide
+        run: |
+          cat > facilitation-guide.md << 'EOFGUIDE'
+          # 🎯 Retrospective Facilitation Guide
+          
+          ## Before the Retrospective
+          
+          **Preparation (15 minutes):**
+          1. Review the week's metrics and data
+          2. Identify 2-3 discussion topics
+          3. Prepare the retrospective board
+          4. Set up video call/meeting space
+          5. Share retrospective questions in advance
+          
+          **Set the Stage:**
+          - Choose a comfortable, safe environment
+          - Ensure everyone can participate equally
+          - Have materials ready (digital board, notes, etc.)
+          - Plan for 45-60 minutes
+          
+          ---
+          
+          ## During the Retrospective
+          
+          ### Phase 1: Check-In (5 minutes)
+          
+          **Activity:** Quick emotional check-in
+          - Ask everyone: "On a scale of 1-10, how was your week?"
+          - Brief sharing (1 minute per person)
+          - Sets the tone, builds connection
+          
+          **Tips:**
+          - Go first as facilitator to model openness
+          - Keep it brief but genuine
+          - Notice who might need extra support
+          
+          ---
+          
+          ### Phase 2: Gather Data (15 minutes)
+          
+          **Activity:** Silent brainstorming
+          - Everyone writes cards for each category
+          - What went well, what could be better, lessons learned
+          - 5-7 minutes of silent writing
+          - Post cards to shared board
+          
+          **Tips:**
+          - Emphasize quantity over quality initially
+          - Encourage specific examples over generalizations
+          - "Good pairing session" → "Pairing with Alice on bug #123 was productive"
+          
+          ---
+          
+          ### Phase 3: Generate Insights (20 minutes)
+          
+          **Activity:** Affinity grouping & discussion
+          - Group similar cards together
+          - Discuss themes that emerge
+          - Vote on top 3-5 items to discuss deeply
+          
+          **Powerful Questions:**
+          - "What's the pattern here?"
+          - "What's the root cause?"
+          - "What would make this 10% better?"
+          - "What are we not talking about?"
+          
+          **Tips:**
+          - Focus on understanding, not blame
+          - Dig deeper than surface symptoms
+          - Connect dots between different observations
+          
+          ---
+          
+          ### Phase 4: Decide Actions (15 minutes)
+          
+          **Activity:** Convert insights to actions
+          - What will we START doing?
+          - What will we STOP doing?
+          - What will we CONTINUE doing?
+          - What will we TRY as an experiment?
+          
+          **Action Item Criteria (SMART):**
+          - **Specific:** Clear and concrete
+          - **Measurable:** How will we know we did it?
+          - **Assigned:** Who owns it?
+          - **Realistic:** Can we actually do this?
+          - **Time-bound:** When will it be done?
+          
+          **Tips:**
+          - Limit to 3-5 action items maximum
+          - Assign clear owners
+          - Set specific deadlines
+          - Define success criteria
+          
+          ---
+          
+          ### Phase 5: Appreciation (5 minutes)
+          
+          **Activity:** Express gratitude
+          - Go around and share appreciations
+          - Specific examples of helpfulness
+          - Recognize invisible work
+          
+          **Tips:**
+          - Model specific appreciation as facilitator
+          - Encourage everyone to share at least one
+          - End on a positive, energizing note
+          
+          ---
+          
+          ### Phase 6: Close (5 minutes)
+          
+          **Activity:** Retrospective on the retrospective
+          - "How was this retrospective itself?"
+          - "What would make our next one better?"
+          - Thank everyone for participating
+          - Confirm next retrospective date
+          
+          **Document:**
+          - Take photo/screenshot of board
+          - Write up action items
+          - Share summary with team
+          - Add to team wiki/docs
+          
+          ---
+          
+          ## After the Retrospective
+          
+          **Follow-Up (within 24 hours):**
+          1. Share retrospective summary
+          2. Create GitHub issues for action items
+          3. Add items to next sprint planning
+          4. Update team documentation
+          5. Schedule next retrospective
+          
+          **Track Progress:**
+          - Review action items in standups
+          - Check completion before next retro
+          - Celebrate completed actions
+          - Discuss incomplete actions
+          
+          ---
+          
+          ## Retrospective Formats
+          
+          ### Weekly Sprint Retro (45 min)
+          - Focus: Last week's work
+          - Questions: What went well, what didn't, actions
+          - Frequency: Every Friday
+          
+          ### Monthly Review (60 min)
+          - Focus: Longer-term patterns and trends
+          - Include: Metrics review, skill development
+          - Deeper: Strategic discussions
+          
+          ### Quarterly Deep Dive (90 min)
+          - Focus: Big picture, team health, growth
+          - Include: Individual reflections, team dynamics
+          - Activities: Futurespective, team health check
+          
+          ### Project Postmortem (60-90 min)
+          - Focus: Specific completed project
+          - Include: Timeline review, what we'd do differently
+          - Document: Lessons for future projects
+          
+          ### Incident Review (45 min)
+          - Focus: Specific incident or outage
+          - Include: Timeline, root cause, preventions
+          - Blameless: Focus on systems, not individuals
+          
+          ### Success Celebration (30 min)
+          - Focus: Wins, achievements, milestones
+          - Include: Recognition, team bonding
+          - Energy: Positive, energizing
+          
+          ---
+          
+          ## Facilitation Principles
+          
+          ### Create Safety
+          - "Vegas rule" - what's said here stays here
+          - No blame, focus on systems
+          - Everyone's voice matters equally
+          - Respect different communication styles
+          
+          ### Stay Neutral
+          - Don't advocate for specific solutions
+          - Help team discover insights
+          - Manage time, not content
+          - Encourage diverse perspectives
+          
+          ### Generate Energy
+          - Keep it moving
+          - Use visual techniques
+          - Mix activities (individual, pairs, whole group)
+          - End on positives
+          
+          ### Drive Action
+          - Insights without action = wasted time
+          - Clear owners and deadlines
+          - Follow up ruthlessly
+          - Celebrate completed actions
+          
+          ---
+          
+          ## Troubleshooting
+          
+          **Problem:** People aren't talking
+          - Try: Silent brainstorming first, then discuss
+          - Try: Smaller breakout groups
+          - Try: Different question prompts
+          
+          **Problem:** One person dominates
+          - Try: "Let's hear from folks who haven't shared"
+          - Try: Time limits per person
+          - Try: Written responses first
+          
+          **Problem:** Discussion gets negative
+          - Try: "What would make this better?"
+          - Try: Shift to appreciations
+          - Try: Focus on what's in our control
+          
+          **Problem:** No actionable outcomes
+          - Try: "If we could only fix one thing..."
+          - Try: "What's the smallest change with biggest impact?"
+          - Try: Assign action item owners during meeting
+          
+          **Problem:** Same issues every time
+          - Try: "Why hasn't this improved?"
+          - Try: Escalate to management
+          - Try: Different retrospective format
+          
+          ---
+          
+          ## Resources
+          
+          **Books:**
+          - "Agile Retrospectives" by Esther Derby & Diana Larsen
+          - "Project Retrospectives" by Norman Kerth
+          
+          **Activities:**
+          - Retromat.org - 100+ retrospective activities
+          - FunRetro.io - Online retrospective boards
+          
+          **Remember:**
+          The best retrospective is one where people feel heard,
+          learn something new, and leave energized to improve.
+          
+          *Happy facilitating!* 🎯
+          EOFGUIDE
+          
+          echo "✅ Facilitation guide created"
+
+  generate-retrospective-report:
+    name: Generate Retrospective Report
+    runs-on: ubuntu-latest
+    needs: [gather-retrospective-data, generate-reflection-prompts, create-retrospective-board, facilitation-guide]
+    steps:
+      - name: Create retrospective summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOFREPORT'
+          # 🔄 Team Retrospective Ready!
+          
+          ## Retrospective Materials Generated
+          
+          ✅ **Reflection Questions** - Deep prompts across 7 categories
+          ✅ **Retrospective Board** - Visual collaboration space
+          ✅ **Facilitation Guide** - Step-by-step facilitation
+          ✅ **Week's Data** - Metrics and activity summary
+          
+          ---
+          
+          ## This Week's Activity
+          
+          - **PRs Created:** [Data from workflow]
+          - **PRs Merged:** [Data from workflow]
+          - **Workflow Success Rate:** [Data from workflow]%
+          - **Issues Created:** [Data from workflow]
+          - **Issues Closed:** [Data from workflow]
+          
+          ---
+          
+          ## Reflection Categories
+          
+          1. ✅ **What Went Well** - Celebrate successes
+          2. 🔧 **What Could Be Better** - Identify improvements
+          3. 📚 **What Did We Learn** - Capture insights
+          4. 🎯 **What Actions to Take** - Define next steps
+          5. 💙 **Team Appreciation** - Express gratitude
+          6. 🌱 **Personal Growth** - Individual development
+          7. 🔮 **Looking Forward** - Plan ahead
+          
+          ---
+          
+          ## How to Run the Retrospective
+          
+          1. **Share Materials** (before meeting)
+             - Send reflection questions
+             - Share retrospective board
+             - Review facilitation guide
+          
+          2. **Facilitate Meeting** (45-60 min)
+             - Check-in (5 min)
+             - Gather data (15 min)
+             - Generate insights (20 min)
+             - Decide actions (15 min)
+             - Appreciation (5 min)
+          
+          3. **Follow Up** (after meeting)
+             - Share summary
+             - Create action items
+             - Track progress
+          
+          ---
+          
+          ## Next Steps
+          
+          📅 **Schedule:** Friday 4 PM UTC (weekly)
+          📋 **Materials:** Ready in artifacts
+          🎯 **Goal:** Continuous improvement
+          
+          ---
+          
+          **Remember:** The best teams reflect regularly! 🔄
+          EOFREPORT
