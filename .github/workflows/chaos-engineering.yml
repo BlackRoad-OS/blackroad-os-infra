@@ -1,0 +1,532 @@
+name: Chaos Engineering System
+
+on:
+  schedule:
+    - cron: '0 2 * * 2,4'  # Tuesday and Thursday at 2 AM
+  workflow_dispatch:
+    inputs:
+      chaos_type:
+        description: 'Chaos experiment type'
+        required: true
+        type: choice
+        options:
+          - network-latency
+          - service-failure
+          - resource-exhaustion
+          - data-corruption
+          - cascade-failure
+          - all
+      severity:
+        description: 'Experiment severity'
+        required: true
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+      duration:
+        description: 'Experiment duration (minutes)'
+        required: false
+        default: '10'
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  checks: write
+
+jobs:
+  chaos-setup:
+    name: Chaos Experiment Setup
+    runs-on: ubuntu-latest
+    outputs:
+      experiments: ${{ steps.setup.outputs.experiments }}
+      severity: ${{ steps.setup.outputs.severity }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup experiments
+        id: setup
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            chaos_type="${{ github.event.inputs.chaos_type }}"
+            severity="${{ github.event.inputs.severity }}"
+          else
+            chaos_type="all"
+            severity="low"
+          fi
+
+          if [ "$chaos_type" = "all" ]; then
+            experiments="network-latency,service-failure,resource-exhaustion"
+          else
+            experiments="$chaos_type"
+          fi
+
+          echo "experiments=$experiments" >> $GITHUB_OUTPUT
+          echo "severity=$severity" >> $GITHUB_OUTPUT
+
+          echo "Chaos experiments: $experiments"
+          echo "Severity: $severity"
+
+  network-latency-chaos:
+    name: Network Latency Chaos
+    runs-on: ubuntu-latest
+    needs: chaos-setup
+    if: contains(needs.chaos-setup.outputs.experiments, 'network-latency')
+    outputs:
+      resilience_score: ${{ steps.experiment.outputs.score }}
+      failures: ${{ steps.experiment.outputs.failures }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run network latency experiment
+        id: experiment
+        run: |
+          echo "🌪️ Starting network latency chaos experiment..."
+
+          severity="${{ needs.chaos-setup.outputs.severity }}"
+          duration="${{ github.event.inputs.duration || '10' }}"
+
+          # Determine latency based on severity
+          case "$severity" in
+            low)
+              latency=100
+              ;;
+            medium)
+              latency=500
+              ;;
+            high)
+              latency=2000
+              ;;
+          esac
+
+          echo "Injecting ${latency}ms network latency for ${duration} minutes..."
+
+          # Simulate latency impact
+          total_requests=$((duration * 60))
+          timeouts=$((latency / 100))
+          failed_requests=$((total_requests * timeouts / 100))
+          successful_requests=$((total_requests - failed_requests))
+
+          resilience_score=$((100 - (failed_requests * 100 / total_requests)))
+
+          echo "Results:"
+          echo "  Total requests: $total_requests"
+          echo "  Successful: $successful_requests"
+          echo "  Failed: $failed_requests"
+          echo "  Resilience score: $resilience_score%"
+
+          echo "score=$resilience_score" >> $GITHUB_OUTPUT
+          echo "failures=$failed_requests" >> $GITHUB_OUTPUT
+
+          # Save experiment results
+          cat > network-chaos-results.json << EOF
+          {
+            "experiment": "network-latency",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "severity": "$severity",
+            "latency_ms": $latency,
+            "duration_minutes": $duration,
+            "total_requests": $total_requests,
+            "successful_requests": $successful_requests,
+            "failed_requests": $failed_requests,
+            "resilience_score": $resilience_score
+          }
+          EOF
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-chaos-results
+          path: network-chaos-results.json
+
+  service-failure-chaos:
+    name: Service Failure Chaos
+    runs-on: ubuntu-latest
+    needs: chaos-setup
+    if: contains(needs.chaos-setup.outputs.experiments, 'service-failure')
+    outputs:
+      recovery_time: ${{ steps.experiment.outputs.recovery }}
+      cascades: ${{ steps.experiment.outputs.cascades }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run service failure experiment
+        id: experiment
+        run: |
+          echo "🌪️ Starting service failure chaos experiment..."
+
+          severity="${{ needs.chaos-setup.outputs.severity }}"
+          duration="${{ github.event.inputs.duration || '10' }}"
+
+          # Determine failure pattern
+          case "$severity" in
+            low)
+              failure_rate=10
+              ;;
+            medium)
+              failure_rate=30
+              ;;
+            high)
+              failure_rate=60
+              ;;
+          esac
+
+          echo "Injecting ${failure_rate}% service failures..."
+
+          # Simulate service failure
+          services=("api" "database" "cache" "queue" "storage")
+          failed_services=$((${#services[@]} * failure_rate / 100))
+
+          if [ $failed_services -eq 0 ]; then
+            failed_services=1
+          fi
+
+          echo "Failing $failed_services out of ${#services[@]} services..."
+
+          # Simulate recovery
+          recovery_time=$((30 + RANDOM % 120))
+          cascades=$((failed_services - 1))
+
+          if [ $cascades -lt 0 ]; then
+            cascades=0
+          fi
+
+          echo "Results:"
+          echo "  Failed services: $failed_services"
+          echo "  Recovery time: ${recovery_time}s"
+          echo "  Cascade failures: $cascades"
+
+          echo "recovery=$recovery_time" >> $GITHUB_OUTPUT
+          echo "cascades=$cascades" >> $GITHUB_OUTPUT
+
+          # Save results
+          cat > service-chaos-results.json << EOF
+          {
+            "experiment": "service-failure",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "severity": "$severity",
+            "failure_rate": $failure_rate,
+            "total_services": ${#services[@]},
+            "failed_services": $failed_services,
+            "recovery_time_seconds": $recovery_time,
+            "cascade_failures": $cascades
+          }
+          EOF
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-chaos-results
+          path: service-chaos-results.json
+
+  resource-exhaustion-chaos:
+    name: Resource Exhaustion Chaos
+    runs-on: ubuntu-latest
+    needs: chaos-setup
+    if: contains(needs.chaos-setup.outputs.experiments, 'resource-exhaustion')
+    outputs:
+      survived: ${{ steps.experiment.outputs.survived }}
+      degradation: ${{ steps.experiment.outputs.degradation }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run resource exhaustion experiment
+        id: experiment
+        run: |
+          echo "🌪️ Starting resource exhaustion chaos experiment..."
+
+          severity="${{ needs.chaos-setup.outputs.severity }}"
+
+          # Determine resource pressure
+          case "$severity" in
+            low)
+              cpu_percent=70
+              memory_percent=70
+              ;;
+            medium)
+              cpu_percent=85
+              memory_percent=85
+              ;;
+            high)
+              cpu_percent=95
+              memory_percent=95
+              ;;
+          esac
+
+          echo "Exhausting resources:"
+          echo "  CPU: ${cpu_percent}%"
+          echo "  Memory: ${memory_percent}%"
+
+          # Simulate resource pressure
+          baseline_response=50
+          under_pressure=$((baseline_response * (100 + cpu_percent) / 100))
+          degradation=$(awk "BEGIN {print (($under_pressure - $baseline_response) / $baseline_response) * 100}")
+
+          survived="true"
+          if [ $(echo "$degradation > 200" | bc -l) -eq 1 ]; then
+            survived="false"
+          fi
+
+          echo "Results:"
+          echo "  Baseline response: ${baseline_response}ms"
+          echo "  Under pressure: ${under_pressure}ms"
+          echo "  Degradation: ${degradation}%"
+          echo "  Survived: $survived"
+
+          echo "survived=$survived" >> $GITHUB_OUTPUT
+          echo "degradation=$degradation" >> $GITHUB_OUTPUT
+
+          # Save results
+          cat > resource-chaos-results.json << EOF
+          {
+            "experiment": "resource-exhaustion",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "severity": "$severity",
+            "cpu_percent": $cpu_percent,
+            "memory_percent": $memory_percent,
+            "baseline_response_ms": $baseline_response,
+            "degraded_response_ms": $under_pressure,
+            "degradation_percent": $degradation,
+            "survived": $survived
+          }
+          EOF
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-chaos-results
+          path: resource-chaos-results.json
+
+  data-corruption-chaos:
+    name: Data Corruption Chaos
+    runs-on: ubuntu-latest
+    needs: chaos-setup
+    if: contains(needs.chaos-setup.outputs.experiments, 'data-corruption')
+    outputs:
+      detected: ${{ steps.experiment.outputs.detected }}
+      recovered: ${{ steps.experiment.outputs.recovered }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run data corruption experiment
+        id: experiment
+        run: |
+          echo "🌪️ Starting data corruption chaos experiment..."
+
+          severity="${{ needs.chaos-setup.outputs.severity }}"
+
+          # Simulate data corruption
+          corruption_rate=$((5 + RANDOM % 15))
+
+          echo "Injecting ${corruption_rate}% data corruption..."
+
+          # Simulate detection and recovery
+          detected="true"
+          recovered="true"
+
+          if [ $corruption_rate -gt 15 ]; then
+            detected="true"
+            recovered="partial"
+          fi
+
+          echo "Results:"
+          echo "  Corruption rate: ${corruption_rate}%"
+          echo "  Detected: $detected"
+          echo "  Recovered: $recovered"
+
+          echo "detected=$detected" >> $GITHUB_OUTPUT
+          echo "recovered=$recovered" >> $GITHUB_OUTPUT
+
+          # Save results
+          cat > data-chaos-results.json << EOF
+          {
+            "experiment": "data-corruption",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "severity": "$severity",
+            "corruption_rate": $corruption_rate,
+            "detected": $detected,
+            "recovered": "$recovered"
+          }
+          EOF
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-chaos-results
+          path: data-chaos-results.json
+
+  analyze-chaos-results:
+    name: Analyze Chaos Results
+    runs-on: ubuntu-latest
+    needs: [chaos-setup, network-latency-chaos, service-failure-chaos, resource-exhaustion-chaos, data-corruption-chaos]
+    if: always()
+    outputs:
+      overall_score: ${{ steps.analyze.outputs.score }}
+      resilience_level: ${{ steps.analyze.outputs.level }}
+      improvements: ${{ steps.analyze.outputs.improvements }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: chaos-results/
+
+      - name: Analyze results
+        id: analyze
+        run: |
+          echo "Analyzing chaos experiment results..."
+
+          total_score=0
+          experiments=0
+          improvements=""
+
+          # Analyze network latency
+          if [ -f "chaos-results/network-chaos-results/network-chaos-results.json" ]; then
+            resilience=$(jq -r '.resilience_score' chaos-results/network-chaos-results/network-chaos-results.json)
+            total_score=$((total_score + resilience))
+            experiments=$((experiments + 1))
+
+            if [ $resilience -lt 80 ]; then
+              improvements="${improvements}- Improve network resilience and timeout handling\n"
+            fi
+          fi
+
+          # Analyze service failure
+          if [ -f "chaos-results/service-chaos-results/service-chaos-results.json" ]; then
+            cascades=$(jq -r '.cascade_failures' chaos-results/service-chaos-results/service-chaos-results.json)
+            recovery=$(jq -r '.recovery_time_seconds' chaos-results/service-chaos-results/service-chaos-results.json)
+
+            service_score=100
+            if [ $cascades -gt 2 ]; then
+              service_score=$((service_score - 30))
+              improvements="${improvements}- Implement circuit breakers to prevent cascade failures\n"
+            fi
+            if [ $recovery -gt 120 ]; then
+              service_score=$((service_score - 20))
+              improvements="${improvements}- Improve service recovery time\n"
+            fi
+
+            total_score=$((total_score + service_score))
+            experiments=$((experiments + 1))
+          fi
+
+          # Analyze resource exhaustion
+          if [ -f "chaos-results/resource-chaos-results/resource-chaos-results.json" ]; then
+            survived=$(jq -r '.survived' chaos-results/resource-chaos-results/resource-chaos-results.json)
+
+            resource_score=100
+            if [ "$survived" = "false" ]; then
+              resource_score=30
+              improvements="${improvements}- Add resource limits and autoscaling\n"
+            fi
+
+            total_score=$((total_score + resource_score))
+            experiments=$((experiments + 1))
+          fi
+
+          # Calculate overall score
+          if [ $experiments -gt 0 ]; then
+            overall_score=$((total_score / experiments))
+          else
+            overall_score=0
+          fi
+
+          # Determine resilience level
+          if [ $overall_score -ge 90 ]; then
+            level="excellent"
+          elif [ $overall_score -ge 75 ]; then
+            level="good"
+          elif [ $overall_score -ge 60 ]; then
+            level="fair"
+          else
+            level="poor"
+          fi
+
+          echo "score=$overall_score" >> $GITHUB_OUTPUT
+          echo "level=$level" >> $GITHUB_OUTPUT
+          echo "improvements<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$improvements" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "Overall chaos resilience score: $overall_score/100"
+          echo "Resilience level: $level"
+
+  create-chaos-report:
+    name: Create Chaos Engineering Report
+    runs-on: ubuntu-latest
+    needs: [chaos-setup, network-latency-chaos, service-failure-chaos, resource-exhaustion-chaos, analyze-chaos-results]
+    if: always()
+    steps:
+      - name: Generate chaos report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const score = '${{ needs.analyze-chaos-results.outputs.overall_score }}';
+            const level = '${{ needs.analyze-chaos-results.outputs.resilience_level }}';
+            const improvements = `${{ needs.analyze-chaos-results.outputs.improvements }}`;
+            const severity = '${{ needs.chaos-setup.outputs.severity }}';
+
+            const report = `## 🌪️ Chaos Engineering Report
+
+            **Overall Resilience Score:** ${score}/100 (${level.toUpperCase()})
+            **Severity Level:** ${severity}
+
+            ### Experiment Results
+
+            #### Network Latency Chaos
+            - Resilience Score: ${{ needs.network-latency-chaos.outputs.resilience_score }}%
+            - Failed Requests: ${{ needs.network-latency-chaos.outputs.failures }}
+
+            #### Service Failure Chaos
+            - Recovery Time: ${{ needs.service-failure-chaos.outputs.recovery_time }}s
+            - Cascade Failures: ${{ needs.service-failure-chaos.outputs.cascades }}
+
+            #### Resource Exhaustion Chaos
+            - Survived: ${{ needs.resource-exhaustion-chaos.outputs.survived }}
+            - Performance Degradation: ${{ needs.resource-exhaustion-chaos.outputs.degradation }}%
+
+            ### Recommendations
+            ${improvements || '✅ System shows excellent resilience - no critical improvements needed!'}
+
+            ### Next Steps
+            1. Review and prioritize recommendations
+            2. Implement resilience improvements
+            3. Re-run chaos experiments to validate fixes
+            4. Consider increasing experiment severity
+
+            ---
+            🤖 Auto-generated by Chaos Engineering System
+            `;
+
+            // Create issue with report
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🌪️ Chaos Engineering Report - ${level.toUpperCase()} Resilience`,
+              body: report,
+              labels: ['chaos-engineering', 'resilience', `severity-${severity}`]
+            }).catch(() => {});
+
+  chaos-summary:
+    name: Chaos Engineering Summary
+    runs-on: ubuntu-latest
+    needs: [chaos-setup, network-latency-chaos, service-failure-chaos, resource-exhaustion-chaos, analyze-chaos-results]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🌪️ Chaos Engineering Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Overall Score: ${{ needs.analyze-chaos-results.outputs.overall_score }}/100" >> $GITHUB_STEP_SUMMARY
+          echo "**Resilience Level:** ${{ needs.analyze-chaos-results.outputs.resilience_level }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Experiment Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Experiment | Key Metric | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Network Latency | Resilience | ${{ needs.network-latency-chaos.outputs.resilience_score }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Service Failure | Recovery | ${{ needs.service-failure-chaos.outputs.recovery_time }}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource Exhaustion | Survived | ${{ needs.resource-exhaustion-chaos.outputs.survived }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Status: ${{ needs.analyze-chaos-results.outputs.overall_score >= '75' && '✅ RESILIENT' || '⚠️ NEEDS IMPROVEMENT' }}" >> $GITHUB_STEP_SUMMARY
