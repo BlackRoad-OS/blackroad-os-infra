@@ -63,6 +63,16 @@ Related to #
 - [ ] Winston (Refactoring suggestions)
 - [ ] Ophelia (Documentation review)
 
+## 😭 Health Rails (optional but iconic)
+Sadness:
+🙂🙂🙂🙂🙂🙂🙂 / 😭😭😭😢☹️🙁😐
+
+Energy:
+🔋🔋🔋🔋🔋🔋🔋 / 🪫🪫🪫🪫🪫🪫🪫
+
+Blocked:
+🟢🟢🟢🟢🟢🟢🟢 / 🔴🔴🔴🔴🔴🔴🔴
+
 ---
 **Auto-Review:** This PR will be automatically reviewed by our AI agents within 15 minutes!
 - 💎 Ruby provides comprehensive code review

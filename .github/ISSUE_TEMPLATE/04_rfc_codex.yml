@@ -1,0 +1,45 @@
+name: "🧠 RFC / Codex Proposal"
+description: "Decide before we build."
+title: "🧠 RFC: "
+labels: ["type:rfc", "codex"]
+body:
+  - type: dropdown
+    id: decision
+    attributes:
+      label: "🗳️ Decision type"
+      options: ["🧭 direction","📐 architecture","🔌 api contract","🔐 security policy","🧠 agent behavior","🛰️ infra topology","📦 release strategy"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: "☢️ Impact"
+      options: ["🧊 low","🧨 medium","☢️ high","🪦 irreversible"]
+    validations: { required: true }
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "🧩 Context"
+    validations: { required: true }
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "✨ Proposal"
+    validations: { required: true }
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "🔀 Alternatives considered"
+      placeholder: |
+        - Option A:
+        - Option B:
+    validations: { required: true }
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ Acceptance / Success Criteria"
+    validations: { required: true }

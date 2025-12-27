@@ -1,0 +1,36 @@
+name: "🔐 Security"
+description: "Threats, fixes, audits, secrets, hardening."
+title: "🔐 "
+labels: ["type:security", "🔒needs-review"]
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: "🧨 Category"
+      options: ["🕵️ vuln","🧷 secret exposure","🧱 hardening","🧪 audit","📜 policy","🔑 auth/identity"]
+    validations: { required: true }
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "🚨 Severity"
+      options: ["🟥 critical","🟧 high","🟨 medium","🟩 low","🟦 info"]
+    validations: { required: true }
+
+  - type: textarea
+    id: risk
+    attributes:
+      label: "☢️ Risk / Threat model"
+    validations: { required: true }
+
+  - type: textarea
+    id: fix
+    attributes:
+      label: "🛠️ Proposed fix"
+    validations: { required: true }
+
+  - type: textarea
+    id: verify
+    attributes:
+      label: "🧪 Verification steps"
+    validations: { required: true }
