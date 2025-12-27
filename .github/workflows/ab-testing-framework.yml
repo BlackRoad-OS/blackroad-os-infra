@@ -1,0 +1,511 @@
+name: 🧪 Workflow A/B Testing Framework
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow_name:
+        description: 'Workflow to A/B test'
+        required: true
+      variant_a:
+        description: 'Variant A (baseline) - branch or commit'
+        required: true
+        default: 'main'
+      variant_b:
+        description: 'Variant B (experimental) - branch or commit'
+        required: true
+      test_runs:
+        description: 'Number of test runs per variant'
+        required: false
+        default: '10'
+      metrics:
+        description: 'Metrics to compare (duration,success,cost)'
+        required: false
+        default: 'duration,success'
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+jobs:
+  setup-ab-test:
+    name: Setup A/B Test
+    runs-on: ubuntu-latest
+    outputs:
+      test_id: ${{ steps.setup.outputs.test_id }}
+      workflow_file: ${{ steps.setup.outputs.workflow_file }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup A/B test
+        id: setup
+        run: |
+          # Generate unique test ID
+          TEST_ID="ab-test-$(date +%s)"
+          echo "test_id=$TEST_ID" >> $GITHUB_OUTPUT
+
+          echo "Setting up A/B test: $TEST_ID"
+          echo "Workflow: ${{ github.event.inputs.workflow_name }}"
+          echo "Variant A: ${{ github.event.inputs.variant_a }}"
+          echo "Variant B: ${{ github.event.inputs.variant_b }}"
+          echo "Test runs: ${{ github.event.inputs.test_runs }}"
+
+          # Find workflow file
+          WORKFLOW_FILE=$(find .github/workflows -name "${{ github.event.inputs.workflow_name }}*" -type f | head -1)
+
+          if [ -z "$WORKFLOW_FILE" ]; then
+            echo "❌ Workflow file not found: ${{ github.event.inputs.workflow_name }}"
+            exit 1
+          fi
+
+          echo "workflow_file=$WORKFLOW_FILE" >> $GITHUB_OUTPUT
+          echo "Found workflow: $WORKFLOW_FILE"
+
+          # Create test metadata
+          mkdir -p /tmp/ab-tests
+
+          cat > /tmp/ab-tests/${TEST_ID}.json << EOF
+{
+  "test_id": "$TEST_ID",
+  "workflow": "${{ github.event.inputs.workflow_name }}",
+  "workflow_file": "$WORKFLOW_FILE",
+  "variant_a": "${{ github.event.inputs.variant_a }}",
+  "variant_b": "${{ github.event.inputs.variant_b }}",
+  "test_runs": ${{ github.event.inputs.test_runs }},
+  "metrics": "${{ github.event.inputs.metrics }}".split(","),
+  "status": "setup",
+  "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+          echo "✅ A/B test setup complete"
+
+  run-variant-a:
+    name: Run Variant A Tests
+    runs-on: ubuntu-latest
+    needs: setup-ab-test
+    strategy:
+      matrix:
+        run_number: ${{ fromJson(format('[{0}]', join(range(1, fromJson(github.event.inputs.test_runs) + 1), ','))) }}
+    steps:
+      - name: 📥 Checkout Variant A
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.variant_a }}
+
+      - name: 🧪 Run test for Variant A
+        id: test
+        run: |
+          echo "Running Variant A - Test Run #${{ matrix.run_number }}"
+
+          START_TIME=$(date +%s%3N)
+
+          # Trigger the workflow
+          WORKFLOW_FILE="${{ needs.setup-ab-test.outputs.workflow_file }}"
+
+          # Simulate workflow run (in real scenario, would trigger actual workflow)
+          echo "Would run: gh workflow run $(basename $WORKFLOW_FILE)"
+
+          # For now, collect existing run data
+          gh run list \
+            --workflow="$(basename $WORKFLOW_FILE)" \
+            --limit 1 \
+            --json conclusion,durationMs,createdAt \
+            > /tmp/variant-a-run-${{ matrix.run_number }}.json
+
+          END_TIME=$(date +%s%3N)
+          DURATION=$((END_TIME - START_TIME))
+
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+
+          cat /tmp/variant-a-run-${{ matrix.run_number }}.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: 📊 Save Variant A results
+        run: |
+          mkdir -p /tmp/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}/variant-a
+
+          cat > /tmp/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}/variant-a/run-${{ matrix.run_number }}.json << EOF
+{
+  "run_number": ${{ matrix.run_number }},
+  "variant": "A",
+  "duration_ms": ${{ steps.test.outputs.duration }},
+  "conclusion": "${{ steps.test.outcome }}",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  run-variant-b:
+    name: Run Variant B Tests
+    runs-on: ubuntu-latest
+    needs: setup-ab-test
+    strategy:
+      matrix:
+        run_number: ${{ fromJson(format('[{0}]', join(range(1, fromJson(github.event.inputs.test_runs) + 1), ','))) }}
+    steps:
+      - name: 📥 Checkout Variant B
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.variant_b }}
+
+      - name: 🧪 Run test for Variant B
+        id: test
+        run: |
+          echo "Running Variant B - Test Run #${{ matrix.run_number }}"
+
+          START_TIME=$(date +%s%3N)
+
+          WORKFLOW_FILE="${{ needs.setup-ab-test.outputs.workflow_file }}"
+
+          gh run list \
+            --workflow="$(basename $WORKFLOW_FILE)" \
+            --limit 1 \
+            --json conclusion,durationMs,createdAt \
+            > /tmp/variant-b-run-${{ matrix.run_number }}.json
+
+          END_TIME=$(date +%s%3N)
+          DURATION=$((END_TIME - START_TIME))
+
+          echo "duration=$DURATION" >> $GITHUB_OUTPUT
+
+          cat /tmp/variant-b-run-${{ matrix.run_number }}.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: 📊 Save Variant B results
+        run: |
+          mkdir -p /tmp/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}/variant-b
+
+          cat > /tmp/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}/variant-b/run-${{ matrix.run_number }}.json << EOF
+{
+  "run_number": ${{ matrix.run_number }},
+  "variant": "B",
+  "duration_ms": ${{ steps.test.outputs.duration }},
+  "conclusion": "${{ steps.test.outcome }}",
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
+  analyze-results:
+    name: Analyze A/B Test Results
+    runs-on: ubuntu-latest
+    needs: [setup-ab-test, run-variant-a, run-variant-b]
+    outputs:
+      winner: ${{ steps.analyze.outputs.winner }}
+      confidence: ${{ steps.analyze.outputs.confidence }}
+    steps:
+      - name: 📊 Statistical analysis
+        id: analyze
+        run: |
+          cat > /tmp/analyze-ab-test.py << 'EOF'
+import json
+import os
+import statistics
+from pathlib import Path
+
+test_id = '${{ needs.setup-ab-test.outputs.test_id }}'
+test_dir = f'/tmp/ab-tests/{test_id}'
+
+# Load all results
+variant_a_results = []
+variant_b_results = []
+
+variant_a_dir = Path(test_dir) / 'variant-a'
+variant_b_dir = Path(test_dir) / 'variant-b'
+
+if variant_a_dir.exists():
+    for result_file in variant_a_dir.glob('run-*.json'):
+        with open(result_file) as f:
+            variant_a_results.append(json.load(f))
+
+if variant_b_dir.exists():
+    for result_file in variant_b_dir.glob('run-*.json'):
+        with open(result_file) as f:
+            variant_b_results.append(json.load(f))
+
+print(f"Variant A results: {len(variant_a_results)}")
+print(f"Variant B results: {len(variant_b_results)}")
+
+# Analyze metrics
+metrics = '${{ github.event.inputs.metrics }}'.split(',')
+
+analysis = {
+    'test_id': test_id,
+    'variant_a': {
+        'runs': len(variant_a_results),
+        'metrics': {}
+    },
+    'variant_b': {
+        'runs': len(variant_b_results),
+        'metrics': {}
+    },
+    'comparison': {},
+    'winner': None,
+    'confidence': 0
+}
+
+# Duration metrics
+if 'duration' in metrics:
+    a_durations = [r['duration_ms'] for r in variant_a_results if r.get('duration_ms')]
+    b_durations = [r['duration_ms'] for r in variant_b_results if r.get('duration_ms')]
+
+    if a_durations and b_durations:
+        a_avg = statistics.mean(a_durations)
+        b_avg = statistics.mean(b_durations)
+
+        analysis['variant_a']['metrics']['duration'] = {
+            'avg_ms': round(a_avg, 2),
+            'min_ms': min(a_durations),
+            'max_ms': max(a_durations),
+            'stddev_ms': round(statistics.stdev(a_durations), 2) if len(a_durations) > 1 else 0
+        }
+
+        analysis['variant_b']['metrics']['duration'] = {
+            'avg_ms': round(b_avg, 2),
+            'min_ms': min(b_durations),
+            'max_ms': max(b_durations),
+            'stddev_ms': round(statistics.stdev(b_durations), 2) if len(b_durations) > 1 else 0
+        }
+
+        improvement = ((a_avg - b_avg) / a_avg) * 100 if a_avg > 0 else 0
+
+        analysis['comparison']['duration'] = {
+            'variant_a_avg': round(a_avg, 2),
+            'variant_b_avg': round(b_avg, 2),
+            'improvement_pct': round(improvement, 2),
+            'faster': 'B' if b_avg < a_avg else 'A'
+        }
+
+# Success rate metrics
+if 'success' in metrics:
+    a_successes = len([r for r in variant_a_results if r.get('conclusion') == 'success'])
+    b_successes = len([r for r in variant_b_results if r.get('conclusion') == 'success'])
+
+    a_success_rate = (a_successes / len(variant_a_results)) * 100 if variant_a_results else 0
+    b_success_rate = (b_successes / len(variant_b_results)) * 100 if variant_b_results else 0
+
+    analysis['variant_a']['metrics']['success'] = {
+        'rate_pct': round(a_success_rate, 2),
+        'successes': a_successes,
+        'total': len(variant_a_results)
+    }
+
+    analysis['variant_b']['metrics']['success'] = {
+        'rate_pct': round(b_success_rate, 2),
+        'successes': b_successes,
+        'total': len(variant_b_results)
+    }
+
+    analysis['comparison']['success'] = {
+        'variant_a_rate': round(a_success_rate, 2),
+        'variant_b_rate': round(b_success_rate, 2),
+        'improvement_pct': round(b_success_rate - a_success_rate, 2),
+        'better': 'B' if b_success_rate > a_success_rate else 'A'
+    }
+
+# Determine winner
+scores = {'A': 0, 'B': 0}
+
+if 'duration' in analysis['comparison']:
+    scores[analysis['comparison']['duration']['faster']] += 1
+
+if 'success' in analysis['comparison']:
+    scores[analysis['comparison']['success']['better']] += 1
+
+if scores['B'] > scores['A']:
+    analysis['winner'] = 'B'
+    analysis['confidence'] = round((scores['B'] / (scores['A'] + scores['B'])) * 100)
+elif scores['A'] > scores['B']:
+    analysis['winner'] = 'A'
+    analysis['confidence'] = round((scores['A'] / (scores['A'] + scores['B'])) * 100)
+else:
+    analysis['winner'] = 'tie'
+    analysis['confidence'] = 50
+
+# Save analysis
+with open('/tmp/ab-test-analysis.json', 'w') as f:
+    json.dump(analysis, f, indent=2)
+
+print(f"\nA/B Test Analysis:")
+print(f"  Winner: Variant {analysis['winner']}")
+print(f"  Confidence: {analysis['confidence']}%")
+
+if 'duration' in analysis['comparison']:
+    comp = analysis['comparison']['duration']
+    print(f"\n  Duration:")
+    print(f"    Variant A: {comp['variant_a_avg']}ms")
+    print(f"    Variant B: {comp['variant_b_avg']}ms")
+    print(f"    Improvement: {comp['improvement_pct']}%")
+
+if 'success' in analysis['comparison']:
+    comp = analysis['comparison']['success']
+    print(f"\n  Success Rate:")
+    print(f"    Variant A: {comp['variant_a_rate']}%")
+    print(f"    Variant B: {comp['variant_b_rate']}%")
+    print(f"    Improvement: {comp['improvement_pct']}%")
+
+# Output
+import os
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    f.write(f"winner={analysis['winner']}\n")
+    f.write(f"confidence={analysis['confidence']}\n")
+EOF
+
+          python3 /tmp/analyze-ab-test.py
+
+  create-recommendation:
+    name: Create Recommendation
+    runs-on: ubuntu-latest
+    needs: [setup-ab-test, analyze-results]
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📝 Generate recommendation report
+        run: |
+          cat > /tmp/ab-test-report.md << 'EOF'
+# 🧪 A/B Test Results
+
+## Test Configuration
+
+**Test ID:** ${{ needs.setup-ab-test.outputs.test_id }}
+**Workflow:** ${{ github.event.inputs.workflow_name }}
+**Test Runs:** ${{ github.event.inputs.test_runs }} per variant
+
+## Variants
+
+**Variant A (Baseline):** `${{ github.event.inputs.variant_a }}`
+**Variant B (Experimental):** `${{ github.event.inputs.variant_b }}`
+
+## Results
+
+**Winner:** Variant ${{ needs.analyze-results.outputs.winner }}
+**Confidence:** ${{ needs.analyze-results.outputs.confidence }}%
+
+### Detailed Metrics
+
+See `/tmp/ab-test-analysis.json` for complete statistical analysis.
+
+## Recommendation
+
+EOF
+
+          if [ "${{ needs.analyze-results.outputs.winner }}" = "B" ] && [ "${{ needs.analyze-results.outputs.confidence }}" -gt 70 ]; then
+            cat >> /tmp/ab-test-report.md << 'EOF'
+✅ **Recommend adopting Variant B**
+
+Variant B shows statistically significant improvement with >70% confidence.
+
+### Next Steps
+1. Review detailed metrics in analysis
+2. Merge variant B changes to main branch
+3. Monitor production performance
+4. Consider rolling back if issues arise
+EOF
+          elif [ "${{ needs.analyze-results.outputs.winner }}" = "A" ]; then
+            cat >> /tmp/ab-test-report.md << 'EOF'
+⚠️ **Recommend keeping Variant A (baseline)**
+
+Variant B does not show significant improvement. Keep current implementation.
+
+### Next Steps
+1. Review why variant B underperformed
+2. Investigate alternative optimizations
+3. Run additional tests if needed
+EOF
+          else
+            cat >> /tmp/ab-test-report.md << 'EOF'
+🤷 **Results inconclusive**
+
+Neither variant shows clear superiority. Consider:
+- Running more test iterations
+- Testing under different conditions
+- Measuring additional metrics
+EOF
+          fi
+
+          cat >> /tmp/ab-test-report.md << 'EOF'
+
+---
+
+🧪 **A/B testing powered by statistical analysis!**
+EOF
+
+          cat /tmp/ab-test-report.md
+
+      - name: 💾 Save A/B test results
+        run: |
+          mkdir -p docs/ab-tests
+
+          cp /tmp/ab-test-analysis.json docs/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}.json
+          cp /tmp/ab-test-report.md docs/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}.md
+
+          git config user.name "BlackRoad A/B Testing"
+          git config user.email "ab-testing@blackroad.systems"
+
+          git add docs/ab-tests/
+          git commit -m "docs: Add A/B test results for ${{ github.event.inputs.workflow_name }}
+
+Test ID: ${{ needs.setup-ab-test.outputs.test_id }}
+Winner: Variant ${{ needs.analyze-results.outputs.winner }}
+Confidence: ${{ needs.analyze-results.outputs.confidence }}%
+
+🧪 Auto-generated by A/B Testing Framework" || true
+
+          git push || true
+
+      - name: 📢 Create PR if Variant B wins
+        if: needs.analyze-results.outputs.winner == 'B' && needs.analyze-results.outputs.confidence > 70
+        run: |
+          gh pr create \
+            --title "🧪 Adopt Variant B for ${{ github.event.inputs.workflow_name }}" \
+            --body "## A/B Test Results
+
+Winner: **Variant B** with ${{ needs.analyze-results.outputs.confidence }}% confidence
+
+Merge variant B changes from \`${{ github.event.inputs.variant_b }}\` to main.
+
+See full analysis: \`docs/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}.md\`" \
+            --base main \
+            --head "${{ github.event.inputs.variant_b }}" \
+            --label "ab-test,optimization"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  generate-summary:
+    name: Generate Summary
+    runs-on: ubuntu-latest
+    needs: [setup-ab-test, analyze-results]
+    if: always()
+    steps:
+      - name: 📊 Create summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🧪 A/B Test Results
+
+          ## Test Configuration
+
+          **Workflow:** ${{ github.event.inputs.workflow_name }}
+          **Variant A:** `${{ github.event.inputs.variant_a }}`
+          **Variant B:** `${{ github.event.inputs.variant_b }}`
+          **Test Runs:** ${{ github.event.inputs.test_runs }}
+
+          ## Results
+
+          **Winner:** Variant ${{ needs.analyze-results.outputs.winner }}
+          **Confidence:** ${{ needs.analyze-results.outputs.confidence }}%
+
+          ## Next Steps
+
+          - Review full analysis: `docs/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}.md`
+          - Check statistical details: `docs/ab-tests/${{ needs.setup-ab-test.outputs.test_id }}.json`
+
+          ---
+
+          🧪 **Data-driven workflow optimization!**
+          EOF

@@ -1,0 +1,788 @@
+name: 🕸️ Workflow Dependency Graph Visualizer
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # Daily at 8 AM
+  workflow_dispatch:
+    inputs:
+      output_format:
+        description: 'Output format (svg, png, json)'
+        required: false
+        default: 'svg'
+      include_external:
+        description: 'Include external dependencies'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  analyze-dependencies:
+    name: Analyze Workflow Dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      dependency_count: ${{ steps.analyze.outputs.count }}
+      critical_paths: ${{ steps.analyze.outputs.critical }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔍 Analyze workflow dependencies
+        id: analyze
+        run: |
+          echo "Analyzing workflow dependencies..."
+
+          cat > /tmp/analyze-dependencies.py << 'EOF'
+import os
+import re
+import json
+import yaml
+from collections import defaultdict
+
+# Load all workflows
+workflows_dir = '.github/workflows'
+workflows = {}
+dependencies = defaultdict(list)
+
+for filename in os.listdir(workflows_dir):
+    if not filename.endswith('.yml') and not filename.endswith('.yaml'):
+        continue
+
+    filepath = os.path.join(workflows_dir, filename)
+
+    with open(filepath, 'r') as f:
+        try:
+            content = f.read()
+            workflow = yaml.safe_load(content)
+
+            if not workflow:
+                continue
+
+            workflow_name = workflow.get('name', filename.replace('.yml', '').replace('.yaml', ''))
+            workflows[workflow_name] = {
+                'filename': filename,
+                'triggers': [],
+                'dependencies': [],
+                'uses': [],
+                'needs': []
+            }
+
+            # Extract triggers
+            if 'on' in workflow:
+                triggers = workflow['on']
+                if isinstance(triggers, dict):
+                    workflows[workflow_name]['triggers'] = list(triggers.keys())
+                elif isinstance(triggers, list):
+                    workflows[workflow_name]['triggers'] = triggers
+                elif isinstance(triggers, str):
+                    workflows[workflow_name]['triggers'] = [triggers]
+
+            # Extract job dependencies
+            if 'jobs' in workflow:
+                for job_name, job_config in workflow['jobs'].items():
+                    # Check for 'needs' dependencies
+                    if isinstance(job_config, dict) and 'needs' in job_config:
+                        needs = job_config['needs']
+                        if isinstance(needs, list):
+                            workflows[workflow_name]['needs'].extend(needs)
+                        else:
+                            workflows[workflow_name]['needs'].append(needs)
+
+                    # Check for 'uses' (reusable workflows)
+                    if isinstance(job_config, dict) and 'uses' in job_config:
+                        workflows[workflow_name]['uses'].append(job_config['uses'])
+
+                    # Check steps for workflow_dispatch calls
+                    if isinstance(job_config, dict) and 'steps' in job_config:
+                        for step in job_config['steps']:
+                            if isinstance(step, dict) and 'run' in step:
+                                run_cmd = step['run']
+                                # Find gh workflow run commands
+                                if 'gh workflow run' in run_cmd:
+                                    match = re.search(r'gh workflow run ([^\s]+)', run_cmd)
+                                    if match:
+                                        dep_workflow = match.group(1)
+                                        dependencies[workflow_name].append(dep_workflow)
+                                        workflows[workflow_name]['dependencies'].append(dep_workflow)
+        except Exception as e:
+            print(f"Error parsing {filename}: {e}")
+
+# Build dependency graph
+graph = {
+    'nodes': [],
+    'edges': [],
+    'metadata': {
+        'total_workflows': len(workflows),
+        'total_dependencies': sum(len(deps) for deps in dependencies.values()),
+        'most_dependent': None,
+        'most_depended_on': None
+    }
+}
+
+# Add nodes
+for name, data in workflows.items():
+    graph['nodes'].append({
+        'id': name,
+        'filename': data['filename'],
+        'triggers': data['triggers'],
+        'dependency_count': len(data['dependencies']),
+        'type': 'workflow'
+    })
+
+# Add edges
+edge_id = 0
+for source, targets in dependencies.items():
+    for target in targets:
+        graph['edges'].append({
+            'id': f'edge-{edge_id}',
+            'source': source,
+            'target': target,
+            'type': 'workflow_dispatch'
+        })
+        edge_id += 1
+
+# Add internal job dependencies as edges
+for name, data in workflows.items():
+    for dep in data['dependencies']:
+        if dep not in [e['target'] for e in graph['edges'] if e['source'] == name]:
+            graph['edges'].append({
+                'id': f'edge-{edge_id}',
+                'source': name,
+                'target': dep,
+                'type': 'job_dependency'
+            })
+            edge_id += 1
+
+# Calculate statistics
+dep_counts = defaultdict(int)
+for edge in graph['edges']:
+    dep_counts[edge['source']] += 1
+
+depended_counts = defaultdict(int)
+for edge in graph['edges']:
+    depended_counts[edge['target']] += 1
+
+if dep_counts:
+    most_dependent = max(dep_counts.items(), key=lambda x: x[1])
+    graph['metadata']['most_dependent'] = {
+        'name': most_dependent[0],
+        'count': most_dependent[1]
+    }
+
+if depended_counts:
+    most_depended_on = max(depended_counts.items(), key=lambda x: x[1])
+    graph['metadata']['most_depended_on'] = {
+        'name': most_depended_on[0],
+        'count': most_depended_on[1]
+    }
+
+# Find critical paths (longest dependency chains)
+def find_paths(graph, start, visited=None):
+    if visited is None:
+        visited = set()
+
+    if start in visited:
+        return []
+
+    visited.add(start)
+    paths = [[start]]
+
+    for edge in graph['edges']:
+        if edge['source'] == start:
+            target = edge['target']
+            sub_paths = find_paths(graph, target, visited.copy())
+            if sub_paths:
+                for sub_path in sub_paths:
+                    paths.append([start] + sub_path)
+
+    return paths
+
+all_paths = []
+for node in graph['nodes']:
+    paths = find_paths(graph, node['id'])
+    all_paths.extend(paths)
+
+# Sort by length
+all_paths.sort(key=len, reverse=True)
+critical_paths = all_paths[:5]  # Top 5 longest paths
+
+graph['critical_paths'] = [
+    {
+        'length': len(path),
+        'path': path
+    }
+    for path in critical_paths
+]
+
+# Save graph
+with open('/tmp/dependency-graph.json', 'w') as f:
+    json.dump(graph, f, indent=2)
+
+print(f"\nDependency Graph Analysis:")
+print(f"  Total workflows: {graph['metadata']['total_workflows']}")
+print(f"  Total dependencies: {graph['metadata']['total_dependencies']}")
+print(f"  Total edges: {len(graph['edges'])}")
+
+if graph['metadata']['most_dependent']:
+    print(f"  Most dependent workflow: {graph['metadata']['most_dependent']['name']} ({graph['metadata']['most_dependent']['count']} dependencies)")
+
+if graph['metadata']['most_depended_on']:
+    print(f"  Most depended-on workflow: {graph['metadata']['most_depended_on']['name']} ({graph['metadata']['most_depended_on']['count']} dependents)")
+
+print(f"\nCritical paths:")
+for i, cp in enumerate(graph['critical_paths'][:3]):
+    print(f"  {i+1}. Length {cp['length']}: {' → '.join(cp['path'][:3])}{'...' if len(cp['path']) > 3 else ''}")
+
+# Output
+import os
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    f.write(f"count={graph['metadata']['total_dependencies']}\n")
+    f.write(f"critical={len(critical_paths)}\n")
+EOF
+
+          python3 /tmp/analyze-dependencies.py
+
+  generate-svg-graph:
+    name: Generate SVG Dependency Graph
+    runs-on: ubuntu-latest
+    needs: analyze-dependencies
+    if: github.event.inputs.output_format == 'svg' || github.event.inputs.output_format == ''
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🎨 Generate SVG graph with D3.js
+        run: |
+          cat > /tmp/generate-svg.py << 'EOF'
+import json
+import math
+
+# Load graph data
+with open('/tmp/dependency-graph.json') as f:
+    graph = json.load(f)
+
+nodes = graph['nodes']
+edges = graph['edges']
+
+# Calculate layout (force-directed simulation approximation)
+# Simple circular layout for now
+node_count = len(nodes)
+radius = max(200, node_count * 15)
+center_x = radius + 50
+center_y = radius + 50
+
+node_positions = {}
+for i, node in enumerate(nodes):
+    angle = (2 * math.pi * i) / node_count
+    x = center_x + radius * math.cos(angle)
+    y = center_y + radius * math.sin(angle)
+    node_positions[node['id']] = {'x': x, 'y': y}
+
+# Generate SVG
+svg_width = (radius + 50) * 2
+svg_height = (radius + 50) * 2
+
+svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#999" />
+    </marker>
+    <style>
+      .node {{ fill: #4CAF50; stroke: #2E7D32; stroke-width: 2; cursor: pointer; }}
+      .node:hover {{ fill: #66BB6A; }}
+      .edge {{ stroke: #999; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }}
+      .edge.dependency {{ stroke: #2196F3; }}
+      .label {{ font-family: Arial, sans-serif; font-size: 12px; fill: #333; text-anchor: middle; }}
+      .title {{ font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #333; text-anchor: middle; }}
+      .stats {{ font-family: Arial, sans-serif; font-size: 14px; fill: #666; }}
+    </style>
+  </defs>
+
+  <rect width="{svg_width}" height="{svg_height}" fill="#f5f5f5"/>
+
+  <text x="{svg_width/2}" y="30" class="title">Workflow Dependency Graph</text>
+  <text x="20" y="60" class="stats">Total Workflows: {len(nodes)} | Dependencies: {len(edges)}</text>
+'''
+
+# Draw edges
+for edge in edges:
+    source_id = edge['source']
+    target_id = edge['target']
+
+    if source_id in node_positions and target_id in node_positions:
+        source_pos = node_positions[source_id]
+        target_pos = node_positions[target_id]
+
+        edge_class = 'edge dependency' if edge['type'] == 'job_dependency' else 'edge'
+
+        svg += f'''  <line x1="{source_pos['x']}" y1="{source_pos['y']}"
+        x2="{target_pos['x']}" y2="{target_pos['y']}" class="{edge_class}"/>\n'''
+
+# Draw nodes
+for node in nodes:
+    pos = node_positions[node['id']]
+    node_radius = 8 + (node['dependency_count'] * 2)  # Larger if more dependencies
+
+    # Truncate long names
+    display_name = node['id']
+    if len(display_name) > 20:
+        display_name = display_name[:17] + '...'
+
+    svg += f'''  <circle cx="{pos['x']}" cy="{pos['y']}" r="{node_radius}" class="node">
+    <title>{node['id']}\nFile: {node['filename']}\nTriggers: {', '.join(node['triggers'])}\nDependencies: {node['dependency_count']}</title>
+  </circle>
+  <text x="{pos['x']}" y="{pos['y'] + node_radius + 15}" class="label">{display_name}</text>\n'''
+
+svg += '</svg>'
+
+# Save SVG
+with open('/tmp/dependency-graph.svg', 'w') as f:
+    f.write(svg)
+
+print(f"✅ Generated SVG graph ({svg_width}x{svg_height})")
+print(f"   Nodes: {len(nodes)}")
+print(f"   Edges: {len(edges)}")
+EOF
+
+          python3 /tmp/generate-svg.py
+
+      - name: 💾 Save dependency graph
+        run: |
+          mkdir -p docs/graphs
+
+          cp /tmp/dependency-graph.json docs/graphs/dependency-graph.json
+          cp /tmp/dependency-graph.svg docs/graphs/dependency-graph.svg
+
+          # Generate HTML viewer
+          cat > docs/graphs/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workflow Dependency Graph</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .stats {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .graph {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 800px;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .legend-item {
+            display: inline-block;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕸️ Workflow Dependency Graph</h1>
+        <div class="stats" id="stats">Loading...</div>
+
+        <div class="graph">
+            <object data="dependency-graph.svg" type="image/svg+xml" width="100%"></object>
+        </div>
+
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #4CAF50;"></span>
+                <span>Workflow Node</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #2196F3; height: 3px;"></span>
+                <span>Job Dependency</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #999; height: 3px;"></span>
+                <span>Workflow Dispatch</span>
+            </div>
+        </div>
+
+        <div id="data" style="margin-top: 30px;">
+            <h3>Dependency Data</h3>
+            <pre id="json-data" style="background: #f5f5f5; padding: 15px; border-radius: 4px; overflow: auto;"></pre>
+        </div>
+    </div>
+
+    <script>
+        fetch('dependency-graph.json')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('stats').innerHTML = `
+                    <strong>Total Workflows:</strong> ${data.metadata.total_workflows} |
+                    <strong>Dependencies:</strong> ${data.metadata.total_dependencies} |
+                    <strong>Edges:</strong> ${data.edges.length}
+                    ${data.metadata.most_dependent ? `<br><strong>Most Dependent:</strong> ${data.metadata.most_dependent.name} (${data.metadata.most_dependent.count} deps)` : ''}
+                    ${data.metadata.most_depended_on ? `<br><strong>Most Depended On:</strong> ${data.metadata.most_depended_on.name} (${data.metadata.most_depended_on.count} dependents)` : ''}
+                `;
+
+                document.getElementById('json-data').textContent = JSON.stringify(data, null, 2);
+            });
+    </script>
+</body>
+</html>
+EOF
+
+          if git diff --quiet docs/graphs/; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git config user.name "BlackRoad Dependency Analyzer"
+          git config user.email "dependencies@blackroad.systems"
+
+          git add docs/graphs/
+          git commit -m "docs: Update workflow dependency graph
+
+Dependencies: ${{ needs.analyze-dependencies.outputs.dependency_count }}
+Critical paths: ${{ needs.analyze-dependencies.outputs.critical_paths }}
+
+🕸️ Auto-generated by Dependency Analyzer" || true
+
+          git push || true
+
+  generate-interactive-graph:
+    name: Generate Interactive D3.js Graph
+    runs-on: ubuntu-latest
+    needs: analyze-dependencies
+    steps:
+      - name: 🎨 Generate interactive D3.js visualization
+        run: |
+          cat > /tmp/interactive-graph.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Workflow Dependency Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        #graph {
+            width: 100vw;
+            height: 100vh;
+        }
+        .node {
+            cursor: pointer;
+        }
+        .node circle {
+            fill: #4CAF50;
+            stroke: #2E7D32;
+            stroke-width: 2px;
+        }
+        .node:hover circle {
+            fill: #66BB6A;
+        }
+        .node text {
+            font-size: 12px;
+            pointer-events: none;
+            text-anchor: middle;
+        }
+        .link {
+            stroke: #999;
+            stroke-width: 1.5px;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        .link.dependency {
+            stroke: #2196F3;
+        }
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .controls button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background: #66BB6A;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h3>Controls</h3>
+        <button onclick="resetZoom()">Reset Zoom</button>
+        <button onclick="centerGraph()">Center</button>
+        <div style="margin-top: 10px;">
+            <label>Layout:</label>
+            <select onchange="changeLayout(this.value)">
+                <option value="force">Force-Directed</option>
+                <option value="radial">Radial</option>
+                <option value="tree">Tree</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+    <svg id="graph"></svg>
+
+    <script>
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        const svg = d3.select('#graph')
+            .attr('width', width)
+            .attr('height', height);
+
+        // Arrow marker
+        svg.append('defs').append('marker')
+            .attr('id', 'arrowhead')
+            .attr('viewBox', '0 0 10 10')
+            .attr('refX', 20)
+            .attr('refY', 5)
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M 0 0 L 10 5 L 0 10 z')
+            .attr('fill', '#999');
+
+        const g = svg.append('g');
+
+        // Zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 10])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+
+        svg.call(zoom);
+
+        function resetZoom() {
+            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+        }
+
+        function centerGraph() {
+            const bounds = g.node().getBBox();
+            const scale = 0.9 / Math.max(bounds.width / width, bounds.height / height);
+            const translate = [width / 2 - scale * (bounds.x + bounds.width / 2),
+                              height / 2 - scale * (bounds.y + bounds.height / 2)];
+
+            svg.transition().duration(750).call(
+                zoom.transform,
+                d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+            );
+        }
+
+        // Load data and render
+        fetch('dependency-graph.json')
+            .then(r => r.json())
+            .then(data => {
+                renderGraph(data, 'force');
+            });
+
+        function renderGraph(data, layoutType) {
+            g.selectAll('*').remove();
+
+            // Transform data for D3
+            const nodes = data.nodes.map(n => ({
+                id: n.id,
+                ...n
+            }));
+
+            const links = data.edges.map(e => ({
+                source: e.source,
+                target: e.target,
+                type: e.type
+            }));
+
+            // Force simulation
+            const simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(30));
+
+            // Links
+            const link = g.append('g')
+                .selectAll('path')
+                .data(links)
+                .join('path')
+                .attr('class', d => d.type === 'job_dependency' ? 'link dependency' : 'link');
+
+            // Nodes
+            const node = g.append('g')
+                .selectAll('g')
+                .data(nodes)
+                .join('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended))
+                .on('mouseover', showTooltip)
+                .on('mouseout', hideTooltip);
+
+            node.append('circle')
+                .attr('r', d => 8 + (d.dependency_count * 2));
+
+            node.append('text')
+                .text(d => d.id.length > 20 ? d.id.substring(0, 17) + '...' : d.id)
+                .attr('y', d => 12 + (d.dependency_count * 2) + 8);
+
+            simulation.on('tick', () => {
+                link.attr('d', d => {
+                    const dx = d.target.x - d.source.x;
+                    const dy = d.target.y - d.source.y;
+                    const dr = Math.sqrt(dx * dx + dy * dy);
+                    return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+                });
+
+                node.attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            function showTooltip(event, d) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.innerHTML = `
+                    <strong>${d.id}</strong><br>
+                    File: ${d.filename}<br>
+                    Triggers: ${d.triggers.join(', ')}<br>
+                    Dependencies: ${d.dependency_count}
+                `;
+                tooltip.style.left = (event.pageX + 10) + 'px';
+                tooltip.style.top = (event.pageY + 10) + 'px';
+                tooltip.style.opacity = 1;
+            }
+
+            function hideTooltip() {
+                document.getElementById('tooltip').style.opacity = 0;
+            }
+
+            // Center after initial layout
+            setTimeout(centerGraph, 1000);
+        }
+
+        function changeLayout(type) {
+            fetch('dependency-graph.json')
+                .then(r => r.json())
+                .then(data => renderGraph(data, type));
+        }
+    </script>
+</body>
+</html>
+EOF
+
+          mkdir -p /tmp/graphs
+          cp /tmp/interactive-graph.html /tmp/graphs/interactive.html
+
+          echo "✅ Generated interactive D3.js graph"
+
+  generate-summary:
+    name: Generate Summary
+    runs-on: ubuntu-latest
+    needs: [analyze-dependencies, generate-svg-graph]
+    if: always()
+    steps:
+      - name: 📊 Create summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🕸️ Workflow Dependency Graph
+
+          ## Analysis Results
+
+          **Total Dependencies:** ${{ needs.analyze-dependencies.outputs.dependency_count }}
+          **Critical Paths:** ${{ needs.analyze-dependencies.outputs.critical_paths }}
+
+          ## Visualizations
+
+          - 📊 **SVG Graph:** `docs/graphs/dependency-graph.svg`
+          - 🎨 **Interactive D3.js:** `docs/graphs/interactive.html`
+          - 📄 **Raw Data:** `docs/graphs/dependency-graph.json`
+          - 🌐 **HTML Viewer:** `docs/graphs/index.html`
+
+          ## Features
+
+          - ✅ Force-directed graph layout
+          - ✅ Interactive node dragging
+          - ✅ Zoom and pan controls
+          - ✅ Critical path identification
+          - ✅ Dependency type visualization
+          - ✅ Hover tooltips with details
+
+          ---
+
+          🕸️ **Visualize workflow relationships and optimize dependency chains!**
+          EOF
