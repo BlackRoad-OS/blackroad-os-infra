@@ -1,0 +1,20 @@
+name: 🗄️ Agent: Database Specialist
+on:
+  issues:
+    types: [opened, labeled]
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  database_agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🗄️ Database Analysis
+        run: |
+          echo "Analyzing database performance and queries..."
+          echo "Agent: redis-cache-manager"

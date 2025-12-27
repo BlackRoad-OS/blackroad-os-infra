@@ -1,0 +1,18 @@
+name: 🧪 Agent: Testing Specialist
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  testing_agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧪 Test Analysis
+        run: |
+          echo "Generating and analyzing tests..."
+          echo "Agent: integration-test-expert"

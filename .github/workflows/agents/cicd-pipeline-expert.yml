@@ -1,0 +1,20 @@
+name: 🚀 Agent: DevOps Specialist
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+      - 'Dockerfile'
+      - 'k8s/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  devops_agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 DevOps Analysis
+        run: |
+          echo "Analyzing infrastructure and deployments..."
+          echo "Agent: cicd-pipeline-expert"

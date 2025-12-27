@@ -1,0 +1,21 @@
+name: ⚙️ Agent: Backend Specialist
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'server/**'
+      - '**/*.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backend_agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⚙️ Backend Analysis
+        run: |
+          echo "Analyzing backend architecture and APIs..."
+          echo "Agent: graphql-expert"

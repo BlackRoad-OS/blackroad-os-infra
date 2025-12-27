@@ -1,0 +1,17 @@
+name: 💻 Agent: Language Expert
+on:
+  pull_request:
+    types: [opened]
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+
+jobs:
+  language_expert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 💻 Language Analysis
+        run: |
+          echo "Analyzing code quality and patterns..."
+          echo "Agent: kotlin-expert"
