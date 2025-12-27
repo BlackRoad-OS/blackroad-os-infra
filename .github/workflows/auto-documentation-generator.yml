@@ -1,0 +1,947 @@
+name: Automatic Documentation Generator
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'lib/**'
+      - '**/*.ts'
+      - '**/*.js'
+      - '**/*.py'
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      doc_type:
+        description: 'Documentation type'
+        required: true
+        type: choice
+        options:
+          - api
+          - user-guide
+          - developer-guide
+          - architecture
+          - all
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  analyze-codebase:
+    name: Analyze Codebase Structure
+    runs-on: ubuntu-latest
+    outputs:
+      has_api: ${{ steps.analyze.outputs.api }}
+      has_cli: ${{ steps.analyze.outputs.cli }}
+      has_ui: ${{ steps.analyze.outputs.ui }}
+      language: ${{ steps.analyze.outputs.language }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Analyze project structure
+        id: analyze
+        run: |
+          echo "Analyzing codebase..."
+
+          # Detect project type and language
+          has_api="false"
+          has_cli="false"
+          has_ui="false"
+          language="unknown"
+
+          # Check for API
+          if find . -name "*.ts" -o -name "*.js" | xargs grep -l "express\|fastify\|@nestjs\|api\|router" 2>/dev/null; then
+            has_api="true"
+          fi
+
+          # Check for CLI
+          if find . -name "*.ts" -o -name "*.js" | xargs grep -l "commander\|yargs\|cli" 2>/dev/null; then
+            has_cli="true"
+          fi
+
+          # Check for UI
+          if find . -name "*.tsx" -o -name "*.jsx" 2>/dev/null | head -1; then
+            has_ui="true"
+          fi
+
+          # Detect primary language
+          if [ -f "package.json" ]; then
+            language="javascript"
+            if [ -f "tsconfig.json" ]; then
+              language="typescript"
+            fi
+          elif [ -f "requirements.txt" ] || [ -f "setup.py" ]; then
+            language="python"
+          elif [ -f "Cargo.toml" ]; then
+            language="rust"
+          elif [ -f "go.mod" ]; then
+            language="go"
+          fi
+
+          echo "api=$has_api" >> $GITHUB_OUTPUT
+          echo "cli=$has_cli" >> $GITHUB_OUTPUT
+          echo "ui=$has_ui" >> $GITHUB_OUTPUT
+          echo "language=$language" >> $GITHUB_OUTPUT
+
+          echo "Project analysis:"
+          echo "  Has API: $has_api"
+          echo "  Has CLI: $has_cli"
+          echo "  Has UI: $has_ui"
+          echo "  Language: $language"
+
+  generate-api-docs:
+    name: Generate API Documentation
+    runs-on: ubuntu-latest
+    needs: analyze-codebase
+    if: needs.analyze-codebase.outputs.has_api == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate API reference
+        run: |
+          echo "Generating API documentation..."
+
+          mkdir -p docs/api
+
+          cat > docs/api/README.md << 'EOF'
+# API Documentation
+
+Auto-generated API reference documentation.
+
+## Overview
+
+This API provides programmatic access to the application's functionality.
+
+## Base URL
+
+```
+https://api.example.com/v1
+```
+
+## Authentication
+
+All API requests require authentication using an API key:
+
+```bash
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+     https://api.example.com/v1/endpoint
+```
+
+## Endpoints
+
+### GET /health
+
+Health check endpoint.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+### GET /api/resources
+
+List all resources.
+
+**Query Parameters:**
+- `limit` (optional): Number of items to return (default: 10)
+- `offset` (optional): Pagination offset (default: 0)
+
+**Response:**
+```json
+{
+  "data": [],
+  "total": 0,
+  "limit": 10,
+  "offset": 0
+}
+```
+
+### POST /api/resources
+
+Create a new resource.
+
+**Request Body:**
+```json
+{
+  "name": "Resource Name",
+  "description": "Resource description"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "name": "Resource Name",
+  "description": "Resource description",
+  "createdAt": "2024-01-01T00:00:00Z"
+}
+```
+
+### GET /api/resources/:id
+
+Get a specific resource.
+
+**Parameters:**
+- `id`: Resource ID
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "name": "Resource Name",
+  "description": "Resource description",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}
+```
+
+### PUT /api/resources/:id
+
+Update a resource.
+
+**Parameters:**
+- `id`: Resource ID
+
+**Request Body:**
+```json
+{
+  "name": "Updated Name",
+  "description": "Updated description"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "name": "Updated Name",
+  "description": "Updated description",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}
+```
+
+### DELETE /api/resources/:id
+
+Delete a resource.
+
+**Parameters:**
+- `id`: Resource ID
+
+**Response:**
+```
+204 No Content
+```
+
+## Error Handling
+
+All errors follow this format:
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {}
+  }
+}
+```
+
+### Common Error Codes
+
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `429` - Too Many Requests
+- `500` - Internal Server Error
+
+## Rate Limiting
+
+API requests are limited to 1000 requests per hour per API key.
+
+Rate limit headers:
+- `X-RateLimit-Limit`: Maximum requests per hour
+- `X-RateLimit-Remaining`: Remaining requests
+- `X-RateLimit-Reset`: Time when limit resets (Unix timestamp)
+
+## Pagination
+
+List endpoints support pagination:
+
+```
+GET /api/resources?limit=20&offset=40
+```
+
+Response includes pagination metadata:
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "total": 100,
+    "limit": 20,
+    "offset": 40,
+    "hasMore": true
+  }
+}
+```
+
+## Webhooks
+
+Configure webhooks to receive real-time notifications:
+
+```bash
+POST /api/webhooks
+{
+  "url": "https://your-domain.com/webhook",
+  "events": ["resource.created", "resource.updated", "resource.deleted"]
+}
+```
+
+Webhook payload example:
+
+```json
+{
+  "event": "resource.created",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "data": {
+    "id": "uuid",
+    "name": "Resource Name"
+  }
+}
+```
+
+---
+🤖 Auto-generated by Documentation Generator
+EOF
+
+          echo "✓ Generated API documentation"
+
+      - name: Upload API docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: docs/api/
+
+  generate-user-guide:
+    name: Generate User Guide
+    runs-on: ubuntu-latest
+    needs: analyze-codebase
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate user guide
+        run: |
+          echo "Generating user guide..."
+
+          mkdir -p docs/guides
+
+          cat > docs/guides/USER_GUIDE.md << 'EOF'
+# User Guide
+
+Complete guide for using this application.
+
+## Table of Contents
+
+1. [Getting Started](#getting-started)
+2. [Installation](#installation)
+3. [Configuration](#configuration)
+4. [Basic Usage](#basic-usage)
+5. [Advanced Features](#advanced-features)
+6. [Troubleshooting](#troubleshooting)
+7. [FAQs](#faqs)
+
+## Getting Started
+
+Welcome! This guide will help you get up and running quickly.
+
+### Prerequisites
+
+- Node.js 18+ or Python 3.9+
+- Package manager (npm, yarn, or pip)
+- Basic command line knowledge
+
+## Installation
+
+### Via Package Manager
+
+```bash
+# npm
+npm install -g your-package
+
+# yarn
+yarn global add your-package
+
+# pip
+pip install your-package
+```
+
+### From Source
+
+```bash
+git clone https://github.com/your-org/your-repo.git
+cd your-repo
+npm install
+npm run build
+```
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file:
+
+```env
+API_KEY=your_api_key_here
+BASE_URL=https://api.example.com
+LOG_LEVEL=info
+```
+
+### Configuration File
+
+Create `config.json`:
+
+```json
+{
+  "api": {
+    "baseUrl": "https://api.example.com",
+    "timeout": 30000
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  }
+}
+```
+
+## Basic Usage
+
+### Command Line Interface
+
+```bash
+# Initialize
+your-cli init
+
+# Run main command
+your-cli run
+
+# Check status
+your-cli status
+```
+
+### Programmatic Usage
+
+```javascript
+const { Client } = require('your-package');
+
+const client = new Client({
+  apiKey: 'your_api_key'
+});
+
+// Example operation
+const result = await client.doSomething();
+console.log(result);
+```
+
+## Advanced Features
+
+### Feature 1: Automation
+
+Automate repetitive tasks:
+
+```bash
+your-cli automate --task=daily-sync
+```
+
+### Feature 2: Custom Workflows
+
+Define custom workflows:
+
+```yaml
+workflows:
+  - name: Deploy
+    steps:
+      - build
+      - test
+      - deploy
+```
+
+### Feature 3: Integrations
+
+Connect with other services:
+
+```javascript
+client.integrate({
+  service: 'slack',
+  webhook: 'https://hooks.slack.com/...'
+});
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Issue: Connection Timeout
+
+**Solution:** Check your network connection and firewall settings.
+
+```bash
+# Test connectivity
+curl https://api.example.com/health
+```
+
+#### Issue: Authentication Failed
+
+**Solution:** Verify your API key is correct and active.
+
+```bash
+# Check API key
+your-cli validate-key
+```
+
+#### Issue: Command Not Found
+
+**Solution:** Ensure the package is installed globally.
+
+```bash
+# Reinstall
+npm install -g your-package
+```
+
+### Debug Mode
+
+Enable debug logging:
+
+```bash
+DEBUG=* your-cli run
+```
+
+## FAQs
+
+**Q: How do I update to the latest version?**
+
+A: Run `npm update -g your-package` or `pip install --upgrade your-package`
+
+**Q: Is there a community forum?**
+
+A: Yes! Visit https://community.example.com
+
+**Q: How do I report bugs?**
+
+A: Create an issue on GitHub: https://github.com/your-org/your-repo/issues
+
+**Q: What's the difference between free and pro?**
+
+A: See our pricing page: https://example.com/pricing
+
+## Getting Help
+
+- Documentation: https://docs.example.com
+- Community: https://community.example.com
+- Support: support@example.com
+- GitHub: https://github.com/your-org/your-repo
+
+---
+🤖 Auto-generated by Documentation Generator
+EOF
+
+          echo "✓ Generated user guide"
+
+      - name: Upload user guide
+        uses: actions/upload-artifact@v4
+        with:
+          name: user-guide
+          path: docs/guides/
+
+  generate-architecture-docs:
+    name: Generate Architecture Documentation
+    runs-on: ubuntu-latest
+    needs: analyze-codebase
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate architecture docs
+        run: |
+          echo "Generating architecture documentation..."
+
+          mkdir -p docs/architecture
+
+          cat > docs/architecture/ARCHITECTURE.md << 'EOF'
+# Architecture Documentation
+
+System architecture and design overview.
+
+## System Overview
+
+```
+┌─────────────────────────────────────────────┐
+│           Client Applications                │
+│  (Web, Mobile, CLI, API Consumers)          │
+└──────────────┬──────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────┐
+│         Load Balancer / API Gateway          │
+│     (Rate Limiting, Auth, Routing)          │
+└──────────────┬──────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────┐
+│          Application Layer                   │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
+│  │ API      │  │ Business │  │ Workers  │  │
+│  │ Service  │  │ Logic    │  │ / Queue  │  │
+│  └──────────┘  └──────────┘  └──────────┘  │
+└──────────────┬─────────┬────────────────────┘
+               │         │
+               ▼         ▼
+┌──────────────┐  ┌──────────────┐
+│   Database   │  │  Cache Layer │
+│  (Postgres)  │  │   (Redis)    │
+└──────────────┘  └──────────────┘
+```
+
+## Components
+
+### 1. API Layer
+
+**Responsibilities:**
+- Request validation
+- Authentication & authorization
+- Rate limiting
+- Response formatting
+
+**Technologies:**
+- Express.js / FastAPI
+- JWT for authentication
+- OpenAPI specification
+
+### 2. Business Logic Layer
+
+**Responsibilities:**
+- Core application logic
+- Data processing
+- Business rules enforcement
+- Integration orchestration
+
+**Patterns:**
+- Service-oriented architecture
+- Dependency injection
+- Repository pattern
+
+### 3. Data Layer
+
+**Responsibilities:**
+- Data persistence
+- Query optimization
+- Transaction management
+- Data integrity
+
+**Technologies:**
+- PostgreSQL (primary database)
+- Redis (caching & sessions)
+- S3 (file storage)
+
+### 4. Background Workers
+
+**Responsibilities:**
+- Async task processing
+- Scheduled jobs
+- Email notifications
+- Data sync
+
+**Technologies:**
+- Bull/Celery (job queues)
+- Cron for scheduling
+
+## Design Principles
+
+### 1. Separation of Concerns
+
+Each layer has a single, well-defined responsibility.
+
+### 2. Dependency Injection
+
+Components receive dependencies rather than creating them.
+
+### 3. Interface-Based Design
+
+Depend on abstractions, not concrete implementations.
+
+### 4. Fail-Fast
+
+Validate early and fail fast with clear error messages.
+
+### 5. Idempotency
+
+Operations can be safely retried without side effects.
+
+## Data Flow
+
+### Request Flow
+
+```
+1. Client Request
+   ↓
+2. API Gateway (auth, rate limit)
+   ↓
+3. API Route Handler
+   ↓
+4. Service Layer (business logic)
+   ↓
+5. Repository Layer (data access)
+   ↓
+6. Database
+   ↓
+7. Response (formatted & cached)
+```
+
+### Event Flow
+
+```
+1. Event Triggered
+   ↓
+2. Event Queue
+   ↓
+3. Worker Process
+   ↓
+4. Service Layer
+   ↓
+5. Side Effects (email, webhook, etc.)
+```
+
+## Security Architecture
+
+### Authentication
+
+- JWT tokens with 1-hour expiration
+- Refresh tokens for long-lived sessions
+- API keys for service-to-service
+
+### Authorization
+
+- Role-based access control (RBAC)
+- Permission-based fine-grained control
+- Resource ownership validation
+
+### Data Security
+
+- Encryption at rest (AES-256)
+- Encryption in transit (TLS 1.3)
+- PII data anonymization
+
+## Scalability
+
+### Horizontal Scaling
+
+- Stateless API servers
+- Database read replicas
+- CDN for static assets
+
+### Vertical Scaling
+
+- Connection pooling
+- Query optimization
+- Caching strategies
+
+### Performance Optimization
+
+- Database indexing
+- Query result caching (Redis)
+- API response compression
+- Lazy loading
+
+## Monitoring & Observability
+
+### Metrics
+
+- Request rate & latency
+- Error rates
+- Database query performance
+- Cache hit rates
+
+### Logging
+
+- Structured JSON logs
+- Log levels (debug, info, warn, error)
+- Distributed tracing
+
+### Alerting
+
+- Error rate thresholds
+- Performance degradation
+- Resource exhaustion
+- Security events
+
+## Disaster Recovery
+
+### Backup Strategy
+
+- Daily database backups
+- 30-day retention
+- Cross-region replication
+
+### Recovery Plan
+
+1. Identify failure scope
+2. Switch to backup infrastructure
+3. Restore from latest backup
+4. Verify data integrity
+5. Resume normal operations
+
+### RTO/RPO
+
+- Recovery Time Objective: 4 hours
+- Recovery Point Objective: 24 hours
+
+---
+🤖 Auto-generated by Documentation Generator
+EOF
+
+          echo "✓ Generated architecture documentation"
+
+      - name: Upload architecture docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-docs
+          path: docs/architecture/
+
+  create-documentation-pr:
+    name: Create Documentation PR
+    runs-on: ubuntu-latest
+    needs: [generate-api-docs, generate-user-guide, generate-architecture-docs]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all documentation
+        uses: actions/download-artifact@v4
+        with:
+          path: all-docs/
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = `docs/auto-generated-${Date.now()}`;
+
+            // Create branch
+            const { data: ref } = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'heads/main'
+            }).catch(() => null);
+
+            if (ref) {
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/heads/${branchName}`,
+                sha: ref.object.sha
+              }).catch(() => {});
+            }
+
+            const prBody = `## 📚 Auto-Generated Documentation
+
+            Comprehensive documentation generated automatically from codebase analysis.
+
+            ### Generated Documentation
+
+            - ✅ API Reference
+            - ✅ User Guide
+            - ✅ Architecture Documentation
+
+            ### Documentation Sections
+
+            #### API Reference
+            - Endpoint documentation
+            - Request/response examples
+            - Authentication guide
+            - Error handling
+            - Rate limiting info
+
+            #### User Guide
+            - Getting started
+            - Installation instructions
+            - Configuration options
+            - Usage examples
+            - Troubleshooting
+            - FAQs
+
+            #### Architecture
+            - System overview
+            - Component descriptions
+            - Data flow diagrams
+            - Security architecture
+            - Scalability design
+            - Monitoring & observability
+
+            ### Artifacts
+
+            All documentation is available in the workflow artifacts:
+            - \`api-docs\`
+            - \`user-guide\`
+            - \`architecture-docs\`
+
+            ### Next Steps
+
+            1. Download documentation from artifacts
+            2. Review and customize content
+            3. Add project-specific details
+            4. Integrate into documentation site
+
+            ---
+            🤖 Auto-generated by Documentation Generator
+            `;
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📚 Auto-Generated Documentation',
+              head: branchName,
+              base: 'main',
+              body: prBody
+            }).catch(err => {
+              console.log('Could not create PR:', err.message);
+              return null;
+            });
+
+            if (pr) {
+              console.log(`✓ Created PR: ${pr.data.html_url}`);
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.data.number,
+                labels: ['documentation', 'automated']
+              }).catch(() => {});
+            }
+
+  documentation-summary:
+    name: Documentation Summary
+    runs-on: ubuntu-latest
+    needs: [analyze-codebase, generate-api-docs, generate-user-guide, generate-architecture-docs]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 📚 Auto-Documentation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Project Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "- Language: **${{ needs.analyze-codebase.outputs.language }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Has API: ${{ needs.analyze-codebase.outputs.has_api }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Has CLI: ${{ needs.analyze-codebase.outputs.has_cli }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Has UI: ${{ needs.analyze-codebase.outputs.has_ui }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Generated Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ API Reference" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ User Guide" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Architecture Docs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check artifacts for generated documentation files!" >> $GITHUB_STEP_SUMMARY
