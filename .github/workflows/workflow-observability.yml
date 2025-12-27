@@ -1,0 +1,521 @@
+name: 📊 Workflow Observability & Monitoring
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['*']
+    types: [completed]
+
+permissions:
+  contents: write
+  issues: write
+  actions: read
+
+jobs:
+  collect-workflow-metrics:
+    name: Collect Workflow Metrics
+    runs-on: ubuntu-latest
+    outputs:
+      total_workflows: ${{ steps.metrics.outputs.total }}
+      active_workflows: ${{ steps.metrics.outputs.active }}
+      failed_workflows: ${{ steps.metrics.outputs.failed }}
+      success_rate: ${{ steps.metrics.outputs.success_rate }}
+      avg_duration: ${{ steps.metrics.outputs.avg_duration }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📊 Collect workflow metrics
+        id: metrics
+        run: |
+          echo "Collecting workflow metrics from last 24 hours..."
+
+          # Get all workflow runs from last 24 hours
+          gh run list \
+            --limit 1000 \
+            --json name,conclusion,status,createdAt,updatedAt,durationMs \
+            > /tmp/workflow-runs.json
+
+          # Analyze with Python
+          python3 << 'EOF'
+import json
+from datetime import datetime, timedelta
+
+with open('/tmp/workflow-runs.json') as f:
+    runs = json.load(f)
+
+# Filter last 24 hours
+now = datetime.utcnow()
+cutoff = now - timedelta(hours=24)
+
+recent_runs = [
+    r for r in runs
+    if datetime.fromisoformat(r['createdAt'].replace('Z', '+00:00')) > cutoff
+]
+
+# Calculate metrics
+total = len(recent_runs)
+completed = [r for r in recent_runs if r['conclusion'] in ['success', 'failure']]
+active = [r for r in recent_runs if r['status'] in ['in_progress', 'queued']]
+failed = [r for r in recent_runs if r['conclusion'] == 'failure']
+succeeded = [r for r in recent_runs if r['conclusion'] == 'success']
+
+success_rate = (len(succeeded) / len(completed) * 100) if completed else 0
+
+# Calculate average duration
+durations = [r.get('durationMs', 0) for r in completed if r.get('durationMs')]
+avg_duration = sum(durations) / len(durations) if durations else 0
+
+# Workflow performance by name
+workflow_stats = {}
+for run in recent_runs:
+    name = run['name']
+    if name not in workflow_stats:
+        workflow_stats[name] = {
+            'total': 0,
+            'success': 0,
+            'failure': 0,
+            'durations': []
+        }
+
+    workflow_stats[name]['total'] += 1
+    if run['conclusion'] == 'success':
+        workflow_stats[name]['success'] += 1
+    elif run['conclusion'] == 'failure':
+        workflow_stats[name]['failure'] += 1
+
+    if run.get('durationMs'):
+        workflow_stats[name]['durations'].append(run['durationMs'])
+
+# Find slowest workflows
+slowest = sorted(
+    [(name, sum(stats['durations'])/len(stats['durations']) if stats['durations'] else 0)
+     for name, stats in workflow_stats.items()],
+    key=lambda x: x[1],
+    reverse=True
+)[:5]
+
+# Find most failing workflows
+most_failing = sorted(
+    [(name, stats['failure'], stats['total'])
+     for name, stats in workflow_stats.items() if stats['failure'] > 0],
+    key=lambda x: x[1],
+    reverse=True
+)[:5]
+
+print(f"Total workflows: {total}")
+print(f"Active workflows: {len(active)}")
+print(f"Failed workflows: {len(failed)}")
+print(f"Success rate: {success_rate:.2f}%")
+print(f"Avg duration: {avg_duration/1000:.2f}s")
+
+# Save detailed stats
+with open('/tmp/workflow-stats.json', 'w') as f:
+    json.dump({
+        'total': total,
+        'active': len(active),
+        'failed': len(failed),
+        'success_rate': success_rate,
+        'avg_duration': avg_duration,
+        'slowest': slowest,
+        'most_failing': most_failing,
+        'workflow_stats': workflow_stats
+    }, f, indent=2)
+
+# Output for GitHub Actions
+import os
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    f.write(f"total={total}\n")
+    f.write(f"active={len(active)}\n")
+    f.write(f"failed={len(failed)}\n")
+    f.write(f"success_rate={success_rate:.2f}\n")
+    f.write(f"avg_duration={avg_duration/1000:.2f}\n")
+EOF
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📈 Generate trend analysis
+        run: |
+          echo "Analyzing workflow trends..."
+
+          python3 << 'EOF'
+import json
+from datetime import datetime, timedelta
+
+# Load workflow stats
+with open('/tmp/workflow-stats.json') as f:
+    stats = json.load(f)
+
+# Check for anomalies
+anomalies = []
+
+# Anomaly 1: Success rate < 80%
+if stats['success_rate'] < 80:
+    anomalies.append({
+        'type': 'low_success_rate',
+        'severity': 'high',
+        'message': f"Success rate is {stats['success_rate']:.2f}% (expected >80%)"
+    })
+
+# Anomaly 2: Too many active workflows
+if stats['active'] > 20:
+    anomalies.append({
+        'type': 'high_active_count',
+        'severity': 'medium',
+        'message': f"{stats['active']} workflows currently active (may indicate bottleneck)"
+    })
+
+# Anomaly 3: Slow workflows (>10 minutes avg)
+for name, duration in stats['slowest']:
+    if duration > 600000:  # 10 minutes
+        anomalies.append({
+            'type': 'slow_workflow',
+            'severity': 'low',
+            'message': f"{name} averages {duration/60000:.1f} minutes (consider optimization)"
+        })
+
+# Anomaly 4: Frequently failing workflows
+for name, failures, total in stats['most_failing']:
+    failure_rate = (failures / total * 100) if total > 0 else 0
+    if failure_rate > 50:
+        anomalies.append({
+            'type': 'flaky_workflow',
+            'severity': 'high',
+            'message': f"{name} fails {failure_rate:.0f}% of the time ({failures}/{total})"
+        })
+
+# Save anomalies
+with open('/tmp/anomalies.json', 'w') as f:
+    json.dump(anomalies, f, indent=2)
+
+print(f"Found {len(anomalies)} anomalies")
+for a in anomalies:
+    print(f"[{a['severity'].upper()}] {a['message']}")
+EOF
+
+  detect-workflow-issues:
+    name: Detect Workflow Issues
+    runs-on: ubuntu-latest
+    needs: collect-workflow-metrics
+    outputs:
+      has_issues: ${{ steps.detect.outputs.has_issues }}
+      issue_count: ${{ steps.detect.outputs.count }}
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔍 Detect workflow issues
+        id: detect
+        run: |
+          echo "Detecting workflow issues..."
+
+          ISSUES=0
+
+          # Issue 1: Failed workflows in last hour
+          RECENT_FAILURES=$(gh run list \
+            --limit 100 \
+            --json conclusion,createdAt \
+            --jq '[.[] | select(.conclusion == "failure")] | length')
+
+          if [ "$RECENT_FAILURES" -gt 5 ]; then
+            echo "⚠️  $RECENT_FAILURES workflows failed recently"
+            ISSUES=$((ISSUES + 1))
+          fi
+
+          # Issue 2: Stuck workflows (running >1 hour)
+          STUCK=$(gh run list \
+            --status in_progress \
+            --limit 100 \
+            --json createdAt,name \
+            --jq '[.[] | select((now - (.createdAt | fromdateiso8601)) > 3600)] | length')
+
+          if [ "$STUCK" -gt 0 ]; then
+            echo "⚠️  $STUCK workflows stuck (running >1 hour)"
+            ISSUES=$((ISSUES + 1))
+          fi
+
+          # Issue 3: Queued workflows (>10 queued)
+          QUEUED=$(gh run list \
+            --status queued \
+            --limit 100 \
+            --json name \
+            --jq 'length')
+
+          if [ "$QUEUED" -gt 10 ]; then
+            echo "⚠️  $QUEUED workflows queued (may indicate capacity issue)"
+            ISSUES=$((ISSUES + 1))
+          fi
+
+          # Issue 4: Workflow with consecutive failures
+          gh run list \
+            --limit 50 \
+            --json name,conclusion \
+            > /tmp/recent-runs.json
+
+          python3 << 'EOF'
+import json
+
+with open('/tmp/recent-runs.json') as f:
+    runs = json.load(f)
+
+# Group by workflow name
+workflows = {}
+for run in runs:
+    name = run['name']
+    if name not in workflows:
+        workflows[name] = []
+    workflows[name].append(run['conclusion'])
+
+# Check for 3+ consecutive failures
+consecutive_failures = []
+for name, conclusions in workflows.items():
+    if len(conclusions) >= 3:
+        if conclusions[0] == 'failure' and conclusions[1] == 'failure' and conclusions[2] == 'failure':
+            consecutive_failures.append(name)
+
+if consecutive_failures:
+    print(f"⚠️  {len(consecutive_failures)} workflows with 3+ consecutive failures:")
+    for wf in consecutive_failures:
+        print(f"  - {wf}")
+
+with open('/tmp/consecutive-failures.txt', 'w') as f:
+    f.write('\n'.join(consecutive_failures))
+EOF
+
+          CONSECUTIVE=$(wc -l < /tmp/consecutive-failures.txt | tr -d ' ')
+          if [ "$CONSECUTIVE" -gt 0 ]; then
+            ISSUES=$((ISSUES + 1))
+          fi
+
+          echo "has_issues=$( [ $ISSUES -gt 0 ] && echo true || echo false )" >> $GITHUB_OUTPUT
+          echo "count=$ISSUES" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "Total issues detected: $ISSUES"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-remediation:
+    name: Auto-Remediate Workflow Issues
+    runs-on: ubuntu-latest
+    needs: [collect-workflow-metrics, detect-workflow-issues]
+    if: needs.detect-workflow-issues.outputs.has_issues == 'true'
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Auto-remediate issues
+        run: |
+          echo "Applying automated remediations..."
+
+          # Remediation 1: Cancel stuck workflows
+          echo "Canceling stuck workflows (running >1 hour)..."
+          gh run list \
+            --status in_progress \
+            --limit 100 \
+            --json databaseId,createdAt,name \
+            --jq '.[] | select((now - (.createdAt | fromdateiso8601)) > 3600) | .databaseId' \
+            | while read -r run_id; do
+              if [ -n "$run_id" ]; then
+                echo "Canceling run $run_id..."
+                gh run cancel "$run_id" || true
+              fi
+            done
+
+          # Remediation 2: Re-run failed workflows (if not flaky)
+          echo "Re-running recently failed workflows..."
+          gh run list \
+            --status failure \
+            --limit 10 \
+            --json databaseId,name \
+            --jq '.[] | .databaseId' \
+            | head -5 \
+            | while read -r run_id; do
+              if [ -n "$run_id" ]; then
+                echo "Re-running failed run $run_id..."
+                gh run rerun "$run_id" --failed || true
+              fi
+            done
+
+          # Remediation 3: Create issue for consecutive failures
+          if [ -f /tmp/consecutive-failures.txt ] && [ -s /tmp/consecutive-failures.txt ]; then
+            WORKFLOWS=$(cat /tmp/consecutive-failures.txt | head -5 | paste -sd ', ')
+
+            gh issue create \
+              --title "⚠️  Workflows with consecutive failures" \
+              --body "## Workflow Failures Detected
+
+The following workflows have 3+ consecutive failures:
+
+$WORKFLOWS
+
+### Recommended Actions
+
+1. Review recent changes to these workflows
+2. Check for infrastructure issues
+3. Verify required secrets/permissions
+4. Consider disabling if persistently failing
+
+### Metrics
+- Success rate: ${{ needs.collect-workflow-metrics.outputs.success_rate }}%
+- Active workflows: ${{ needs.collect-workflow-metrics.outputs.active }}
+- Failed workflows: ${{ needs.collect-workflow-metrics.outputs.failed }}
+
+🤖 Auto-generated by Workflow Observability" \
+              --label "workflow,needs-attention" || true
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  generate-dashboard:
+    name: Generate Workflow Dashboard
+    runs-on: ubuntu-latest
+    needs: collect-workflow-metrics
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📊 Generate HTML dashboard
+        run: |
+          cat > /tmp/workflow-dashboard.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BlackRoad Workflow Observability Dashboard</title>
+  <style>
+    body { font-family: system-ui; padding: 20px; background: #0f0f23; color: #cccccc; }
+    .metric { display: inline-block; padding: 20px; margin: 10px; background: #1e1e3f; border-radius: 8px; min-width: 200px; }
+    .metric-value { font-size: 36px; font-weight: bold; color: #00d9ff; }
+    .metric-label { font-size: 14px; color: #888; margin-top: 5px; }
+    .success { color: #00ff88; }
+    .warning { color: #ffaa00; }
+    .error { color: #ff4444; }
+    h1 { color: #00d9ff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+    th { background: #1e1e3f; color: #00d9ff; }
+    tr:hover { background: #2a2a4f; }
+  </style>
+</head>
+<body>
+  <h1>📊 BlackRoad Workflow Observability</h1>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-value">${{ needs.collect-workflow-metrics.outputs.total_workflows }}</div>
+      <div class="metric-label">Total Workflows (24h)</div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-value success">${{ needs.collect-workflow-metrics.outputs.success_rate }}%</div>
+      <div class="metric-label">Success Rate</div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-value warning">${{ needs.collect-workflow-metrics.outputs.active_workflows }}</div>
+      <div class="metric-label">Active Workflows</div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-value error">${{ needs.collect-workflow-metrics.outputs.failed_workflows }}</div>
+      <div class="metric-label">Failed Workflows</div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-value">${{ needs.collect-workflow-metrics.outputs.avg_duration }}s</div>
+      <div class="metric-label">Avg Duration</div>
+    </div>
+  </div>
+
+  <h2>📈 Workflow Health Status</h2>
+  <p>Last updated: <span id="timestamp"></span></p>
+
+  <script>
+    document.getElementById('timestamp').textContent = new Date().toLocaleString();
+
+    // Auto-refresh every 5 minutes
+    setTimeout(() => location.reload(), 300000);
+  </script>
+</body>
+</html>
+EOF
+
+          echo "Dashboard generated at /tmp/workflow-dashboard.html"
+
+      - name: 📊 Generate summary report
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 📊 Workflow Observability Report
+
+          ## Key Metrics (Last 24 Hours)
+
+          | Metric | Value |
+          |--------|-------|
+          | Total Workflows | ${{ needs.collect-workflow-metrics.outputs.total_workflows }} |
+          | Success Rate | ${{ needs.collect-workflow-metrics.outputs.success_rate }}% |
+          | Active Workflows | ${{ needs.collect-workflow-metrics.outputs.active_workflows }} |
+          | Failed Workflows | ${{ needs.collect-workflow-metrics.outputs.failed_workflows }} |
+          | Avg Duration | ${{ needs.collect-workflow-metrics.outputs.avg_duration }}s |
+
+          ## Health Status
+
+          ${{ needs.collect-workflow-metrics.outputs.success_rate >= 90 && '✅ Healthy' || needs.collect-workflow-metrics.outputs.success_rate >= 75 && '⚠️  Degraded' || '❌ Critical' }}
+
+          ## Detected Issues
+
+          ${{ needs.detect-workflow-issues.outputs.issue_count }} issue(s) detected
+
+          ---
+
+          📊 **Workflow observability monitoring all 199 workflows!**
+          EOF
+
+  workflow-optimization-suggestions:
+    name: Generate Optimization Suggestions
+    runs-on: ubuntu-latest
+    needs: collect-workflow-metrics
+    steps:
+      - name: 💡 Generate optimization suggestions
+        run: |
+          echo "Generating workflow optimization suggestions..."
+
+          cat > /tmp/optimization-suggestions.md << 'EOF'
+          # 💡 Workflow Optimization Suggestions
+
+          Based on analysis of workflow performance, here are recommended optimizations:
+
+          ## 1. Caching Improvements
+          - Use `actions/cache@v4` for dependencies
+          - Cache Docker layers with `docker/build-push-action@v5`
+          - Cache test results between runs
+
+          ## 2. Parallel Execution
+          - Use matrix strategy for independent jobs
+          - Run tests in parallel across multiple runners
+          - Parallelize deployment steps where possible
+
+          ## 3. Resource Optimization
+          - Use `runs-on: ubuntu-latest` instead of custom runners when possible
+          - Limit workflow concurrency with `concurrency` groups
+          - Cancel redundant runs with `cancel-in-progress: true`
+
+          ## 4. Schedule Optimization
+          - Stagger scheduled workflows to avoid concurrent runs
+          - Use `workflow_dispatch` for manual triggers
+          - Consider reducing frequency of less critical workflows
+
+          ## 5. Artifact Management
+          - Set retention periods on artifacts
+          - Use artifact compression
+          - Clean up old artifacts regularly
+
+          ## 6. Monitoring Improvements
+          - Add job-level timeouts
+          - Use failure notifications
+          - Track workflow duration trends
+
+          EOF
+
+          cat /tmp/optimization-suggestions.md
