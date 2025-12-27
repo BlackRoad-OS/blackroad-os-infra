@@ -1,0 +1,138 @@
+name: ❓ Question
+description: Ask a question about the codebase or project
+title: "[QUESTION] "
+labels: ["question"]
+assignees:
+  - chatgpt-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ❓ Question
+        ChatGPT (Conversationalist) will help answer your question!
+
+        **What happens next:**
+        1. Auto-assigned to ChatGPT
+        2. Intelligent analysis of your question
+        3. Clear, helpful answer within 10 minutes
+        4. Links to relevant documentation
+        5. Follow-up support if needed
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What is this about?
+      options:
+        - "💻 How to use a feature"
+        - "🏗️ Architecture/design decision"
+        - "🐛 Debugging help"
+        - "📚 Documentation clarification"
+        - "🔧 Configuration/setup"
+        - "⚡ Performance question"
+        - "🔒 Security question"
+        - "🧪 Testing question"
+        - "📦 Dependencies/tooling"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: |
+        How do I configure the authentication system to use a custom JWT secret?
+        I've tried setting the JWT_SECRET environment variable but it doesn't seem to work.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Relevant background information
+      placeholder: |
+        I'm trying to deploy this to production and need to use our company's JWT signing key.
+        I see the docs mention JWT_SECRET but I'm not sure where to set it.
+    validations:
+      required: false
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What I've Tried
+      description: What have you already attempted?
+      placeholder: |
+        - Set JWT_SECRET in .env file
+        - Restarted the server
+        - Checked the logs (no errors)
+        - Searched the documentation
+    validations:
+      required: false
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Relevant Code/Config
+      description: Any relevant code snippets or configuration?
+      placeholder: |
+        ```javascript
+        // .env
+        JWT_SECRET=my-secret-key
+
+        // config.ts
+        const jwtConfig = {
+          secret: process.env.JWT_SECRET
+        };
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Outcome
+      description: What are you trying to achieve?
+      placeholder: |
+        I expect the application to sign JWT tokens using my custom secret key.
+        Tokens should be verifiable using the same secret.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this?
+      options:
+        - "🔴 Urgent - Blocking work"
+        - "🟠 High - Need answer soon"
+        - "🟡 Medium - This week"
+        - "🟢 Low - When available"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: research
+    attributes:
+      label: Research Done
+      options:
+        - label: I've searched existing issues
+        - label: I've checked the documentation
+        - label: I've searched online for solutions
+        - label: I've tried debugging myself
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ❓ **ChatGPT's Support Guarantee:**
+        - Clear, helpful answers
+        - Code examples when relevant
+        - Links to documentation
+        - Follow-up questions welcome
+        - Response within 10 minutes
+        - Patient and thorough explanations

@@ -1,0 +1,158 @@
+name: 🔧 Refactoring Request
+description: Request code refactoring or cleanup
+title: "[REFACTOR] "
+labels: ["refactoring", "code-quality"]
+assignees:
+  - winston-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔧 Refactoring Request
+        Winston (Refactorer) will analyze and improve this code with zero tolerance for tech debt!
+
+        **What happens next:**
+        1. Auto-assigned to Winston
+        2. Code analysis and technical debt assessment
+        3. Refactoring plan with before/after comparison
+        4. PR with improvements within 1 hour
+        5. Maintains 100% backward compatibility
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent is this refactoring?
+      options:
+        - "🔴 High - Blocking new development"
+        - "🟠 Medium - Impacting productivity"
+        - "🟡 Low - Nice to have"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Refactoring Type
+      description: What needs refactoring?
+      options:
+        - "🎯 Extract method - Long methods (>50 lines)"
+        - "♻️ Remove duplication - DRY violations"
+        - "🧩 Simplify conditionals - Complex if/else"
+        - "📦 Extract class - God objects"
+        - "🔄 Rename - Poor naming"
+        - "🗑️ Remove dead code - Unused code"
+        - "📐 Extract constant - Magic numbers"
+        - "🏗️ Architecture - Structural improvements"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: code_location
+    attributes:
+      label: Code Location
+      description: Where is the code that needs refactoring?
+      placeholder: |
+        File: src/services/user-service.ts
+        Lines: 145-230
+        Function: processUserData()
+      value: |
+        File:
+        Lines:
+        Function/Class:
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong with current code?
+      description: Describe the issues
+      placeholder: |
+        - Function is 150 lines long
+        - Has 4 levels of nested if statements
+        - Duplicate validation logic in 3 places
+        - Hard to test and understand
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Current Impact
+      description: How is this affecting development?
+      placeholder: |
+        - Takes 30 minutes to understand the code
+        - Hard to add new features
+        - Tests are difficult to write
+        - High bug rate in this area
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Approach
+      description: Any ideas for how to refactor?
+      placeholder: |
+        - Extract validation into separate functions
+        - Break into smaller methods
+        - Use strategy pattern for conditionals
+        - Create separate classes for responsibilities
+    validations:
+      required: false
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Any requirements or limitations?
+      placeholder: |
+        - Must maintain backward compatibility
+        - Cannot change public API
+        - Need to keep existing tests passing
+        - Performance must not degrade
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: How much code is affected?
+      options:
+        - "🎯 Single function/method"
+        - "📄 Single file"
+        - "📦 Single module"
+        - "🏢 Multiple modules"
+        - "🌍 System-wide"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: goals
+    attributes:
+      label: Refactoring Goals
+      description: What should this achieve?
+      options:
+        - label: Improve readability and maintainability
+        - label: Reduce technical debt
+        - label: Make code easier to test
+        - label: Improve performance
+        - label: Better separation of concerns
+        - label: Follow design patterns
+        - label: Reduce code duplication
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        🔧 **Winston's Refactoring Guarantee:**
+        - Thorough code analysis with metrics
+        - Before/after comparison
+        - Technical debt score improvement
+        - 100% backward compatibility
+        - All tests still pass
+        - PR ready within 1 hour

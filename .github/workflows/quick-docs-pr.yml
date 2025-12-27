@@ -1,0 +1,173 @@
+name: 📚 Quick Docs PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      docs_topic:
+        description: 'What needs documentation?'
+        required: true
+        type: string
+      docs_type:
+        description: 'Documentation type'
+        required: true
+        type: choice
+        options:
+          - API Documentation
+          - Tutorial
+          - Getting Started
+          - How-To Guide
+          - README Update
+          - FAQ
+          - Concept Guide
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-docs-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create docs branch
+        run: |
+          TOPIC_SLUG=$(echo "${{ inputs.docs_topic }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          BRANCH="docs/${TOPIC_SLUG}"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          git checkout -b "$BRANCH"
+
+      - name: Create docs template
+        run: |
+          cat > DOCS_GUIDE.md << 'EOF'
+          # 📚 Documentation Guide
+
+          ## Topic: ${{ inputs.docs_topic }}
+          ## Type: ${{ inputs.docs_type }}
+
+          ## Writing Guidelines:
+          - Clear and concise language
+          - Include code examples
+          - Add screenshots/diagrams if helpful
+          - Test all code examples
+          - Link to related documentation
+
+          ## Documentation Checklist:
+          - [ ] Clear introduction
+          - [ ] Working code examples
+          - [ ] Screenshots/diagrams (if applicable)
+          - [ ] Troubleshooting section
+          - [ ] Links to related docs
+          - [ ] Spelling/grammar checked
+
+          ## When done:
+          Push to this branch and Ophelia will review!
+          EOF
+
+      - name: Create documentation starter
+        run: |
+          mkdir -p docs
+          cat > docs/${{ inputs.docs_topic }}.md << 'EOF'
+          # ${{ inputs.docs_topic }}
+
+          ## Overview
+          <!-- Brief introduction to the topic -->
+
+          ## Prerequisites
+          <!-- What users need before starting -->
+
+          ## Instructions
+          <!-- Step-by-step guide or API reference -->
+
+          ## Examples
+          ```typescript
+          // Add working code examples here
+          ```
+
+          ## Troubleshooting
+          <!-- Common issues and solutions -->
+
+          ## Related Documentation
+          <!-- Links to related pages -->
+          EOF
+
+      - name: Commit template
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add DOCS_GUIDE.md docs/
+          git commit -m "docs: Add documentation for ${{ inputs.docs_topic }}"
+
+      - name: Push branch
+        run: git push origin "$BRANCH"
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📚 Docs: ${{ inputs.docs_topic }}',
+              head: process.env.BRANCH,
+              base: 'main',
+              body: `# 📚 Documentation PR
+
+## Documentation Type
+${{ inputs.docs_type }}
+
+## Topic
+${{ inputs.docs_topic }}
+
+## What's Being Documented
+<!-- Describe what you're documenting -->
+
+## Documentation Quality
+- [ ] Clear and concise
+- [ ] Includes working code examples
+- [ ] Screenshots/diagrams included (if applicable)
+- [ ] Links to related docs
+- [ ] Covers edge cases
+- [ ] Troubleshooting section included
+
+## Validation
+- [ ] All code examples tested and working
+- [ ] Links verified (no 404s)
+- [ ] Spelling/grammar checked
+- [ ] Markdown renders correctly
+
+## Checklist
+- [ ] Follows documentation style guide
+- [ ] Self-reviewed for clarity
+- [ ] Code examples are tested
+- [ ] No broken links
+- [ ] Properly formatted markdown
+
+---
+**Next Steps:**
+1. Fill out the documentation template
+2. Add code examples and test them
+3. Add screenshots if helpful
+4. Push to this branch
+5. Ophelia will review!
+
+🤖 Quick Docs PR created by workflow`
+            });
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              labels: ['documentation']
+            });
+
+            // Assign to Ophelia
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              assignees: ['ophelia-bot']
+            });
+
+            core.info(`✅ Created PR #${pr.data.number}: ${pr.data.html_url}`);

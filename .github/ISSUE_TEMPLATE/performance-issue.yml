@@ -1,0 +1,105 @@
+name: ⚡ Performance Issue
+description: Report slow performance or optimization opportunities
+title: "[PERF] "
+labels: ["performance", "optimization"]
+assignees:
+  - cadillac-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚡ Performance Issue
+        Cadillac (Optimizer) will analyze this with zero tolerance for slowness!
+
+        **What happens next:**
+        1. Auto-assigned to Cadillac
+        2. Performance profiling and analysis
+        3. Benchmark current vs target performance
+        4. Optimization PR with metrics within 8 minutes
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Performance Area
+      description: What's slow?
+      options:
+        - "📦 Bundle Size - Large JavaScript bundles"
+        - "🚀 Page Load - Slow initial load"
+        - "🔄 API Response - Slow backend"
+        - "🗄️ Database - Slow queries"
+        - "🎨 Rendering - Slow UI updates"
+        - "💾 Memory - High memory usage"
+        - "🔋 CPU - High CPU usage"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Performance
+      description: What are the current metrics?
+      placeholder: |
+        - Page load: 5.2 seconds
+        - Time to Interactive: 8.1 seconds
+        - First Contentful Paint: 3.4 seconds
+        - API response time: 2,300ms
+      value: |
+        - Metric 1:
+        - Metric 2:
+        - Metric 3:
+    validations:
+      required: true
+
+  - type: textarea
+    id: target
+    attributes:
+      label: Target Performance
+      description: What's acceptable?
+      placeholder: |
+        - Page load: < 2 seconds
+        - Time to Interactive: < 3 seconds
+        - First Contentful Paint: < 1 second
+        - API response time: < 500ms
+      value: |
+        - Metric 1:
+        - Metric 2:
+        - Metric 3:
+    validations:
+      required: true
+
+  - type: textarea
+    id: profiling
+    attributes:
+      label: Profiling Data
+      description: Any profiling results, screenshots, or traces?
+      placeholder: |
+        Lighthouse score: 45/100
+        Chrome DevTools flame graph attached
+        Network waterfall shows...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: User Impact
+      description: How many users affected?
+      options:
+        - "🔴 Critical - All users"
+        - "🟠 High - Most users"
+        - "🟡 Medium - Some users"
+        - "🟢 Low - Few users"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ⚡ **Cadillac's Performance Guarantee:**
+        - Detailed analysis with metrics
+        - Specific optimization recommendations
+        - Benchmark before/after
+        - PR with improvements
+        - Zero tolerance for regression

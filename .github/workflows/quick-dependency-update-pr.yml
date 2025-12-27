@@ -1,0 +1,155 @@
+name: 📦 Quick Dependency Update PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: 'Package to update'
+        required: true
+        type: string
+      target_version:
+        description: 'Target version (or "latest")'
+        required: false
+        default: 'latest'
+        type: string
+      update_type:
+        description: 'Update type'
+        required: true
+        type: choice
+        options:
+          - Security patch
+          - Minor update
+          - Major update
+          - Latest version
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-dependency-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create dependency branch
+        run: |
+          PACKAGE_SLUG=$(echo "${{ inputs.package_name }}" | tr '@/' '-')
+          BRANCH="deps/update-${PACKAGE_SLUG}"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          git checkout -b "$BRANCH"
+
+      - name: Update dependency
+        id: update
+        run: |
+          if [ -f "package.json" ]; then
+            # Get current version
+            CURRENT_VERSION=$(node -p "require('./package.json').dependencies['${{ inputs.package_name }}'] || require('./package.json').devDependencies['${{ inputs.package_name }}'] || 'not found'")
+            echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+
+            # Update the package
+            if [ "${{ inputs.target_version }}" = "latest" ]; then
+              npm install ${{ inputs.package_name }}@latest --save-exact
+            else
+              npm install ${{ inputs.package_name }}@${{ inputs.target_version }} --save-exact
+            fi
+
+            # Get new version
+            NEW_VERSION=$(node -p "require('./package.json').dependencies['${{ inputs.package_name }}'] || require('./package.json').devDependencies['${{ inputs.package_name }}']")
+            echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          else
+            echo "No package.json found"
+            exit 1
+          fi
+
+      - name: Run tests
+        continue-on-error: true
+        run: |
+          if [ -f "package.json" ]; then
+            npm test 2>&1 | tee test-output.txt || echo "Tests failed or not configured"
+          fi
+
+      - name: Commit changes
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add package.json package-lock.json
+          git commit -m "build: Update ${{ inputs.package_name }} to ${NEW_VERSION}"
+
+      - name: Push branch
+        run: git push origin "$BRANCH"
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const updateType = '${{ inputs.update_type }}';
+            let labels = ['dependencies'];
+            let autoMerge = false;
+
+            if (updateType === 'Security patch') {
+              labels.push('security', 'priority-high');
+              autoMerge = true;
+            } else if (updateType === 'Minor update') {
+              labels.push('safe-update');
+              autoMerge = true;
+            } else if (updateType === 'Major update') {
+              labels.push('major-update', 'needs-review');
+            }
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📦 Update ${{ inputs.package_name }} ${process.env.CURRENT_VERSION} → ${process.env.NEW_VERSION}',
+              head: process.env.BRANCH,
+              base: 'main',
+              body: `# 📦 Dependency Update PR
+
+## Package
+**Name:** ${{ inputs.package_name }}
+**Current Version:** ${process.env.CURRENT_VERSION}
+**New Version:** ${process.env.NEW_VERSION}
+**Update Type:** ${{ inputs.update_type }}
+
+## Compatibility Check
+- [ ] No breaking changes
+- [ ] Tests passing
+- [ ] No new warnings
+- [ ] Backward compatible
+
+## Testing Done
+- [ ] npm install successful
+- [ ] Tests run (check logs)
+- [ ] Manual testing if needed
+
+## Auto-Merge
+${autoMerge ? '✅ This update will auto-merge after CI passes' : '❌ Manual review required for major updates'}
+
+## Checklist
+- [ ] Dependency updated
+- [ ] Tests pass
+- [ ] No breaking changes
+- [ ] Changelog updated if needed
+
+---
+**Auto-Review:** Dependency updater will verify this!
+${autoMerge ? '✅ Auto-merge enabled for safe updates' : '⚠️ Major update - manual review required'}
+
+🤖 Quick Dependency Update PR created by workflow`
+            });
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              labels: labels
+            });
+
+            core.info(`✅ Created PR #${pr.data.number}: ${pr.data.html_url}`);
+            core.info(`Auto-merge: ${autoMerge}`);

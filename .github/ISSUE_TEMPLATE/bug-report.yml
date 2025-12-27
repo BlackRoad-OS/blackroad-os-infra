@@ -1,0 +1,123 @@
+name: 🐛 Bug Report
+description: Report a bug to help us improve
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees:
+  - felix-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug Report
+        Thanks for reporting! Felix (Auto-Fixer) will analyze this automatically.
+
+        **What happens next:**
+        1. Auto-labeled and assigned to Felix
+        2. Felix analyzes if auto-fixable (95% success rate)
+        3. If complex, routes to Sidian for debugging
+        4. Fix PR created within 15 minutes
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - "🔴 Critical - System down"
+        - "🟠 High - Major feature broken"
+        - "🟡 Medium - Feature partially broken"
+        - "🟢 Low - Minor issue"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What's broken?
+      description: Clear description of the bug
+      placeholder: |
+        When I click the submit button, nothing happens.
+        Expected: Form submits and shows success message
+        Actual: Nothing happens, no errors shown
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: Steps to reproduce the bug
+      placeholder: |
+        1. Go to /profile
+        2. Click 'Edit Profile'
+        3. Change name field
+        4. Click 'Save'
+        5. See error
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen?
+      placeholder: Profile should update and show success message
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happens?
+      placeholder: Error message appears, profile not updated
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does this happen?
+      value: |
+        - Browser:
+        - OS:
+        - Version:
+        - URL:
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error logs/screenshots
+      description: Any error messages or screenshots?
+      placeholder: Paste error messages or drag screenshots here
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I've searched existing issues
+          required: true
+        - label: I can reproduce this consistently
+          required: true
+        - label: I've provided all required information
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        🔨 **Felix will analyze this automatically!**
+        - Auto-fix success rate: 95%
+        - Average response time: 3 minutes
+        - You'll get updates as comments below

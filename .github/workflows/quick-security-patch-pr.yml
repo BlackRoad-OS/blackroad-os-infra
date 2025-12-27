@@ -1,0 +1,189 @@
+name: 🔒 Quick Security Patch PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      vulnerability_description:
+        description: 'Security vulnerability description'
+        required: true
+        type: string
+      affected_files:
+        description: 'Affected files (comma-separated)'
+        required: true
+        type: string
+      severity:
+        description: 'Severity level'
+        required: true
+        type: choice
+        options:
+          - Critical
+          - High
+          - Medium
+          - Low
+      cve_id:
+        description: 'CVE ID (if applicable)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  create-security-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create security branch
+        run: |
+          BRANCH="security/patch-$(date +%s)"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          git checkout -b "$BRANCH"
+
+      - name: Create security patch guide
+        run: |
+          cat > SECURITY_PATCH_GUIDE.md << 'EOF'
+          # 🔒 Security Patch Guide
+
+          ## Vulnerability: ${{ inputs.vulnerability_description }}
+          ## Severity: ${{ inputs.severity }}
+          ## CVE: ${{ inputs.cve_id }}
+
+          ## Affected Files:
+          ${{ inputs.affected_files }}
+
+          ## Security Patch Checklist:
+          - [ ] Identify the vulnerability
+          - [ ] Implement the fix
+          - [ ] Verify no similar issues exist
+          - [ ] Add security test
+          - [ ] Update security documentation
+
+          ## Testing Requirements:
+          - [ ] Security test added
+          - [ ] All tests pass
+          - [ ] Manual security review
+          - [ ] No regressions
+
+          ## Important Notes:
+          - Keep details private until patched
+          - Follow responsible disclosure
+          - Document fix thoroughly
+          - Consider backporting to older versions
+
+          ## When done:
+          Push to this branch and Silas will review immediately!
+          EOF
+
+      - name: Commit guide
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add SECURITY_PATCH_GUIDE.md
+          git commit -m "security: Add patch guide for ${{ inputs.vulnerability_description }}"
+
+      - name: Push branch
+        run: git push origin "$BRANCH"
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const severity = '${{ inputs.severity }}';
+            const cveId = '${{ inputs.cve_id }}' || 'N/A';
+
+            let labels = ['security'];
+            if (severity === 'Critical') {
+              labels.push('priority-critical', 'urgent');
+            } else if (severity === 'High') {
+              labels.push('priority-high');
+            }
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔒 Security: ${{ inputs.vulnerability_description }}',
+              head: process.env.BRANCH,
+              base: 'main',
+              body: `# 🔒 Security Patch PR
+
+## ⚠️ SECURITY VULNERABILITY
+
+## Vulnerability Description
+${{ inputs.vulnerability_description }}
+
+## Severity
+**${{ inputs.severity }}**
+
+## CVE ID
+${cveId}
+
+## Affected Files
+${{ inputs.affected_files }}
+
+## Fix Description
+<!-- Describe how you fixed the vulnerability -->
+
+## Security Impact
+<!-- What could an attacker do before the fix? -->
+
+## Testing Done
+- [ ] Security test added to prevent regression
+- [ ] Verified vulnerability is fixed
+- [ ] Tested potential attack vectors
+- [ ] All existing tests pass
+- [ ] Manual security review completed
+
+## Disclosure Timeline
+- [ ] Keep private until merged
+- [ ] Responsible disclosure followed
+- [ ] Security advisory drafted (if needed)
+
+## Checklist
+- [ ] Vulnerability fixed
+- [ ] Security test added
+- [ ] No similar issues in codebase
+- [ ] Documentation updated
+- [ ] Changelog updated with security note
+
+---
+**URGENT:** This is a **${{ inputs.severity }}** severity security issue!
+
+**Auto-Review:** Silas will review this immediately!
+- 🛡️ Security analysis
+- ✅ Fix verification
+- 🔍 Checks for similar issues
+- 📊 Impact assessment
+
+🤖 Quick Security Patch PR created by workflow`
+            });
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              labels: labels
+            });
+
+            // Assign to Silas
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              assignees: ['silas-bot']
+            });
+
+            // Add comment about urgency
+            if (severity === 'Critical' || severity === 'High') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.data.number,
+                body: `⚠️ **URGENT SECURITY PATCH**\n\nThis PR addresses a **${severity}** severity security vulnerability and requires immediate attention!\n\n🛡️ Silas has been assigned for immediate review.`
+              });
+            }
+
+            core.info(`✅ Created SECURITY PR #${pr.data.number}: ${pr.data.html_url}`);

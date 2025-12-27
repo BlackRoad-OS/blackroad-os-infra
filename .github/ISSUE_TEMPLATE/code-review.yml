@@ -1,0 +1,177 @@
+name: 💎 Code Review Request
+description: Request comprehensive code review
+title: "[REVIEW] "
+labels: ["review", "needs-review"]
+assignees:
+  - ruby-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 💎 Code Review Request
+        Ruby (Deep Reviewer) will provide comprehensive, thoughtful code review!
+
+        **What happens next:**
+        1. Auto-assigned to Ruby
+        2. Line-by-line code analysis
+        3. Security, performance, and architecture review
+        4. Detailed feedback within 20 minutes
+        5. Follow-up with specific improvement suggestions
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How soon do you need review?
+      options:
+        - "🔴 Urgent - Blocking deployment"
+        - "🟠 High - Need soon"
+        - "🟡 Medium - This week"
+        - "🟢 Low - When available"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Review Type
+      description: What kind of review?
+      options:
+        - "🆕 New feature - Full review"
+        - "🐛 Bug fix - Focused review"
+        - "♻️ Refactoring - Architecture review"
+        - "⚡ Performance - Optimization review"
+        - "🔒 Security - Security audit"
+        - "🧪 Testing - Test coverage review"
+        - "📚 Documentation - Docs review"
+        - "🎨 UI/UX - Interface review"
+    validations:
+      required: true
+
+  - type: textarea
+    id: code_location
+    attributes:
+      label: Code to Review
+      description: Where is the code?
+      placeholder: |
+        PR: #123
+        Branch: feature/new-auth
+        Files: src/auth/*.ts
+        Commit: abc123def
+      value: |
+        PR/Branch:
+        Files:
+        Commit:
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Purpose
+      description: What does this code do?
+      placeholder: |
+        This implements a new JWT-based authentication system.
+        Replaces the old session-based approach.
+        Affects login, logout, and API authorization.
+    validations:
+      required: true
+
+  - type: textarea
+    id: concerns
+    attributes:
+      label: Specific Concerns
+      description: What should reviewers focus on?
+      placeholder: |
+        - Is the token expiration logic correct?
+        - Are there any security vulnerabilities?
+        - Is error handling comprehensive?
+        - Performance impact on API endpoints?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: review_focus
+    attributes:
+      label: Review Focus Areas
+      description: What should Ruby examine?
+      options:
+        - label: Code quality and readability
+        - label: Security vulnerabilities
+        - label: Performance and optimization
+        - label: Error handling
+        - label: Test coverage
+        - label: Architecture and design patterns
+        - label: Documentation and comments
+        - label: Backward compatibility
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing Done
+      description: What testing have you completed?
+      placeholder: |
+        - Unit tests: 95% coverage
+        - Integration tests: All passing
+        - Manual testing: Tested on dev environment
+        - Load testing: Not yet done
+      value: |
+        - Unit tests:
+        - Integration tests:
+        - Manual testing:
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies & Side Effects
+      description: What else does this affect?
+      placeholder: |
+        - Requires database migration
+        - Breaks compatibility with old clients
+        - Depends on new environment variables
+        - Affects 3 other services
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking Changes?
+      description: Does this break existing functionality?
+      options:
+        - "No - Fully backward compatible"
+        - "Maybe - Minor compatibility issues"
+        - "Yes - Breaking change (documented)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: checklist_completed
+    attributes:
+      label: Pre-Review Checklist
+      description: What have you already done?
+      value: |
+        - [ ] Code follows style guide
+        - [ ] Tests added/updated
+        - [ ] Documentation updated
+        - [ ] No console.logs or debug code
+        - [ ] Security considerations addressed
+        - [ ] Performance tested
+        - [ ] Error handling implemented
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        💎 **Ruby's Review Guarantee:**
+        - Comprehensive line-by-line analysis
+        - Security vulnerability detection
+        - Performance considerations
+        - Architecture evaluation
+        - Constructive, educational feedback
+        - Detailed review within 20 minutes

@@ -1,0 +1,173 @@
+name: 🔧 Quick Refactor PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      refactor_target:
+        description: 'What to refactor (file/function/module)'
+        required: true
+        type: string
+      refactor_reason:
+        description: 'Why refactor?'
+        required: true
+        type: choice
+        options:
+          - Long methods (>50 lines)
+          - Code duplication
+          - Complex conditionals
+          - Poor naming
+          - God objects
+          - Magic numbers
+          - Technical debt reduction
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-refactor-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create refactor branch
+        run: |
+          TARGET_SLUG=$(echo "${{ inputs.refactor_target }}" | tr '[:upper:]' '[:lower:]' | tr ' /' '-')
+          BRANCH="refactor/${TARGET_SLUG}"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          git checkout -b "$BRANCH"
+
+      - name: Create refactoring guide
+        run: |
+          cat > REFACTORING_GUIDE.md << 'EOF'
+          # 🔧 Refactoring Guide
+
+          ## Target: ${{ inputs.refactor_target }}
+          ## Reason: ${{ inputs.refactor_reason }}
+
+          ## Refactoring Principles:
+          - Maintain 100% backward compatibility
+          - Keep all tests passing
+          - Make small, incremental changes
+          - Test after each change
+
+          ## Refactoring Patterns to Consider:
+          - Extract Method: Break long methods into smaller ones
+          - Extract Class: Separate responsibilities
+          - Rename: Improve clarity
+          - Simplify Conditionals: Reduce complexity
+          - Remove Duplication: Follow DRY principle
+          - Extract Constants: Replace magic numbers
+
+          ## Testing Checklist:
+          - [ ] All existing tests pass
+          - [ ] No new test failures
+          - [ ] Verified behavior unchanged
+          - [ ] Performance not degraded
+
+          ## Quality Metrics to Track:
+          - Lines of code (should decrease)
+          - Cyclomatic complexity (should decrease)
+          - Code duplication (should decrease)
+          - Test coverage (should maintain or improve)
+
+          ## When done:
+          Push to this branch and Winston will review!
+          EOF
+
+      - name: Commit guide
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add REFACTORING_GUIDE.md
+          git commit -m "refactor: Add refactoring guide for ${{ inputs.refactor_target }}"
+
+      - name: Push branch
+        run: git push origin "$BRANCH"
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔧 Refactor: ${{ inputs.refactor_target }}',
+              head: process.env.BRANCH,
+              base: 'main',
+              body: `# 🔧 Refactoring PR
+
+## Refactoring Target
+${{ inputs.refactor_target }}
+
+## Reason
+${{ inputs.refactor_reason }}
+
+## Current Problems
+<!-- What's wrong with the current code? -->
+- Issue 1
+- Issue 2
+
+## Technical Debt Impact
+**Before:**
+- Complexity score: X/10
+- Maintainability: X/10
+- Test coverage: XX%
+
+**After:**
+- Complexity score: X/10 (improvement)
+- Maintainability: X/10 (improvement)
+- Test coverage: XX% (maintained/improved)
+
+## Changes Made
+<!-- List the refactoring changes as you make them -->
+-
+-
+
+## Backward Compatibility
+- [ ] 100% backward compatible
+- [ ] API unchanged
+- [ ] All tests still pass
+- [ ] No behavior changes
+
+## Testing Done
+- [ ] All existing tests pass
+- [ ] No new test failures
+- [ ] Verified behavior unchanged
+- [ ] Performance not degraded
+
+## Checklist
+- [ ] Code follows project style
+- [ ] Self-reviewed code
+- [ ] All tests pass
+- [ ] No behavior changes
+- [ ] Performance maintained/improved
+
+---
+**Next Steps:**
+1. Refactor the code incrementally
+2. Run tests after each change
+3. Document improvements
+4. Push to this branch
+5. Winston will review!
+
+🤖 Quick Refactor PR created by workflow`
+            });
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              labels: ['refactoring', 'code-quality']
+            });
+
+            // Assign to Winston
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              assignees: ['winston-bot']
+            });
+
+            core.info(`✅ Created PR #${pr.data.number}: ${pr.data.html_url}`);

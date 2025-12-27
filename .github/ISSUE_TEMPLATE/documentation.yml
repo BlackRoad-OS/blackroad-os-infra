@@ -1,0 +1,170 @@
+name: 📚 Documentation Request
+description: Request documentation updates or additions
+title: "[DOCS] "
+labels: ["documentation"]
+assignees:
+  - ophelia-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📚 Documentation Request
+        Ophelia (Poet) will craft beautiful, comprehensive documentation!
+
+        **What happens next:**
+        1. Auto-assigned to Ophelia
+        2. Documentation analysis and gap identification
+        3. Beautiful, clear documentation written
+        4. PR with docs within 30 minutes
+        5. Includes examples, diagrams, and guides
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Documentation Type
+      description: What kind of documentation?
+      options:
+        - "📖 README - Project overview"
+        - "🔧 API Documentation - Endpoints, functions"
+        - "🎓 Tutorial - Step-by-step guide"
+        - "📝 How-to Guide - Specific task"
+        - "💡 Concept Explanation - Theory/architecture"
+        - "🚀 Getting Started - Onboarding"
+        - "🔍 Reference - Complete API reference"
+        - "❓ FAQ - Common questions"
+        - "📋 Changelog - Release notes"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent?
+      options:
+        - "🔴 High - Blocking users"
+        - "🟠 Medium - Important for users"
+        - "🟡 Low - Nice to have"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs documentation?
+      description: What feature, API, or concept?
+      placeholder: |
+        The new authentication system using JWT tokens.
+        Need to document how to authenticate API requests.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Documentation State
+      description: What exists now?
+      placeholder: |
+        - No documentation exists
+        - Outdated docs from v1.0
+        - Partial coverage in README
+        - Missing examples
+    validations:
+      required: true
+
+  - type: textarea
+    id: audience
+    attributes:
+      label: Target Audience
+      description: Who will read this?
+      placeholder: |
+        - Frontend developers integrating with our API
+        - New team members onboarding
+        - External users of the library
+        - DevOps engineers deploying the service
+    validations:
+      required: true
+
+  - type: textarea
+    id: should_include
+    attributes:
+      label: Should Include
+      description: What should be covered?
+      placeholder: |
+        - Overview of authentication flow
+        - Code examples in JavaScript and Python
+        - Common error messages and solutions
+        - Security best practices
+        - Troubleshooting guide
+      value: |
+        -
+        -
+        -
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Desired Examples
+      description: What examples would help?
+      placeholder: |
+        - Basic authentication request
+        - Handling token refresh
+        - Error handling
+        - Using with different HTTP clients
+    validations:
+      required: false
+
+  - type: dropdown
+    id: format
+    attributes:
+      label: Preferred Format
+      description: How should it be presented?
+      options:
+        - "Markdown files"
+        - "Code comments/JSDoc"
+        - "Interactive examples"
+        - "Video/GIF demonstrations"
+        - "Diagrams/flowcharts"
+        - "Mix of all above"
+    validations:
+      required: true
+
+  - type: textarea
+    id: existing_resources
+    attributes:
+      label: Existing Resources
+      description: Any existing docs or references?
+      placeholder: |
+        - Related docs: docs/api/overview.md
+        - Similar projects: https://example.com/docs
+        - Internal notes: See Slack thread
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: quality
+    attributes:
+      label: Documentation Quality Goals
+      options:
+        - label: Clear and beginner-friendly
+        - label: Include working code examples
+        - label: Cover edge cases and gotchas
+        - label: Include troubleshooting section
+        - label: Add diagrams or visuals
+        - label: Link to related documentation
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        📚 **Ophelia's Documentation Guarantee:**
+        - Crystal clear, beautiful prose
+        - Working code examples
+        - Comprehensive coverage
+        - Proper formatting and structure
+        - PR ready within 30 minutes
+        - Makes complex topics accessible

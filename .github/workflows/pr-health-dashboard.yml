@@ -1,0 +1,211 @@
+name: 📊 PR Health Dashboard
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  workflow_dispatch:
+  pull_request:
+    types: [opened, closed, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: write
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate PR Health Dashboard
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Fetch all open PRs
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            console.log(`Found ${pullRequests.length} open PRs`);
+
+            // Analyze each PR
+            const prAnalysis = [];
+            for (const pr of pullRequests) {
+              // Get reviews
+              const { data: reviews } = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+
+              // Get checks
+              const { data: checkRuns } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: pr.head.sha
+              });
+
+              // Calculate health score
+              let healthScore = 0;
+              const metrics = {
+                hasDescription: pr.body && pr.body.length > 100,
+                hasReviews: reviews.length > 0,
+                hasApprovals: reviews.filter(r => r.state === 'APPROVED').length > 0,
+                ciPassing: checkRuns.check_runs.every(c => c.conclusion === 'success'),
+                ageInDays: Math.floor((Date.now() - new Date(pr.created_at)) / (1000 * 60 * 60 * 24)),
+                isStale: Math.floor((Date.now() - new Date(pr.updated_at)) / (1000 * 60 * 60 * 24)) > 7,
+                isDraft: pr.draft,
+                changedFiles: pr.changed_files,
+                comments: pr.comments
+              };
+
+              // Calculate score (0-100)
+              if (metrics.hasDescription) healthScore += 20;
+              if (metrics.hasReviews) healthScore += 20;
+              if (metrics.hasApprovals) healthScore += 30;
+              if (metrics.ciPassing) healthScore += 20;
+              if (!metrics.isStale) healthScore += 10;
+
+              // Determine status
+              let status, statusEmoji;
+              if (healthScore >= 80) {
+                status = 'Ready to Merge';
+                statusEmoji = '✅';
+              } else if (healthScore >= 60) {
+                status = 'Needs Minor Work';
+                statusEmoji = '🟡';
+              } else if (healthScore >= 40) {
+                status = 'Needs Work';
+                statusEmoji = '🟠';
+              } else {
+                status = 'Needs Attention';
+                statusEmoji = '🔴';
+              }
+
+              prAnalysis.push({
+                number: pr.number,
+                title: pr.title,
+                author: pr.user.login,
+                url: pr.html_url,
+                healthScore,
+                status,
+                statusEmoji,
+                metrics,
+                reviews: reviews.length,
+                approvals: reviews.filter(r => r.state === 'APPROVED').length,
+                checks: checkRuns.check_runs.length,
+                checksStatus: metrics.ciPassing ? '✅ Pass' : '❌ Fail',
+                labels: pr.labels.map(l => l.name).join(', ')
+              });
+            }
+
+            // Sort by health score (worst first)
+            prAnalysis.sort((a, b) => a.healthScore - b.healthScore);
+
+            // Generate dashboard markdown
+            const now = new Date().toISOString();
+            let dashboard = `# 📊 PR Health Dashboard
+
+**Last Updated:** ${now}
+**Total Open PRs:** ${pullRequests.length}
+
+## Summary
+
+| Status | Count |
+|--------|-------|
+| ✅ Ready to Merge | ${prAnalysis.filter(p => p.status === 'Ready to Merge').length} |
+| 🟡 Needs Minor Work | ${prAnalysis.filter(p => p.status === 'Needs Minor Work').length} |
+| 🟠 Needs Work | ${prAnalysis.filter(p => p.status === 'Needs Work').length} |
+| 🔴 Needs Attention | ${prAnalysis.filter(p => p.status === 'Needs Attention').length} |
+
+## All Open PRs
+
+| Status | PR | Author | Health | Reviews | CI | Age | Labels |
+|--------|----|----|--------|---------|----|----|--------|
+`;
+
+            for (const pr of prAnalysis) {
+              dashboard += `| ${pr.statusEmoji} | [#${pr.number}](${pr.url}) ${pr.title} | @${pr.author} | ${pr.healthScore}/100 | ${pr.approvals}/${pr.reviews} | ${pr.checksStatus} | ${pr.metrics.ageInDays}d | ${pr.labels || 'none'} |\n`;
+            }
+
+            dashboard += `\n## Detailed Analysis\n\n`;
+
+            for (const pr of prAnalysis) {
+              dashboard += `### ${pr.statusEmoji} PR #${pr.number}: ${pr.title}\n\n`;
+              dashboard += `**Status:** ${pr.status} (${pr.healthScore}/100)\n\n`;
+              dashboard += `**Metrics:**\n`;
+              dashboard += `- ✍️ Description: ${pr.metrics.hasDescription ? '✅' : '❌'}\n`;
+              dashboard += `- 👀 Reviews: ${pr.reviews} (${pr.approvals} approved)\n`;
+              dashboard += `- 🧪 CI Checks: ${pr.checksStatus}\n`;
+              dashboard += `- 📅 Age: ${pr.metrics.ageInDays} days\n`;
+              dashboard += `- 🔄 Stale: ${pr.metrics.isStale ? '⚠️ Yes (>7 days)' : '✅ No'}\n`;
+              dashboard += `- 📝 Draft: ${pr.metrics.isDraft ? 'Yes' : 'No'}\n`;
+              dashboard += `- 📊 Changed Files: ${pr.metrics.changedFiles}\n`;
+              dashboard += `- 💬 Comments: ${pr.metrics.comments}\n\n`;
+
+              // Recommendations
+              dashboard += `**Recommendations:**\n`;
+              if (!pr.metrics.hasDescription) dashboard += `- Add detailed description\n`;
+              if (pr.reviews === 0) dashboard += `- Request reviews\n`;
+              if (pr.approvals === 0 && pr.reviews > 0) dashboard += `- Address review feedback\n`;
+              if (!pr.metrics.ciPassing) dashboard += `- Fix failing CI checks\n`;
+              if (pr.metrics.isStale) dashboard += `- Rebase or update branch\n`;
+              dashboard += `\n---\n\n`;
+            }
+
+            dashboard += `\n## Quick Actions\n\n`;
+            dashboard += `- [View All PRs](https://github.com/${context.repo.owner}/${context.repo.repo}/pulls)\n`;
+            dashboard += `- [Create New PR](https://github.com/${context.repo.owner}/${context.repo.repo}/compare)\n`;
+            dashboard += `- [View Workflows](https://github.com/${context.repo.owner}/${context.repo.repo}/actions)\n\n`;
+            dashboard += `🤖 **Auto-generated by PR Health Dashboard** | Updates every 30 minutes\n`;
+
+            // Write dashboard to file
+            const fs = require('fs');
+            fs.writeFileSync('PR_HEALTH_DASHBOARD.md', dashboard);
+
+            console.log('Dashboard generated successfully');
+            return dashboard;
+
+      - name: Commit dashboard
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add PR_HEALTH_DASHBOARD.md
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore: Update PR health dashboard"
+          git push || echo "No changes to push"
+
+      - name: Create issue if PRs need attention
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const dashboard = fs.readFileSync('PR_HEALTH_DASHBOARD.md', 'utf8');
+
+            // Check if there are PRs needing attention
+            const needsAttention = dashboard.includes('🔴 Needs Attention');
+
+            if (needsAttention) {
+              // Check if alert issue already exists
+              const { data: issues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                labels: 'pr-health-alert'
+              });
+
+              if (issues.length === 0) {
+                // Create new alert issue
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: '⚠️ PR Health Alert: PRs Need Attention',
+                  body: `Some PRs need immediate attention!\n\nSee the [PR Health Dashboard](PR_HEALTH_DASHBOARD.md) for details.`,
+                  labels: ['pr-health-alert', 'priority-high']
+                });
+                console.log('Created PR health alert issue');
+              }
+            }

@@ -1,0 +1,111 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement", "feature-request"]
+assignees:
+  - codex-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ Feature Request
+        Thanks for the suggestion! Codex (Innovator) will review this.
+
+        **What happens next:**
+        1. Auto-assigned to Codex for innovation review
+        2. Codex creates prototype/POC within 24 hours
+        3. Claude reviews architecture implications
+        4. Community feedback collected
+        5. Implementation plan created
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - "🔴 Critical - Blocker for production"
+        - "🟠 High - Important for users"
+        - "🟡 Medium - Nice to have"
+        - "🟢 Low - Future consideration"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the pain point or need
+      placeholder: |
+        As a user, I can't easily export my data.
+        This makes it hard to backup or migrate.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you solve this?
+      placeholder: |
+        Add an "Export Data" button that:
+        - Exports all user data as JSON
+        - Includes all related records
+        - Downloads as a file
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other solutions have you thought about?
+      placeholder: |
+        - Manual database query (too technical)
+        - API export (requires coding)
+        - Third-party tool (privacy concerns)
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: Mockups/Examples
+      description: Any designs, screenshots, or examples?
+      placeholder: Drag images here or paste links
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking change?
+      description: Would this break existing functionality?
+      options:
+        - "No - Fully backward compatible"
+        - "Maybe - Might affect some users"
+        - "Yes - Will require migration"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: Contribution
+      description: Would you like to help build this?
+      options:
+        - label: I can help with design
+        - label: I can help with implementation
+        - label: I can help with testing
+        - label: I can help with documentation
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        🚀 **Codex will prototype this!**
+        - Prototype ETA: 24 hours
+        - Will create POC/demo
+        - Gets architecture review from Claude
+        - You'll see progress updates here

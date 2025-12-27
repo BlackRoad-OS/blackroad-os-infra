@@ -1,0 +1,153 @@
+name: 🛡️ Security Issue
+description: Report a security vulnerability or concern
+title: "[SECURITY] "
+labels: ["security", "urgent"]
+assignees:
+  - silas-bot
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🛡️ Security Issue
+        Silas (Guardian) will handle this with maximum priority and confidentiality.
+
+        **What happens next:**
+        1. Auto-assigned to Silas (security specialist)
+        2. Immediate triage and risk assessment
+        3. Private security analysis (not public if critical)
+        4. Fix PR or mitigation plan within 2 hours
+        5. Security advisory published if needed
+
+        **⚠️ For critical vulnerabilities, consider emailing blackroad.systems@gmail.com directly**
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Security Severity
+      description: How severe is this vulnerability?
+      options:
+        - "🔴 Critical - Immediate exploitation possible"
+        - "🟠 High - Significant risk"
+        - "🟡 Medium - Moderate risk"
+        - "🟢 Low - Minor security concern"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Vulnerability Type
+      description: What kind of security issue?
+      options:
+        - "🔓 Authentication/Authorization bypass"
+        - "💉 Injection vulnerability (SQL, XSS, etc.)"
+        - "🔐 Cryptographic weakness"
+        - "📦 Dependency vulnerability (CVE)"
+        - "🚪 Unauthorized access"
+        - "📊 Data exposure/leak"
+        - "⚙️ Configuration issue"
+        - "🌐 Network security"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Vulnerability Description
+      description: Describe the security issue
+      placeholder: |
+        Clear description of the vulnerability.
+        What data/systems are at risk?
+        Who could exploit this?
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential Impact
+      description: What could an attacker do?
+      placeholder: |
+        - Access user data
+        - Execute arbitrary code
+        - Bypass authentication
+        - Steal credentials
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: How to reproduce the vulnerability?
+      placeholder: |
+        1. Navigate to /api/endpoint
+        2. Send crafted payload: {...}
+        3. Observe unauthorized access
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proof
+    attributes:
+      label: Proof of Concept
+      description: Any POC code, screenshots, or evidence?
+      placeholder: |
+        Curl command, code snippet, or screenshot demonstrating the issue.
+        Be responsible - don't include actual exploits that could be misused.
+    validations:
+      required: false
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested Mitigation
+      description: Any ideas for fixing this?
+      placeholder: |
+        - Add input validation
+        - Use parameterized queries
+        - Implement rate limiting
+        - Update to latest version
+    validations:
+      required: false
+
+  - type: dropdown
+    id: disclosure
+    attributes:
+      label: Public Disclosure
+      description: Can this be discussed publicly right now?
+      options:
+        - "No - Keep private until fixed (responsible disclosure)"
+        - "Yes - Already public knowledge"
+        - "Partial - Some details can be shared"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Security Checklist
+      options:
+        - label: I have NOT publicly disclosed this vulnerability
+          required: true
+        - label: I have NOT exploited this in production
+          required: true
+        - label: I am reporting this responsibly
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        🛡️ **Silas's Security Guarantee:**
+        - Immediate triage (< 15 minutes)
+        - Risk assessment and containment plan
+        - Fix or mitigation within 2-4 hours for critical issues
+        - Security advisory if needed
+        - Credit in security acknowledgments (if desired)

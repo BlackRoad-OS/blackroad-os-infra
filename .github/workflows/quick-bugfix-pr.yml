@@ -1,0 +1,133 @@
+name: 🐛 Quick Bug Fix PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      bug_description:
+        description: 'Bug description'
+        required: true
+        type: string
+      files_to_fix:
+        description: 'Files to fix (comma-separated)'
+        required: true
+        type: string
+      issue_number:
+        description: 'Related issue number (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  create-bugfix-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create bugfix branch
+        run: |
+          BRANCH="bugfix/quick-fix-$(date +%s)"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          git checkout -b "$BRANCH"
+
+      - name: Create bugfix template
+        run: |
+          cat > BUGFIX_GUIDE.md << 'EOF'
+          # 🐛 Quick Bug Fix Guide
+
+          ## Bug: ${{ inputs.bug_description }}
+
+          ## Files to Fix:
+          ${{ inputs.files_to_fix }}
+
+          ## Steps:
+          1. Fix the bug in the listed files
+          2. Add regression test
+          3. Verify fix works
+          4. Push changes to this branch
+
+          ## Testing Checklist:
+          - [ ] Bug is fixed
+          - [ ] Added regression test
+          - [ ] All tests pass
+          - [ ] No side effects
+
+          ## When done:
+          This PR will be automatically created!
+          EOF
+
+      - name: Commit template
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add BUGFIX_GUIDE.md
+          git commit -m "chore: Add bugfix guide for ${{ inputs.bug_description }}"
+
+      - name: Push branch
+        run: git push origin "$BRANCH"
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueRef = '${{ inputs.issue_number }}' ? `Fixes #${{ inputs.issue_number }}` : '';
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🐛 Fix: ${{ inputs.bug_description }}',
+              head: process.env.BRANCH,
+              base: 'main',
+              body: `# 🐛 Bug Fix PR
+
+## Bug Description
+${{ inputs.bug_description }}
+
+## Related Issue
+${issueRef}
+
+## Files to Fix
+${{ inputs.files_to_fix }}
+
+## Testing Done
+- [ ] Added regression test to prevent this bug
+- [ ] Verified fix in development environment
+- [ ] Tested edge cases
+- [ ] All existing tests still pass
+
+## Checklist
+- [ ] Code follows project style
+- [ ] Self-reviewed code
+- [ ] Added regression test
+- [ ] Updated documentation if needed
+
+---
+**Next Steps:**
+1. Make your bug fixes in the listed files
+2. Add regression tests
+3. Push to this branch
+4. Felix will auto-review!
+
+🤖 Quick Bug Fix PR created by workflow`
+            });
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              labels: ['bug', 'quick-fix']
+            });
+
+            // Assign to Felix
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              assignees: ['felix-bot']
+            });
+
+            core.info(`✅ Created PR #${pr.data.number}: ${pr.data.html_url}`);

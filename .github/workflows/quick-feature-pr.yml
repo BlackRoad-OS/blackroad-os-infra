@@ -1,0 +1,147 @@
+name: ✨ Quick Feature PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_name:
+        description: 'Feature name'
+        required: true
+        type: string
+      feature_description:
+        description: 'Brief feature description'
+        required: true
+        type: string
+      issue_number:
+        description: 'Related issue number (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-feature-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create feature branch
+        run: |
+          FEATURE_SLUG=$(echo "${{ inputs.feature_name }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+          BRANCH="feature/${FEATURE_SLUG}"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          git checkout -b "$BRANCH"
+
+      - name: Create feature template
+        run: |
+          cat > FEATURE_GUIDE.md << 'EOF'
+          # ✨ Quick Feature Guide
+
+          ## Feature: ${{ inputs.feature_name }}
+
+          ## Description:
+          ${{ inputs.feature_description }}
+
+          ## Implementation Steps:
+          1. Create the core functionality
+          2. Add tests (unit + integration)
+          3. Add documentation
+          4. Add usage examples
+
+          ## Testing Checklist:
+          - [ ] Unit tests added
+          - [ ] Integration tests added
+          - [ ] Manual testing completed
+          - [ ] All tests passing
+
+          ## Documentation Checklist:
+          - [ ] README updated
+          - [ ] API docs added
+          - [ ] Examples included
+
+          ## When done:
+          Push to this branch and the PR will be ready for review!
+          EOF
+
+      - name: Commit template
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add FEATURE_GUIDE.md
+          git commit -m "feat: Add feature guide for ${{ inputs.feature_name }}"
+
+      - name: Push branch
+        run: git push origin "$BRANCH"
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueRef = '${{ inputs.issue_number }}' ? `Closes #${{ inputs.issue_number }}` : '';
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '✨ Feature: ${{ inputs.feature_name }}',
+              head: process.env.BRANCH,
+              base: 'main',
+              body: `# ✨ Feature PR
+
+## Feature: ${{ inputs.feature_name }}
+
+## Description
+${{ inputs.feature_description }}
+
+## Related Issue
+${issueRef}
+
+## Implementation Details
+<!-- Add implementation details as you code -->
+
+## Testing Done
+- [ ] Unit tests added (XX% coverage)
+- [ ] Integration tests added
+- [ ] Manual testing completed
+- [ ] Performance tested
+
+## Documentation
+- [ ] README updated
+- [ ] API documentation added
+- [ ] Examples/tutorials added
+- [ ] Changelog updated
+
+## Checklist
+- [ ] Code follows project style
+- [ ] Self-reviewed code
+- [ ] Added comprehensive tests
+- [ ] Updated all relevant documentation
+- [ ] No performance regressions
+
+---
+**Next Steps:**
+1. Implement the feature
+2. Add tests and documentation
+3. Push to this branch
+4. Codex and Ruby will auto-review!
+
+🤖 Quick Feature PR created by workflow`
+            });
+
+            // Add labels
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              labels: ['enhancement', 'feature']
+            });
+
+            // Assign to Codex for innovation review
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.data.number,
+              assignees: ['codex-bot']
+            });
+
+            core.info(`✅ Created PR #${pr.data.number}: ${pr.data.html_url}`);
