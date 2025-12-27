@@ -1,6 +1,21 @@
 const { App } = require('@slack/bolt');
 const { Octokit } = require('@octokit/rest');
+const express = require('express');
 require('dotenv').config();
+
+// Initialize Express for health checks
+const server = express();
+const PORT = process.env.PORT || 3000;
+
+// Health check endpoint for Railway
+server.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    service: 'blackroad-slack-bot',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Initialize Slack app
 const app = new App({
@@ -8,7 +23,7 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   socketMode: true,
   appToken: process.env.SLACK_APP_TOKEN,
-  port: process.env.PORT || 3000
+  receiver: undefined // Use Express receiver
 });
 
 // Initialize GitHub client
@@ -363,7 +378,13 @@ app.event('app_mention', async ({ event, say }) => {
 // ========================================
 
 (async () => {
+  // Start Slack app
   await app.start();
-  console.log('✅ BlackRoad Slack Bot is running!');
-  console.log('📡 Listening for commands...');
+
+  // Start Express server
+  server.listen(PORT, () => {
+    console.log('✅ BlackRoad Slack Bot is running!');
+    console.log('📡 Listening for commands...');
+    console.log(`🏥 Health endpoint: http://localhost:${PORT}/health`);
+  });
 })();
