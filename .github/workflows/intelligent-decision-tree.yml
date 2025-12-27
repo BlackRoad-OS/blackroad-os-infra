@@ -1,0 +1,358 @@
+name: 🌳 Intelligent Decision Tree
+
+on:
+  issues:
+    types: [opened, labeled, edited]
+  pull_request:
+    types: [opened, labeled, synchronize]
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  decision_tree:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Intelligent Decision Tree Analysis
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const eventType = context.eventName;
+
+            console.log(`🌳 Decision Tree Processing: ${eventType}`);
+
+            // ========================================
+            // DECISION TREE: ISSUE ROUTING
+            // ========================================
+
+            async function analyzeIssue(issue) {
+              const title = issue.title.toLowerCase();
+              const body = (issue.body || '').toLowerCase();
+              const labels = issue.labels.map(l => l.name);
+
+              const decisions = {
+                agent: null,
+                priority: 'medium',
+                estimatedTime: '1 hour',
+                autoAssign: true,
+                reasoning: []
+              };
+
+              // DECISION 1: Urgency Detection
+              if (title.includes('urgent') || title.includes('critical') || title.includes('emergency')) {
+                decisions.priority = 'critical';
+                decisions.estimatedTime = '30 minutes';
+                decisions.reasoning.push('Urgent keywords detected');
+              }
+
+              // DECISION 2: Security Detection
+              if (title.includes('security') || title.includes('vulnerability') || title.includes('cve') ||
+                  body.includes('exploit') || body.includes('breach')) {
+                decisions.agent = 'silas-bot';
+                decisions.priority = 'critical';
+                decisions.estimatedTime = '15 minutes';
+                decisions.reasoning.push('Security issue detected → Silas (Guardian)');
+                return decisions;
+              }
+
+              // DECISION 3: Performance Detection
+              if (title.includes('slow') || title.includes('performance') || title.includes('optimize') ||
+                  body.includes('bottleneck') || body.includes('latency')) {
+                decisions.agent = 'cadillac-bot';
+                decisions.estimatedTime = '8 minutes';
+                decisions.reasoning.push('Performance issue → Cadillac (Optimizer)');
+                return decisions;
+              }
+
+              // DECISION 4: Bug Detection
+              if (labels.includes('bug') || title.includes('bug') || title.includes('broken') ||
+                  title.includes('error') || title.includes('crash')) {
+                decisions.agent = 'felix-bot';
+                decisions.estimatedTime = '3 minutes';
+                decisions.reasoning.push('Bug detected → Felix (Auto-Fixer)');
+                return decisions;
+              }
+
+              // DECISION 5: Feature Request
+              if (labels.includes('enhancement') || labels.includes('feature') ||
+                  title.includes('feature') || title.includes('add ')) {
+                decisions.agent = 'codex-bot';
+                decisions.priority = 'medium';
+                decisions.estimatedTime = '24 hours';
+                decisions.reasoning.push('Feature request → Codex (Innovator)');
+                return decisions;
+              }
+
+              // DECISION 6: Refactoring
+              if (title.includes('refactor') || title.includes('cleanup') || title.includes('tech debt')) {
+                decisions.agent = 'winston-bot';
+                decisions.estimatedTime = '1 hour';
+                decisions.reasoning.push('Refactoring needed → Winston (Refactorer)');
+                return decisions;
+              }
+
+              // DECISION 7: Documentation
+              if (labels.includes('documentation') || title.includes('docs') || title.includes('readme')) {
+                decisions.agent = 'ophelia-bot';
+                decisions.estimatedTime = '30 minutes';
+                decisions.reasoning.push('Documentation → Ophelia (Poet)');
+                return decisions;
+              }
+
+              // DECISION 8: Question
+              if (title.includes('how to') || title.includes('question') || title.startsWith('?')) {
+                decisions.agent = 'chatgpt-bot';
+                decisions.priority = 'low';
+                decisions.estimatedTime = '10 minutes';
+                decisions.reasoning.push('Question → ChatGPT (Support)');
+                return decisions;
+              }
+
+              // DEFAULT: Agent marketplace routing
+              decisions.agent = 'agent-marketplace';
+              decisions.reasoning.push('No specific pattern → Agent Marketplace');
+              return decisions;
+            }
+
+            // ========================================
+            // DECISION TREE: PR ROUTING
+            // ========================================
+
+            async function analyzePR(pr) {
+              const title = pr.title.toLowerCase();
+              const body = (pr.body || '').toLowerCase();
+              const files = pr.changed_files;
+              const additions = pr.additions;
+              const deletions = pr.deletions;
+
+              const decisions = {
+                reviewers: [],
+                labels: [],
+                autoMerge: false,
+                riskLevel: 'medium',
+                reasoning: []
+              };
+
+              // DECISION 1: PR Size Analysis
+              const totalChanges = additions + deletions;
+              if (totalChanges > 1000) {
+                decisions.riskLevel = 'high';
+                decisions.labels.push('large-pr');
+                decisions.reasoning.push(`Large PR: ${totalChanges} lines changed`);
+              } else if (totalChanges < 50) {
+                decisions.riskLevel = 'low';
+                decisions.labels.push('small-pr');
+                decisions.reasoning.push(`Small PR: ${totalChanges} lines changed`);
+              }
+
+              // DECISION 2: Breaking Change Detection
+              if (title.includes('breaking') || title.includes('!:') || body.includes('breaking change')) {
+                decisions.reviewers.push('claude-bot');  // Architect review
+                decisions.labels.push('breaking-change');
+                decisions.riskLevel = 'critical';
+                decisions.reasoning.push('Breaking change → Requires Claude review');
+              }
+
+              // DECISION 3: Security PR
+              if (title.includes('security') || title.includes('cve') || body.includes('vulnerability')) {
+                decisions.reviewers.push('silas-bot');
+                decisions.labels.push('security');
+                decisions.riskLevel = 'critical';
+                decisions.reasoning.push('Security PR → Silas review required');
+              }
+
+              // DECISION 4: Bug Fix
+              if (title.includes('fix') || title.includes('bug')) {
+                decisions.reviewers.push('felix-bot');
+                decisions.reviewers.push('ruby-bot');
+                decisions.labels.push('bugfix');
+                decisions.reasoning.push('Bug fix → Felix + Ruby review');
+              }
+
+              // DECISION 5: Feature PR
+              if (title.includes('feat') || title.includes('feature')) {
+                decisions.reviewers.push('codex-bot');
+                decisions.reviewers.push('ruby-bot');
+                decisions.labels.push('feature');
+                decisions.reasoning.push('Feature → Codex + Ruby review');
+              }
+
+              // DECISION 6: Refactoring
+              if (title.includes('refactor')) {
+                decisions.reviewers.push('winston-bot');
+                decisions.reviewers.push('ruby-bot');
+                decisions.labels.push('refactoring');
+                decisions.reasoning.push('Refactor → Winston + Ruby review');
+              }
+
+              // DECISION 7: Documentation
+              if (title.includes('docs') || files < 3) {
+                decisions.reviewers.push('ophelia-bot');
+                decisions.labels.push('documentation');
+                if (files === 1 && totalChanges < 100) {
+                  decisions.autoMerge = true;
+                  decisions.reasoning.push('Simple docs → Auto-merge after review');
+                }
+              }
+
+              // DECISION 8: Dependency Update
+              if (title.includes('bump') || title.includes('update') && (title.includes('dep') || body.includes('package.json'))) {
+                decisions.labels.push('dependencies');
+                if (body.includes('security') || body.includes('cve')) {
+                  decisions.autoMerge = true;
+                  decisions.reasoning.push('Security dependency → Auto-merge');
+                }
+              }
+
+              // DECISION 9: Always add Ruby for code review
+              if (!decisions.reviewers.includes('ruby-bot') && !title.includes('docs')) {
+                decisions.reviewers.push('ruby-bot');
+                decisions.reasoning.push('Ruby for comprehensive code review');
+              }
+
+              return decisions;
+            }
+
+            // ========================================
+            // EXECUTE DECISIONS
+            // ========================================
+
+            if (eventType === 'issues') {
+              const issue = context.payload.issue;
+              if (!issue) return;
+
+              const decisions = await analyzeIssue(issue);
+
+              console.log('📊 Issue Decision Tree Results:');
+              console.log(`  Agent: ${decisions.agent}`);
+              console.log(`  Priority: ${decisions.priority}`);
+              console.log(`  Estimated Time: ${decisions.estimatedTime}`);
+              console.log(`  Reasoning: ${decisions.reasoning.join(', ')}`);
+
+              // Apply decisions
+              if (decisions.agent && decisions.agent !== 'agent-marketplace') {
+                // Assign to agent
+                try {
+                  await github.rest.issues.addAssignees({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    assignees: [decisions.agent]
+                  });
+                  console.log(`✅ Assigned to ${decisions.agent}`);
+                } catch (e) {
+                  console.log(`⚠️ Could not assign to ${decisions.agent}`);
+                }
+              }
+
+              // Add priority label
+              const priorityLabel = `priority-${decisions.priority}`;
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: [priorityLabel]
+                });
+              } catch (e) {
+                console.log(`⚠️ Could not add label ${priorityLabel}`);
+              }
+
+              // Add decision tree comment
+              const comment = `## 🌳 Decision Tree Analysis
+
+**Auto-routing Decision:**
+- **Agent:** ${decisions.agent}
+- **Priority:** ${decisions.priority}
+- **Estimated Response Time:** ${decisions.estimatedTime}
+
+**Reasoning:**
+${decisions.reasoning.map(r => `- ${r}`).join('\n')}
+
+---
+🤖 Automated by Intelligent Decision Tree`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: comment
+              });
+
+            } else if (eventType === 'pull_request') {
+              const pr = context.payload.pull_request;
+              if (!pr) return;
+
+              const decisions = await analyzePR(pr);
+
+              console.log('📊 PR Decision Tree Results:');
+              console.log(`  Reviewers: ${decisions.reviewers.join(', ')}`);
+              console.log(`  Labels: ${decisions.labels.join(', ')}`);
+              console.log(`  Risk Level: ${decisions.riskLevel}`);
+              console.log(`  Auto-merge: ${decisions.autoMerge}`);
+              console.log(`  Reasoning: ${decisions.reasoning.join(', ')}`);
+
+              // Request reviewers
+              if (decisions.reviewers.length > 0) {
+                try {
+                  await github.rest.pulls.requestReviewers({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: pr.number,
+                    reviewers: decisions.reviewers
+                  });
+                  console.log(`✅ Requested reviews from: ${decisions.reviewers.join(', ')}`);
+                } catch (e) {
+                  console.log(`⚠️ Could not request reviewers`);
+                }
+              }
+
+              // Add labels
+              if (decisions.labels.length > 0) {
+                try {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    labels: decisions.labels
+                  });
+                } catch (e) {
+                  console.log(`⚠️ Could not add labels`);
+                }
+              }
+
+              // Add decision tree comment
+              const riskEmoji = {
+                'low': '🟢',
+                'medium': '🟡',
+                'high': '🟠',
+                'critical': '🔴'
+              };
+
+              const comment = `## 🌳 Decision Tree Analysis
+
+**Auto-routing Decisions:**
+- **Reviewers:** ${decisions.reviewers.join(', ')}
+- **Risk Level:** ${riskEmoji[decisions.riskLevel]} ${decisions.riskLevel}
+- **Auto-merge:** ${decisions.autoMerge ? '✅ Yes (after approvals)' : '❌ No'}
+
+**Reasoning:**
+${decisions.reasoning.map(r => `- ${r}`).join('\n')}
+
+---
+🤖 Automated by Intelligent Decision Tree`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: comment
+              });
+            }

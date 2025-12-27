@@ -1,0 +1,347 @@
+name: 📡 Real-Time Command Center
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:
+  issues:
+    types: [opened, closed]
+  pull_request:
+    types: [opened, closed, merged]
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
+jobs:
+  command_center:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📡 Generate Real-Time Command Center Dashboard
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('📡 REAL-TIME COMMAND CENTER ACTIVATED');
+
+            const now = new Date();
+            const stats = {
+              timestamp: now.toISOString(),
+              issues: {
+                open: 0,
+                closed_today: 0,
+                critical: 0,
+                by_agent: {}
+              },
+              prs: {
+                open: 0,
+                merged_today: 0,
+                ready_to_merge: 0,
+                by_status: {}
+              },
+              agents: {
+                active: 0,
+                tasks_completed_today: 0,
+                by_agent: {}
+              },
+              triggers: {
+                fired_today: 0,
+                by_type: {}
+              },
+              health: {
+                score: 100,
+                status: 'healthy',
+                issues: []
+              }
+            };
+
+            // ========================================
+            // COLLECT ISSUE STATS
+            // ========================================
+            const { data: allIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+
+            for (const issue of allIssues) {
+              if (issue.pull_request) continue;  // Skip PRs
+
+              if (issue.state === 'open') {
+                stats.issues.open++;
+
+                // Check if critical
+                if (issue.labels.find(l => l.name.includes('critical'))) {
+                  stats.issues.critical++;
+                }
+
+                // Count by agent
+                if (issue.assignee) {
+                  const agent = issue.assignee.login;
+                  stats.issues.by_agent[agent] = (stats.issues.by_agent[agent] || 0) + 1;
+                }
+              } else if (issue.state === 'closed') {
+                const closedAt = new Date(issue.closed_at);
+                if (closedAt >= todayStart) {
+                  stats.issues.closed_today++;
+                }
+              }
+            }
+
+            // ========================================
+            // COLLECT PR STATS
+            // ========================================
+            const { data: allPRs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100
+            });
+
+            for (const pr of allPRs) {
+              if (pr.state === 'open') {
+                stats.prs.open++;
+
+                // Check if ready to merge
+                const { data: reviews } = await github.rest.pulls.listReviews({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number
+                });
+
+                const approvals = reviews.filter(r => r.state === 'APPROVED');
+                if (approvals.length >= 1) {
+                  stats.prs.ready_to_merge++;
+                }
+
+                // Count by status
+                if (pr.draft) {
+                  stats.prs.by_status['draft'] = (stats.prs.by_status['draft'] || 0) + 1;
+                } else {
+                  stats.prs.by_status['ready_for_review'] = (stats.prs.by_status['ready_for_review'] || 0) + 1;
+                }
+              } else if (pr.merged_at) {
+                const mergedAt = new Date(pr.merged_at);
+                if (mergedAt >= todayStart) {
+                  stats.prs.merged_today++;
+                }
+              }
+            }
+
+            // ========================================
+            // CALCULATE HEALTH SCORE
+            // ========================================
+            let healthScore = 100;
+
+            // Deduct for critical issues
+            if (stats.issues.critical > 0) {
+              healthScore -= stats.issues.critical * 10;
+              stats.health.issues.push(`${stats.issues.critical} critical issues open`);
+            }
+
+            // Deduct for stale PRs
+            if (stats.prs.open > 10) {
+              healthScore -= 10;
+              stats.health.issues.push(`${stats.prs.open} PRs open (high)`);
+            }
+
+            // Deduct for PRs ready to merge
+            if (stats.prs.ready_to_merge > 5) {
+              healthScore -= 5;
+              stats.health.issues.push(`${stats.prs.ready_to_merge} PRs ready to merge (pending)`);
+            }
+
+            healthScore = Math.max(0, Math.min(100, healthScore));
+            stats.health.score = healthScore;
+
+            if (healthScore >= 90) {
+              stats.health.status = '🟢 Healthy';
+            } else if (healthScore >= 70) {
+              stats.health.status = '🟡 Warning';
+            } else if (healthScore >= 50) {
+              stats.health.status = '🟠 Degraded';
+            } else {
+              stats.health.status = '🔴 Critical';
+            }
+
+            // ========================================
+            // AGENT PERFORMANCE
+            // ========================================
+            const agentList = [
+              'claude-bot', 'felix-bot', 'ruby-bot', 'winston-bot',
+              'cadillac-bot', 'silas-bot', 'codex-bot', 'ophelia-bot',
+              'chatgpt-bot', 'elias-bot', 'athena-bot', 'cecilia-bot'
+            ];
+
+            for (const agent of agentList) {
+              const assignedIssues = stats.issues.by_agent[agent] || 0;
+              stats.agents.by_agent[agent] = {
+                assigned: assignedIssues,
+                status: assignedIssues > 0 ? '🟢 Active' : '⚪ Idle'
+              };
+
+              if (assignedIssues > 0) {
+                stats.agents.active++;
+              }
+            }
+
+            // ========================================
+            // GENERATE DASHBOARD
+            // ========================================
+            const dashboard = `# 📡 Real-Time Command Center
+
+**Last Updated:** ${now.toLocaleString()}
+**Status:** ${stats.health.status} (Score: ${stats.health.score}/100)
+
+---
+
+## 🎯 System Health
+
+### Overall Status
+| Metric | Value | Status |
+|--------|-------|--------|
+| Health Score | ${stats.health.score}/100 | ${stats.health.status} |
+| Critical Issues | ${stats.issues.critical} | ${stats.issues.critical === 0 ? '✅' : '🔴'} |
+| Open Issues | ${stats.issues.open} | ${stats.issues.open < 20 ? '✅' : '⚠️'} |
+| Open PRs | ${stats.prs.open} | ${stats.prs.open < 10 ? '✅' : '⚠️'} |
+
+${stats.health.issues.length > 0 ? `### ⚠️ Health Issues\n${stats.health.issues.map(i => `- ${i}`).join('\n')}` : '### ✅ All Systems Operational'}
+
+---
+
+## 📊 Live Statistics
+
+### Issues
+| Metric | Count |
+|--------|-------|
+| 🔴 Open Issues | ${stats.issues.open} |
+| ✅ Closed Today | ${stats.issues.closed_today} |
+| 🚨 Critical | ${stats.issues.critical} |
+
+### Pull Requests
+| Metric | Count |
+|--------|-------|
+| 🔵 Open PRs | ${stats.prs.open} |
+| ✅ Merged Today | ${stats.prs.merged_today} |
+| 🎯 Ready to Merge | ${stats.prs.ready_to_merge} |
+| 📝 Draft | ${stats.prs.by_status['draft'] || 0} |
+| 👀 Ready for Review | ${stats.prs.by_status['ready_for_review'] || 0} |
+
+---
+
+## 🤖 Agent Activity
+
+**Active Agents:** ${stats.agents.active}/${agentList.length}
+
+| Agent | Assigned Issues | Status |
+|-------|----------------|--------|
+${agentList.map(agent => {
+  const data = stats.agents.by_agent[agent];
+  return `| ${agent} | ${data.assigned} | ${data.status} |`;
+}).join('\n')}
+
+---
+
+## 📈 Today's Activity
+
+| Metric | Count |
+|--------|-------|
+| Issues Closed | ${stats.issues.closed_today} |
+| PRs Merged | ${stats.prs.merged_today} |
+| Agent Tasks Completed | ${stats.agents.tasks_completed_today} |
+
+---
+
+## 🚀 Quick Actions
+
+- [View All Issues](https://github.com/${context.repo.owner}/${context.repo.repo}/issues)
+- [View All PRs](https://github.com/${context.repo.owner}/${context.repo.repo}/pulls)
+- [View Workflows](https://github.com/${context.repo.owner}/${context.repo.repo}/actions)
+- [PR Health Dashboard](PR_HEALTH_DASHBOARD.md)
+- [Smart Triggers Dashboard](TRIGGERS_DASHBOARD.md)
+
+---
+
+## 🎯 Next Tasks
+
+${stats.prs.ready_to_merge > 0 ? `- ✅ Merge ${stats.prs.ready_to_merge} ready PRs` : ''}
+${stats.issues.critical > 0 ? `- 🚨 Address ${stats.issues.critical} critical issues` : ''}
+${stats.prs.open > 10 ? `- 📝 Review ${stats.prs.open} open PRs` : ''}
+${stats.issues.open > 20 ? `- 📋 Triage ${stats.issues.open} open issues` : ''}
+${stats.health.score === 100 ? '- 🎉 All clear! System is healthy!' : ''}
+
+---
+
+**🤖 Real-Time Command Center** | Updates every 5 minutes
+`;
+
+            // Save dashboard
+            const fs = require('fs');
+            fs.writeFileSync('COMMAND_CENTER.md', dashboard);
+
+            // Save raw stats
+            fs.writeFileSync('COMMAND_CENTER_STATS.json', JSON.stringify(stats, null, 2));
+
+            console.log('\n📊 COMMAND CENTER STATS:');
+            console.log(JSON.stringify(stats, null, 2));
+
+            return stats;
+
+      - name: 📊 Commit Dashboard Updates
+        run: |
+          git config user.name "BlackRoad Bot"
+          git config user.email "bot@blackroad.dev"
+          git add COMMAND_CENTER.md COMMAND_CENTER_STATS.json || true
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore: Update real-time command center [skip ci]"
+          git push || echo "No changes to push"
+
+      - name: 🚨 Alert on Critical Health
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const stats = JSON.parse(fs.readFileSync('COMMAND_CENTER_STATS.json', 'utf8'));
+
+            if (stats.health.score < 70) {
+              // Create alert issue if health is degraded
+              const { data: existingIssues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                labels: 'health-alert'
+              });
+
+              if (existingIssues.length === 0) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `🚨 System Health Alert: ${stats.health.status}`,
+                  body: `## System Health Degraded!
+
+**Health Score:** ${stats.health.score}/100
+**Status:** ${stats.health.status}
+
+### Issues:
+${stats.health.issues.map(i => `- ${i}`).join('\n')}
+
+### Recommended Actions:
+1. Address ${stats.issues.critical} critical issues immediately
+2. Review and merge ${stats.prs.ready_to_merge} ready PRs
+3. Triage open issues and PRs
+
+See [Command Center](COMMAND_CENTER.md) for full details.
+
+---
+🤖 Auto-generated by Real-Time Command Center`,
+                  labels: ['health-alert', 'priority-high']
+                });
+
+                console.log('🚨 Created health alert issue');
+              }
+            }
