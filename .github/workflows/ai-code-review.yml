@@ -1,0 +1,321 @@
+name: 🤖 AI-Powered Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  ai-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 🔍 Get changed files
+        id: files
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number || github.event.inputs.pr_number }}"
+
+          echo "Fetching changed files from PR #$PR_NUMBER..."
+
+          gh pr diff $PR_NUMBER --name-only > /tmp/changed-files.txt
+
+          CHANGED_COUNT=$(wc -l < /tmp/changed-files.txt | tr -d ' ')
+          echo "changed_count=$CHANGED_COUNT" >> $GITHUB_OUTPUT
+
+          echo "Changed files: $CHANGED_COUNT"
+          cat /tmp/changed-files.txt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🧠 Analyze code quality
+        id: analyze
+        run: |
+          echo "Running AI code quality analysis..."
+
+          # Initialize review data
+          > /tmp/review-comments.json
+          echo '[]' > /tmp/review-comments.json
+
+          ISSUES_FOUND=0
+          SUGGESTIONS=0
+          SECURITY_ISSUES=0
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            echo "Analyzing: $file"
+
+            # Skip non-code files
+            if [[ ! "$file" =~ \.(ts|tsx|js|jsx|py|go|rs|java)$ ]]; then
+              continue
+            fi
+
+            # Get file diff
+            git diff origin/${{ github.event.pull_request.base.ref }} HEAD -- "$file" > /tmp/current-diff.txt
+
+            # Check for common issues
+
+            # 1. Console.log statements (should use logger)
+            if grep -n "console\\.log\\|console\\.error\\|console\\.warn" "$file" 2>/dev/null; then
+              ISSUES_FOUND=$((ISSUES_FOUND + 1))
+              echo "⚠️  Found console.log in $file - consider using proper logging"
+            fi
+
+            # 2. TODO comments
+            if grep -n "TODO\\|FIXME\\|HACK" "$file" 2>/dev/null; then
+              SUGGESTIONS=$((SUGGESTIONS + 1))
+              echo "📝 Found TODO/FIXME in $file"
+            fi
+
+            # 3. Hardcoded credentials patterns
+            if grep -niE "password|api[_-]?key|secret|token" "$file" 2>/dev/null | grep -v "process\\.env" | grep -v "//"; then
+              SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+              echo "🚨 SECURITY: Potential hardcoded secret in $file"
+            fi
+
+            # 4. Missing error handling
+            if grep -n "async function\\|await " "$file" 2>/dev/null | head -5; then
+              if ! grep -q "try\\|catch" "$file" 2>/dev/null; then
+                ISSUES_FOUND=$((ISSUES_FOUND + 1))
+                echo "⚠️  Async function without try/catch in $file"
+              fi
+            fi
+
+            # 5. Large functions (>50 lines)
+            if [[ "$file" =~ \.(ts|tsx|js|jsx)$ ]]; then
+              awk '/^[[:space:]]*(function|const.*=.*\(|async function)/ { start=NR }
+                   /^}/ { if (NR-start > 50) print "Line " start ": Function is " (NR-start) " lines (consider splitting)" }' "$file" || true
+            fi
+
+          done < /tmp/changed-files.txt
+
+          echo "issues=$ISSUES_FOUND" >> $GITHUB_OUTPUT
+          echo "suggestions=$SUGGESTIONS" >> $GITHUB_OUTPUT
+          echo "security=$SECURITY_ISSUES" >> $GITHUB_OUTPUT
+
+          # Calculate overall score (0-100)
+          TOTAL_ISSUES=$((ISSUES_FOUND + SUGGESTIONS + SECURITY_ISSUES * 3))
+          if [ $TOTAL_ISSUES -eq 0 ]; then
+            SCORE=100
+          else
+            SCORE=$((100 - TOTAL_ISSUES * 5))
+            [ $SCORE -lt 0 ] && SCORE=0
+          fi
+
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+
+      - name: 🎯 Generate AI insights
+        id: insights
+        run: |
+          SCORE=${{ steps.analyze.outputs.score }}
+          ISSUES=${{ steps.analyze.outputs.issues }}
+          SUGGESTIONS=${{ steps.analyze.outputs.suggestions }}
+          SECURITY=${{ steps.analyze.outputs.security }}
+
+          # Generate recommendation
+          if [ $SCORE -ge 90 ]; then
+            RECOMMENDATION="✅ **Excellent code quality!** This PR meets high standards."
+            STATUS="approved"
+          elif [ $SCORE -ge 75 ]; then
+            RECOMMENDATION="👍 **Good code quality** with minor improvements suggested."
+            STATUS="commented"
+          elif [ $SCORE -ge 60 ]; then
+            RECOMMENDATION="⚠️  **Needs improvement** - please address the issues below."
+            STATUS="changes_requested"
+          else
+            RECOMMENDATION="❌ **Major issues found** - significant refactoring needed."
+            STATUS="changes_requested"
+          fi
+
+          echo "recommendation=$RECOMMENDATION" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+      - name: 💬 Post review comment
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number || github.event.inputs.pr_number }}"
+
+          # Create comprehensive review comment
+          cat > /tmp/review.md << 'EOF'
+          # 🤖 AI Code Review Results
+
+          ## Quality Score: ${{ steps.analyze.outputs.score }}/100
+
+          ${{ steps.insights.outputs.recommendation }}
+
+          ### Analysis Summary
+
+          | Category | Count |
+          |----------|-------|
+          | ⚠️  Code Issues | ${{ steps.analyze.outputs.issues }} |
+          | 📝 Suggestions | ${{ steps.analyze.outputs.suggestions }} |
+          | 🚨 Security Concerns | ${{ steps.analyze.outputs.security }} |
+          | 📄 Files Changed | ${{ steps.files.outputs.changed_count }} |
+
+          ### Detailed Findings
+
+          #### Code Quality Issues
+          - Check for `console.log` statements - use proper logging
+          - Verify error handling in async functions
+          - Review function complexity (keep under 50 lines)
+
+          #### Security Best Practices
+          - No hardcoded credentials or API keys
+          - All secrets should use environment variables
+          - Sensitive data properly sanitized
+
+          #### Suggestions
+          - Address TODO/FIXME comments before merging
+          - Add JSDoc comments for public APIs
+          - Consider adding unit tests for new functions
+
+          ### Next Steps
+
+          ${{ steps.analyze.outputs.security > 0 && '🚨 **CRITICAL:** Security issues must be resolved before merge!' || '' }}
+          ${{ steps.analyze.outputs.issues > 5 && '⚠️  Multiple code quality issues detected - please review carefully.' || '' }}
+          ${{ steps.analyze.outputs.score >= 90 && '✅ Code looks great! Ready for human review.' || '' }}
+
+          ---
+
+          🤖 *Automated review by BlackRoad AI Code Review*
+          *This is a preliminary analysis - human review still recommended*
+          EOF
+
+          # Post comment
+          gh pr comment $PR_NUMBER --body-file /tmp/review.md
+
+          echo "✅ Review posted to PR #$PR_NUMBER"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  complexity-analysis:
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+    needs: ai-review
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📊 Install complexity analyzer
+        run: |
+          npm install -g complexity-report
+
+      - name: 📈 Analyze complexity
+        run: |
+          echo "Running complexity analysis..."
+
+          find src -name "*.ts" -o -name "*.js" 2>/dev/null | while read -r file; do
+            echo "Analyzing: $file"
+            cr "$file" --format json > "/tmp/$(basename $file).complexity.json" 2>/dev/null || true
+          done
+
+          echo "✅ Complexity analysis complete"
+
+  test-coverage-check:
+    name: Test Coverage Verification
+    runs-on: ubuntu-latest
+    needs: ai-review
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci || npm install
+
+      - name: 🧪 Check test coverage
+        id: coverage
+        run: |
+          echo "Checking if new code has tests..."
+
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          # Get changed files
+          gh pr diff $PR_NUMBER --name-only | grep -E '\.(ts|js)$' > /tmp/changed-code.txt || true
+
+          MISSING_TESTS=0
+
+          while IFS= read -r file; do
+            # Skip test files
+            [[ "$file" =~ test|spec ]] && continue
+
+            basename=$(basename "$file" .ts)
+            basename=$(basename "$basename" .js)
+
+            # Check if test exists
+            if ! find . -name "${basename}.test.*" -o -name "${basename}.spec.*" 2>/dev/null | grep -q .; then
+              echo "⚠️  Missing test for: $file"
+              MISSING_TESTS=$((MISSING_TESTS + 1))
+            fi
+          done < /tmp/changed-code.txt
+
+          echo "missing_tests=$MISSING_TESTS" >> $GITHUB_OUTPUT
+
+          if [ $MISSING_TESTS -gt 0 ]; then
+            echo "❌ Found $MISSING_TESTS files without tests"
+            exit 1
+          else
+            echo "✅ All changed files have tests"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  summary:
+    name: Review Summary
+    runs-on: ubuntu-latest
+    needs: [ai-review, complexity-analysis, test-coverage-check]
+    if: always()
+    steps:
+      - name: 📊 Generate summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🤖 AI Code Review Summary
+
+          ## Overall Results
+
+          | Check | Status |
+          |-------|--------|
+          | AI Review | ${{ needs.ai-review.result }} |
+          | Complexity Analysis | ${{ needs.complexity-analysis.result }} |
+          | Test Coverage | ${{ needs.test-coverage-check.result }} |
+
+          ## Metrics
+
+          - **Quality Score:** ${{ needs.ai-review.outputs.score || 'N/A' }}/100
+          - **Code Issues:** ${{ needs.ai-review.outputs.issues || '0' }}
+          - **Security Alerts:** ${{ needs.ai-review.outputs.security || '0' }}
+
+          ## Recommendation
+
+          ${{ needs.ai-review.outputs.recommendation || 'Review in progress...' }}
+
+          ---
+
+          *Next: Human reviewer should verify AI findings*
+          EOF

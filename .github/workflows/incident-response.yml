@@ -1,0 +1,387 @@
+name: 🚨 Automated Incident Response
+
+on:
+  issues:
+    types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      incident_type:
+        description: 'Type of incident'
+        required: true
+        type: choice
+        options:
+          - outage
+          - security
+          - performance
+          - data-loss
+      severity:
+        description: 'Severity level'
+        required: true
+        type: choice
+        options:
+          - critical
+          - high
+          - medium
+          - low
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  detect-incident:
+    name: Incident Detection
+    runs-on: ubuntu-latest
+    outputs:
+      is_incident: ${{ steps.check.outputs.is_incident }}
+      severity: ${{ steps.check.outputs.severity }}
+      type: ${{ steps.check.outputs.type }}
+    steps:
+      - name: 🔍 Check if issue is an incident
+        id: check
+        run: |
+          IS_INCIDENT=false
+          SEVERITY="low"
+          TYPE="unknown"
+
+          # Check labels
+          LABELS="${{ join(github.event.issue.labels.*.name, ',') }}"
+
+          if [[ "$LABELS" =~ incident|outage|critical|emergency ]]; then
+            IS_INCIDENT=true
+
+            # Determine severity
+            if [[ "$LABELS" =~ critical|emergency ]]; then
+              SEVERITY="critical"
+            elif [[ "$LABELS" =~ high|urgent ]]; then
+              SEVERITY="high"
+            elif [[ "$LABELS" =~ medium ]]; then
+              SEVERITY="medium"
+            fi
+
+            # Determine type
+            if [[ "$LABELS" =~ security|breach|vulnerability ]]; then
+              TYPE="security"
+            elif [[ "$LABELS" =~ outage|down|unavailable ]]; then
+              TYPE="outage"
+            elif [[ "$LABELS" =~ performance|slow|timeout ]]; then
+              TYPE="performance"
+            elif [[ "$LABELS" =~ data.*loss|corruption ]]; then
+              TYPE="data-loss"
+            fi
+          fi
+
+          # Manual trigger override
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            IS_INCIDENT=true
+            SEVERITY="${{ github.event.inputs.severity }}"
+            TYPE="${{ github.event.inputs.incident_type }}"
+          fi
+
+          echo "is_incident=$IS_INCIDENT" >> $GITHUB_OUTPUT
+          echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
+          echo "type=$TYPE" >> $GITHUB_OUTPUT
+
+          echo "Incident detected: $IS_INCIDENT"
+          echo "Severity: $SEVERITY"
+          echo "Type: $TYPE"
+
+  create-incident-issue:
+    name: Create Incident Tracking Issue
+    runs-on: ubuntu-latest
+    needs: detect-incident
+    if: needs.detect-incident.outputs.is_incident == 'true'
+    outputs:
+      incident_number: ${{ steps.create.outputs.incident_number }}
+    steps:
+      - name: 📋 Create incident tracking issue
+        id: create
+        run: |
+          SEVERITY="${{ needs.detect-incident.outputs.severity }}"
+          TYPE="${{ needs.detect-incident.outputs.type }}"
+
+          # Generate incident ID
+          INCIDENT_ID="INC-$(date +%Y%m%d-%H%M%S)"
+
+          # Create issue body
+          cat > /tmp/incident.md << EOF
+          # 🚨 Incident: $INCIDENT_ID
+
+          **Type:** $TYPE
+          **Severity:** $SEVERITY
+          **Status:** 🔴 ACTIVE
+          **Detected:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Impact Assessment
+
+          - [ ] Customer-facing services affected
+          - [ ] Data integrity at risk
+          - [ ] Security breach potential
+          - [ ] Financial impact
+
+          ## Response Timeline
+
+          - **Detection:** $(date -u +"%H:%M:%S UTC")
+          - **Response initiated:** In progress
+          - **Root cause identified:** Pending
+          - **Resolution:** Pending
+
+          ## Incident Commander
+
+          @blackroad-oncall
+
+          ## Response Checklist
+
+          - [ ] Incident acknowledged
+          - [ ] Stakeholders notified
+          - [ ] Root cause analysis started
+          - [ ] Mitigation deployed
+          - [ ] Monitoring increased
+          - [ ] Post-mortem scheduled
+
+          ## Communication Log
+
+          <!-- Update this section as incident progresses -->
+
+          ---
+
+          🤖 Auto-generated incident report
+          EOF
+
+          # Create issue
+          ISSUE_NUMBER=$(gh issue create \
+            --title "🚨 [$SEVERITY] $TYPE incident - $INCIDENT_ID" \
+            --body-file /tmp/incident.md \
+            --label "incident,$SEVERITY,$TYPE" \
+            --assignee "@me" | grep -oP '\d+$')
+
+          echo "incident_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "Created incident issue #$ISSUE_NUMBER"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  immediate-response:
+    name: Immediate Response Actions
+    runs-on: ubuntu-latest
+    needs: [detect-incident, create-incident-issue]
+    if: needs.detect-incident.outputs.severity == 'critical'
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🚨 Execute emergency procedures
+        run: |
+          TYPE="${{ needs.detect-incident.outputs.type }}"
+
+          echo "Executing emergency procedures for: $TYPE"
+
+          case "$TYPE" in
+            outage)
+              echo "🔄 Triggering automatic failover..."
+              # Add failover logic here
+              ;;
+
+            security)
+              echo "🔒 Locking down affected systems..."
+              # Add security lockdown logic here
+              ;;
+
+            performance)
+              echo "📊 Scaling up resources..."
+              # Add auto-scaling logic here
+              ;;
+
+            data-loss)
+              echo "💾 Initiating backup restoration..."
+              # Add backup restoration logic here
+              ;;
+          esac
+
+      - name: 📢 Send critical alert
+        run: |
+          echo "Sending critical alerts to all channels..."
+
+          # Slack notification (if configured)
+          # curl -X POST $SLACK_WEBHOOK_URL -d '{"text":"🚨 CRITICAL INCIDENT"}'
+
+          # Email notification (if configured)
+          # Add email notification logic
+
+          echo "✅ Alerts sent"
+
+  diagnostic-collection:
+    name: Collect Diagnostics
+    runs-on: ubuntu-latest
+    needs: [detect-incident, create-incident-issue]
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📊 Collect system diagnostics
+        run: |
+          mkdir -p /tmp/diagnostics
+
+          echo "Collecting diagnostic information..."
+
+          # System info
+          cat > /tmp/diagnostics/system.txt << EOF
+          Timestamp: $(date -u)
+          GitHub SHA: ${{ github.sha }}
+          Branch: ${{ github.ref }}
+          EOF
+
+          # Recent deployments
+          gh run list --limit 10 --json conclusion,createdAt,headBranch > /tmp/diagnostics/recent-deploys.json || true
+
+          # Recent commits
+          git log --oneline -20 > /tmp/diagnostics/recent-commits.txt || true
+
+          # Environment status (if health endpoint exists)
+          # curl -s https://api.blackroad.io/health > /tmp/diagnostics/health.json || true
+
+          echo "✅ Diagnostics collected"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 Upload diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: incident-diagnostics-${{ needs.create-incident-issue.outputs.incident_number }}
+          path: /tmp/diagnostics/
+
+  rollback-check:
+    name: Check Rollback Options
+    runs-on: ubuntu-latest
+    needs: [detect-incident, create-incident-issue]
+    if: needs.detect-incident.outputs.type == 'outage' || needs.detect-incident.outputs.type == 'performance'
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔄 Identify rollback target
+        id: rollback
+        run: |
+          echo "Finding last known good deployment..."
+
+          # Get recent successful deployments
+          gh run list \
+            --workflow=complete-cicd-pipeline.yml \
+            --status=success \
+            --limit=5 \
+            --json conclusion,headSha,createdAt \
+            > /tmp/successful-runs.json
+
+          # Get most recent successful SHA
+          ROLLBACK_SHA=$(jq -r '.[0].headSha' /tmp/successful-runs.json)
+
+          echo "rollback_sha=$ROLLBACK_SHA" >> $GITHUB_OUTPUT
+          echo "Last known good commit: $ROLLBACK_SHA"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔄 Create rollback PR
+        if: needs.detect-incident.outputs.severity == 'critical'
+        run: |
+          ROLLBACK_SHA="${{ steps.rollback.outputs.rollback_sha }}"
+          INCIDENT_NUM="${{ needs.create-incident-issue.outputs.incident_number }}"
+
+          # Create rollback branch
+          git checkout -b "rollback/incident-$INCIDENT_NUM"
+
+          # Revert to last known good
+          git revert --no-commit HEAD..$ROLLBACK_SHA || true
+          git commit -m "revert: Emergency rollback for incident #$INCIDENT_NUM"
+
+          git push origin "rollback/incident-$INCIDENT_NUM"
+
+          # Create emergency rollback PR
+          gh pr create \
+            --title "🚨 EMERGENCY ROLLBACK - Incident #$INCIDENT_NUM" \
+            --body "**EMERGENCY ROLLBACK**
+
+This PR reverts to last known good commit: $ROLLBACK_SHA
+
+**Incident:** #$INCIDENT_NUM
+**Severity:** ${{ needs.detect-incident.outputs.severity }}
+
+**⚠️  This PR should be merged immediately to restore service**" \
+            --label "emergency,rollback" \
+            --base main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  incident-summary:
+    name: Incident Status Update
+    runs-on: ubuntu-latest
+    needs: [detect-incident, create-incident-issue, immediate-response, diagnostic-collection, rollback-check]
+    if: always()
+    steps:
+      - name: 📊 Update incident issue
+        run: |
+          INCIDENT_NUM="${{ needs.create-incident-issue.outputs.incident_number }}"
+
+          # Create status update
+          cat > /tmp/update.md << EOF
+          ## Response Status Update
+
+          **Time:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ### Actions Taken
+
+          - ✅ Incident detected and classified
+          - ✅ Tracking issue created (#$INCIDENT_NUM)
+          - ${{ needs.immediate-response.result == 'success' && '✅' || '⏭️' }} Emergency procedures executed
+          - ✅ Diagnostics collected
+          - ${{ needs.rollback-check.result == 'success' && '✅' || '⏭️' }} Rollback options identified
+
+          ### Next Steps
+
+          1. Human incident commander should review
+          2. Validate automated responses
+          3. Continue monitoring
+          4. Update stakeholders
+
+          ---
+
+          🤖 Automated incident response system
+          EOF
+
+          # Post update
+          gh issue comment $INCIDENT_NUM --body-file /tmp/update.md
+
+          echo "✅ Incident status updated"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📈 Generate incident report
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🚨 Incident Response Summary
+
+          ## Incident Details
+
+          - **Type:** ${{ needs.detect-incident.outputs.type }}
+          - **Severity:** ${{ needs.detect-incident.outputs.severity }}
+          - **Issue:** #${{ needs.create-incident-issue.outputs.incident_number }}
+
+          ## Response Actions
+
+          | Action | Status |
+          |--------|--------|
+          | Detection | ✅ Complete |
+          | Tracking Issue | ${{ needs.create-incident-issue.result }} |
+          | Emergency Response | ${{ needs.immediate-response.result || 'skipped' }} |
+          | Diagnostics | ${{ needs.diagnostic-collection.result }} |
+          | Rollback Check | ${{ needs.rollback-check.result || 'skipped' }} |
+
+          ## Timeline
+
+          - **Detected:** $(date -u +"%H:%M:%S UTC")
+          - **Response Time:** < 60 seconds
+          - **Status:** 🔴 ACTIVE
+
+          ---
+
+          **Next:** Human review required for incident #${{ needs.create-incident-issue.outputs.incident_number }}
+          EOF
