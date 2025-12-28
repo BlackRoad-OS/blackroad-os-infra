@@ -201,7 +201,8 @@ Comprehensive SLA tracking with error budget management.
 
 ```
 Monthly Error Budget = Total Minutes × (100% - SLO Target)
-                     = 43,200 × 0.1%
+                     = 43,200 minutes × (100% - 99.9%)
+                     = 43,200 minutes × 0.001
                      = 43.2 minutes allowed downtime
 ```
 
@@ -270,12 +271,12 @@ The SLA dashboard is generated at `.github/sla-data/dashboard/index.html` and in
 
 | Workflow | Lines | Jobs | Steps | Triggers |
 |----------|-------|------|-------|----------|
-| canary-deployment.yml | 580 | 7 | 35 | workflow_dispatch, repository_dispatch |
-| deployment-approval.yml | 380 | 4 | 18 | workflow_dispatch, repository_dispatch |
-| audit-trail.yml | 420 | 5 | 15 | schedule, push, PR, deployment, workflow_run |
-| sla-monitoring.yml | 520 | 5 | 12 | schedule (4 crons), workflow_dispatch |
+| canary-deployment.yml | 703 | 7 | 35 | workflow_dispatch, repository_dispatch |
+| deployment-approval.yml | 485 | 4 | 18 | workflow_dispatch, repository_dispatch |
+| audit-trail.yml | 635 | 5 | 15 | schedule, push, PR, deployment, workflow_run |
+| sla-monitoring.yml | 727 | 5 | 12 | schedule (4 crons), workflow_dispatch |
 
-**Total Phase 20**: ~1,900 lines of workflow YAML
+**Total Phase 20**: ~2,550 lines of workflow YAML
 
 ## Integration Points
 
