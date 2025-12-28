@@ -49,7 +49,7 @@ jobs:
   check-slas:
     name: 🏥 Check SLAs
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-slas'
+    if: github.event.schedule == '*/15 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-slas')
     outputs:
       overall_status: ${{ steps.check.outputs.overall_status }}
       sla_breached: ${{ steps.check.outputs.sla_breached }}
@@ -191,7 +191,7 @@ jobs:
   daily-report:
     name: 📊 Daily SLA Report
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 0 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'daily')
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'daily')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -221,10 +221,10 @@ jobs:
           INCIDENTS=0
           DOWNTIME_MINUTES=7
 
-          # Calculate SLA budget
+          # Calculate SLA budget (using awk for portable floating-point arithmetic)
           MONTHLY_BUDGET_MINUTES=$((30 * 24 * 60))  # 43200 minutes
-          ALLOWED_DOWNTIME=$(echo "scale=2; $MONTHLY_BUDGET_MINUTES * (100 - ${{ env.SLA_UPTIME_TARGET }}) / 100" | bc)
-          REMAINING_BUDGET=$(echo "scale=2; $ALLOWED_DOWNTIME - $DOWNTIME_MINUTES" | bc)
+          ALLOWED_DOWNTIME=$(awk "BEGIN {printf \"%.2f\", $MONTHLY_BUDGET_MINUTES * (100 - ${{ env.SLA_UPTIME_TARGET }}) / 100}")
+          REMAINING_BUDGET=$(awk "BEGIN {printf \"%.2f\", $ALLOWED_DOWNTIME - $DOWNTIME_MINUTES}")
 
           echo "📈 Daily Metrics Summary"
           echo "------------------------"
@@ -327,13 +327,14 @@ jobs:
   weekly-report:
     name: 📊 Weekly SLA Report
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 0 * * 1' || (github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'weekly')
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'weekly')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: 📊 Generate weekly SLA report
         run: |
+          # Note: Uses GNU date's relative date syntax (available on ubuntu-latest runners)
           REPORT_ID="sla-weekly-$(date +%Y-W%V)"
           WEEK_START=$(date -d 'last monday' +%Y-%m-%d)
           WEEK_END=$(date -d 'last sunday' +%Y-%m-%d)
@@ -422,7 +423,7 @@ jobs:
   monthly-report:
     name: 📊 Monthly SLA Report
     runs-on: ubuntu-latest
-    if: github.event.schedule == '0 0 1 * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'monthly')
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'monthly')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -560,7 +561,7 @@ jobs:
   generate-dashboard:
     name: 📈 Generate Dashboard
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ always() && needs.check-slas.result != 'skipped' }}
     needs: [check-slas]
     steps:
       - name: Checkout repository
