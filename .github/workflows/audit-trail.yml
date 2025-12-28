@@ -42,7 +42,7 @@ permissions:
 
 env:
   AUDIT_RETENTION_DAYS: 365
-  COMPLIANCE_STANDARDS: 'SOC2,ISO27001,HIPAA'
+  COMPLIANCE_STANDARDS: 'SOC2,ISO27001'
 
 jobs:
   # ============================================================
