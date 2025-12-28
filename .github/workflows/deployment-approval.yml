@@ -42,6 +42,8 @@ permissions:
   deployments: write
 
 env:
+  # NOTE: APPROVAL_TIMEOUT_HOURS is informational; the actual approval timeout is enforced
+  # via GitHub Environment protection settings configured to 24 hours.
   APPROVAL_TIMEOUT_HOURS: 24
   MIN_APPROVERS_STAGING: 1
   MIN_APPROVERS_PRODUCTION: 2
