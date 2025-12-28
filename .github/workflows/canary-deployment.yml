@@ -590,9 +590,9 @@ jobs:
     needs: [validate-deployment, deploy-canary-5, deploy-canary-25, deploy-canary-50]
     if: |
       always() && (
-        needs.deploy-canary-5.outputs.can_promote == 'false' ||
-        needs.deploy-canary-25.outputs.can_promote == 'false' ||
-        needs.deploy-canary-50.outputs.can_promote == 'false'
+        needs.deploy-canary-5.result == 'failure' ||
+        needs.deploy-canary-25.result == 'failure' ||
+        needs.deploy-canary-50.result == 'failure'
       )
     runs-on: ubuntu-latest
     steps:
