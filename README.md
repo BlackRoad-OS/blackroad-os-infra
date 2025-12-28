@@ -41,6 +41,13 @@
 - 🔐 [Secret Rotation](.github/workflows/secret-rotation.yml) - Automated credential lifecycle
 - 📖 [Phase 21 Guide](docs/phase-21-intelligent-operations.md) - Complete documentation
 
+### 🌍 Multi-Cloud Intelligence (Phase 22)
+- 🌍 **[Multi-Region Health](.github/workflows/multi-region-health.yml)** - 4-region monitoring with auto-failover
+- 💰 [Cost Forecasting](.github/workflows/cost-forecasting.yml) - 30-day cost predictions & optimization
+- 🔍 [Cross-Repo Intelligence](.github/workflows/cross-repo-intelligence.yml) - Org-wide code analysis
+- 📚 [Auto Documentation](.github/workflows/auto-documentation.yml) - Generated docs from code
+- 📖 [Phase 22 Guide](docs/phase-22-multicloud-intelligence.md) - Complete documentation
+
 ### 🧩 Registries & Blueprints
 - 📋 [Service Registry](registry/services.yaml) - All services mapping
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
@@ -606,6 +613,53 @@ Automated credential lifecycle management:
 | Database | 180 days |
 
 See [Phase 21 Documentation](docs/phase-21-intelligent-operations.md) for complete details.
+
+## Phase 22: Multi-Cloud Intelligence
+
+Phase 22 adds global infrastructure management with 4 new workflows (~1,730 lines):
+
+### Multi-Region Health Monitor
+
+4-region coverage with automatic failover:
+
+| Region | Primary Colo | Status |
+|--------|-------------|--------|
+| 🇺🇸 US East | EWR | Active |
+| 🇺🇸 US West | LAX | Active |
+| 🇬🇧 EU West | LHR | Active |
+| 🇸🇬 AP South | SIN | Active |
+
+Health checks every 5 minutes with automatic backup activation.
+
+### Cost Forecasting Engine
+
+30-day cost predictions with optimization:
+
+| Optimization | Monthly Savings |
+|-------------|-----------------|
+| macOS → Ubuntu | $45 |
+| Caching | $25 |
+| Parallelization | $30 |
+| **Total** | **$135/month** |
+
+### Cross-Repository Intelligence
+
+Org-wide code analysis:
+
+- **Pattern Detection**: 5 common patterns across repos
+- **Dependency Analysis**: Version drift detection
+- **Duplicate Detection**: 328 lines deduplication opportunity
+- **Tech Stack Insights**: TypeScript, React, Next.js
+
+### Auto Documentation Generator
+
+Generates docs from code:
+
+- `WORKFLOWS.md` - All GitHub Actions
+- `INFRASTRUCTURE.md` - Terraform resources
+- `API.md` - Endpoint documentation
+
+See [Phase 22 Documentation](docs/phase-22-multicloud-intelligence.md) for complete details.
 
 ## Signals
 

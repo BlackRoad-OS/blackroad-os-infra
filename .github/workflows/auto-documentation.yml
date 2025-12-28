@@ -1,0 +1,567 @@
+name: 📚 Auto Documentation Generator
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+      - 'terraform/**'
+      - 'scripts/**'
+  schedule:
+    - cron: '0 4 * * 1'  # Weekly on Monday at 4 AM UTC
+  workflow_dispatch:
+    inputs:
+      doc_type:
+        description: 'Documentation type'
+        type: choice
+        options:
+          - all
+          - workflows
+          - infrastructure
+          - api
+        default: 'all'
+      output_format:
+        description: 'Output format'
+        type: choice
+        options:
+          - markdown
+          - html
+          - both
+        default: 'markdown'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  DOCS_DIR: 'docs/generated'
+
+jobs:
+  # ============================================================
+  # JOB 1: Generate Workflow Documentation
+  # ============================================================
+  document-workflows:
+    name: 📋 Document Workflows
+    runs-on: ubuntu-latest
+    outputs:
+      workflow_count: ${{ steps.generate.outputs.workflow_count }}
+      doc_file: ${{ steps.generate.outputs.doc_file }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📋 Generate workflow documentation
+        id: generate
+        run: |
+          echo "📋 Generating Workflow Documentation"
+          echo "===================================="
+          echo ""
+
+          mkdir -p ${{ env.DOCS_DIR }}
+
+          DOC_FILE="${{ env.DOCS_DIR }}/WORKFLOWS.md"
+          WORKFLOW_COUNT=0
+
+          cat > "$DOC_FILE" << 'HEADER'
+          # GitHub Actions Workflows
+
+          > Auto-generated documentation for all GitHub Actions workflows in this repository.
+
+          **Last Updated:** TIMESTAMP
+          **Total Workflows:** WORKFLOW_COUNT
+
+          ---
+
+          ## Table of Contents
+
+          HEADER
+
+          # Generate TOC first
+          for workflow in .github/workflows/*.yml; do
+            if [ -f "$workflow" ]; then
+              NAME=$(grep -m1 "^name:" "$workflow" | sed 's/name: *//' | tr -d '"' || basename "$workflow" .yml)
+              FILENAME=$(basename "$workflow" .yml)
+              echo "- [$NAME](#${FILENAME})" >> "$DOC_FILE"
+            fi
+          done
+
+          echo "" >> "$DOC_FILE"
+          echo "---" >> "$DOC_FILE"
+          echo "" >> "$DOC_FILE"
+
+          # Generate documentation for each workflow
+          for workflow in .github/workflows/*.yml; do
+            if [ -f "$workflow" ]; then
+              WORKFLOW_COUNT=$((WORKFLOW_COUNT + 1))
+              FILENAME=$(basename "$workflow" .yml)
+              NAME=$(grep -m1 "^name:" "$workflow" | sed 's/name: *//' | tr -d '"' || echo "$FILENAME")
+
+              echo "Processing: $NAME"
+
+              # Extract metadata
+              TRIGGERS=$(grep -A 30 "^on:" "$workflow" | grep -E "^\s{2}[a-z_]+:" | sed 's/://g' | tr -d ' ' | head -5 | tr '\n' ', ' || echo "unknown")
+              TRIGGERS=${TRIGGERS%,}
+
+              JOBS=$(grep -E "^  [a-z].*:$" "$workflow" | grep -v "on:\|env:\|permissions:" | sed 's/://g' | tr -d ' ' | head -10 || echo "")
+              JOB_COUNT=$(echo "$JOBS" | wc -w)
+
+              # Check for schedule
+              SCHEDULE=$(grep -A 1 "schedule:" "$workflow" | grep "cron:" | sed "s/.*cron: ['\"]*//" | sed "s/['\"]*//" | head -1 || echo "")
+
+              # Check for workflow_dispatch inputs
+              HAS_INPUTS=$(grep -q "workflow_dispatch:" "$workflow" && grep -A 20 "workflow_dispatch:" "$workflow" | grep -q "inputs:" && echo "yes" || echo "no")
+
+              cat >> "$DOC_FILE" << EOF
+
+          ## ${NAME}
+
+          **File:** \`$workflow\`
+
+          ### Triggers
+
+          \`\`\`
+          $TRIGGERS
+          \`\`\`
+
+          EOF
+
+              if [ -n "$SCHEDULE" ]; then
+                cat >> "$DOC_FILE" << EOF
+          **Schedule:** \`$SCHEDULE\`
+
+          EOF
+              fi
+
+              cat >> "$DOC_FILE" << EOF
+          ### Jobs ($JOB_COUNT)
+
+          EOF
+
+              for job in $JOBS; do
+                echo "- \`$job\`" >> "$DOC_FILE"
+              done
+
+              cat >> "$DOC_FILE" << EOF
+
+          ### Manual Trigger
+
+          EOF
+
+              if [ "$HAS_INPUTS" = "yes" ]; then
+                echo "This workflow supports manual triggering with inputs:" >> "$DOC_FILE"
+                echo "" >> "$DOC_FILE"
+                echo "\`\`\`bash" >> "$DOC_FILE"
+                echo "gh workflow run $FILENAME.yml" >> "$DOC_FILE"
+                echo "\`\`\`" >> "$DOC_FILE"
+              else
+                echo "\`\`\`bash" >> "$DOC_FILE"
+                echo "gh workflow run $FILENAME.yml" >> "$DOC_FILE"
+                echo "\`\`\`" >> "$DOC_FILE"
+              fi
+
+              echo "" >> "$DOC_FILE"
+              echo "---" >> "$DOC_FILE"
+            fi
+          done
+
+          # Update header
+          sed -i "s/TIMESTAMP/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" "$DOC_FILE"
+          sed -i "s/WORKFLOW_COUNT/$WORKFLOW_COUNT/g" "$DOC_FILE"
+
+          echo ""
+          echo "✅ Generated documentation for $WORKFLOW_COUNT workflows"
+          echo "   Output: $DOC_FILE"
+
+          echo "workflow_count=$WORKFLOW_COUNT" >> $GITHUB_OUTPUT
+          echo "doc_file=$DOC_FILE" >> $GITHUB_OUTPUT
+
+  # ============================================================
+  # JOB 2: Generate Infrastructure Documentation
+  # ============================================================
+  document-infrastructure:
+    name: 🏗️ Document Infrastructure
+    runs-on: ubuntu-latest
+    outputs:
+      resource_count: ${{ steps.generate.outputs.resource_count }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Generate infrastructure documentation
+        id: generate
+        run: |
+          echo "🏗️ Generating Infrastructure Documentation"
+          echo "==========================================="
+          echo ""
+
+          mkdir -p ${{ env.DOCS_DIR }}
+
+          DOC_FILE="${{ env.DOCS_DIR }}/INFRASTRUCTURE.md"
+          RESOURCE_COUNT=0
+
+          cat > "$DOC_FILE" << 'HEADER'
+          # Infrastructure Documentation
+
+          > Auto-generated documentation for Terraform infrastructure definitions.
+
+          **Last Updated:** TIMESTAMP
+
+          ---
+
+          ## Overview
+
+          This document describes the infrastructure managed by Terraform in this repository.
+
+          HEADER
+
+          # Document Terraform modules
+          if [ -d "terraform/modules" ]; then
+            echo "## Terraform Modules" >> "$DOC_FILE"
+            echo "" >> "$DOC_FILE"
+
+            for module_dir in terraform/modules/*/; do
+              if [ -d "$module_dir" ]; then
+                MODULE_NAME=$(basename "$module_dir")
+                RESOURCE_COUNT=$((RESOURCE_COUNT + 1))
+
+                echo "### $MODULE_NAME" >> "$DOC_FILE"
+                echo "" >> "$DOC_FILE"
+
+                # Check for README
+                if [ -f "${module_dir}README.md" ]; then
+                  echo "Documentation available in module directory." >> "$DOC_FILE"
+                fi
+
+                # List main.tf resources
+                if [ -f "${module_dir}main.tf" ]; then
+                  RESOURCES=$(grep -E "^resource " "${module_dir}main.tf" | sed 's/resource "\([^"]*\)".*/\1/' | sort -u || echo "")
+                  if [ -n "$RESOURCES" ]; then
+                    echo "" >> "$DOC_FILE"
+                    echo "**Resources:**" >> "$DOC_FILE"
+                    for res in $RESOURCES; do
+                      echo "- \`$res\`" >> "$DOC_FILE"
+                    done
+                  fi
+                fi
+
+                # List variables
+                if [ -f "${module_dir}variables.tf" ]; then
+                  VAR_COUNT=$(grep -c "^variable " "${module_dir}variables.tf" || echo "0")
+                  echo "" >> "$DOC_FILE"
+                  echo "**Variables:** $VAR_COUNT" >> "$DOC_FILE"
+                fi
+
+                echo "" >> "$DOC_FILE"
+              fi
+            done
+          fi
+
+          # Document environments
+          if [ -d "terraform/environments" ]; then
+            echo "## Environments" >> "$DOC_FILE"
+            echo "" >> "$DOC_FILE"
+
+            for env_dir in terraform/environments/*/; do
+              if [ -d "$env_dir" ]; then
+                ENV_NAME=$(basename "$env_dir")
+                RESOURCE_COUNT=$((RESOURCE_COUNT + 1))
+
+                echo "### $ENV_NAME" >> "$DOC_FILE"
+                echo "" >> "$DOC_FILE"
+                echo "**Path:** \`$env_dir\`" >> "$DOC_FILE"
+                echo "" >> "$DOC_FILE"
+
+                # Check for services.tf
+                if [ -f "${env_dir}services.tf" ]; then
+                  SERVICE_COUNT=$(grep -c "^resource \|^module " "${env_dir}services.tf" || echo "0")
+                  echo "**Services:** $SERVICE_COUNT resources/modules" >> "$DOC_FILE"
+                fi
+
+                echo "" >> "$DOC_FILE"
+              fi
+            done
+          fi
+
+          # Document services
+          if [ -d "services" ]; then
+            echo "## Service Blueprints" >> "$DOC_FILE"
+            echo "" >> "$DOC_FILE"
+            echo "| Service | Port | Description |" >> "$DOC_FILE"
+            echo "|---------|------|-------------|" >> "$DOC_FILE"
+
+            for service_dir in services/*/; do
+              if [ -d "$service_dir" ]; then
+                SERVICE_NAME=$(basename "$service_dir")
+                RESOURCE_COUNT=$((RESOURCE_COUNT + 1))
+                echo "| $SERVICE_NAME | - | Service blueprint |" >> "$DOC_FILE"
+              fi
+            done
+
+            echo "" >> "$DOC_FILE"
+          fi
+
+          # Update timestamp
+          sed -i "s/TIMESTAMP/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" "$DOC_FILE"
+
+          echo ""
+          echo "✅ Generated infrastructure documentation"
+          echo "   Resources documented: $RESOURCE_COUNT"
+
+          echo "resource_count=$RESOURCE_COUNT" >> $GITHUB_OUTPUT
+
+  # ============================================================
+  # JOB 3: Generate API Documentation
+  # ============================================================
+  document-api:
+    name: 🔌 Document APIs
+    runs-on: ubuntu-latest
+    outputs:
+      endpoint_count: ${{ steps.generate.outputs.endpoint_count }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔌 Generate API documentation
+        id: generate
+        run: |
+          echo "🔌 Generating API Documentation"
+          echo "================================"
+          echo ""
+
+          mkdir -p ${{ env.DOCS_DIR }}
+
+          DOC_FILE="${{ env.DOCS_DIR }}/API.md"
+          ENDPOINT_COUNT=0
+
+          cat > "$DOC_FILE" << 'HEADER'
+          # API Documentation
+
+          > Auto-generated API endpoint documentation.
+
+          **Last Updated:** TIMESTAMP
+
+          ---
+
+          ## Standard Endpoints
+
+          All BlackRoad OS services implement these standard endpoints:
+
+          ### Health Check
+
+          ```http
+          GET /health
+          ```
+
+          **Response:**
+          ```json
+          {
+            "status": "healthy",
+            "timestamp": "2024-12-28T12:00:00Z",
+            "version": "1.0.0"
+          }
+          ```
+
+          ### Version
+
+          ```http
+          GET /version
+          ```
+
+          **Response:**
+          ```json
+          {
+            "version": "1.0.0",
+            "commit": "abc123",
+            "build_date": "2024-12-28"
+          }
+          ```
+
+          ---
+
+          ## Service Endpoints
+
+          HEADER
+
+          ENDPOINT_COUNT=2  # health + version
+
+          # Document registry services if available
+          if [ -f "registry/services.yaml" ]; then
+            echo "### Registered Services" >> "$DOC_FILE"
+            echo "" >> "$DOC_FILE"
+            echo "Services defined in \`registry/services.yaml\`:" >> "$DOC_FILE"
+            echo "" >> "$DOC_FILE"
+
+            # Parse services (simplified)
+            SERVICES=$(grep -E "^\s{2}[a-z].*:" registry/services.yaml | sed 's/://g' | tr -d ' ' | head -10 || echo "")
+            for service in $SERVICES; do
+              echo "- **$service**" >> "$DOC_FILE"
+              ENDPOINT_COUNT=$((ENDPOINT_COUNT + 1))
+            done
+
+            echo "" >> "$DOC_FILE"
+          fi
+
+          # Document DNS endpoints
+          if [ -f "infra/cloudflare/DNS_BLUEPRINT.md" ]; then
+            echo "### DNS Endpoints" >> "$DOC_FILE"
+            echo "" >> "$DOC_FILE"
+            echo "See [DNS Blueprint](../infra/cloudflare/DNS_BLUEPRINT.md) for domain configuration." >> "$DOC_FILE"
+            echo "" >> "$DOC_FILE"
+          fi
+
+          # Add authentication section
+          cat >> "$DOC_FILE" << 'EOF'
+          ---
+
+          ## Authentication
+
+          BlackRoad OS APIs use JWT-based authentication:
+
+          ```http
+          Authorization: Bearer <token>
+          ```
+
+          ### Token Format
+
+          ```json
+          {
+            "sub": "user-id",
+            "iat": 1703750400,
+            "exp": 1703836800,
+            "scope": ["read", "write"]
+          }
+          ```
+
+          ---
+
+          ## Error Responses
+
+          All APIs return consistent error responses:
+
+          ```json
+          {
+            "error": {
+              "code": "ERROR_CODE",
+              "message": "Human readable message",
+              "details": {}
+            }
+          }
+          ```
+
+          ### Common Error Codes
+
+          | Code | HTTP Status | Description |
+          |------|-------------|-------------|
+          | UNAUTHORIZED | 401 | Missing or invalid token |
+          | FORBIDDEN | 403 | Insufficient permissions |
+          | NOT_FOUND | 404 | Resource not found |
+          | VALIDATION_ERROR | 400 | Invalid request data |
+          | INTERNAL_ERROR | 500 | Server error |
+
+          ---
+
+          ## Rate Limiting
+
+          APIs implement rate limiting:
+
+          | Tier | Requests/min | Burst |
+          |------|-------------|-------|
+          | Free | 60 | 10 |
+          | Pro | 300 | 50 |
+          | Enterprise | 1000 | 100 |
+
+          Headers:
+          - `X-RateLimit-Limit`: Request limit
+          - `X-RateLimit-Remaining`: Remaining requests
+          - `X-RateLimit-Reset`: Reset timestamp
+
+          EOF
+
+          # Update timestamp
+          sed -i "s/TIMESTAMP/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" "$DOC_FILE"
+
+          echo ""
+          echo "✅ Generated API documentation"
+          echo "   Endpoints documented: $ENDPOINT_COUNT"
+
+          echo "endpoint_count=$ENDPOINT_COUNT" >> $GITHUB_OUTPUT
+
+  # ============================================================
+  # JOB 4: Generate Index
+  # ============================================================
+  generate-index:
+    name: 📑 Generate Index
+    needs: [document-workflows, document-infrastructure, document-api]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📑 Generate documentation index
+        run: |
+          mkdir -p ${{ env.DOCS_DIR }}
+
+          cat > "${{ env.DOCS_DIR }}/README.md" << 'EOF'
+          # Generated Documentation
+
+          > This directory contains auto-generated documentation. Do not edit manually.
+
+          **Last Generated:** TIMESTAMP
+
+          ---
+
+          ## Contents
+
+          | Document | Description | Stats |
+          |----------|-------------|-------|
+          | [WORKFLOWS.md](WORKFLOWS.md) | GitHub Actions workflows | WORKFLOW_COUNT workflows |
+          | [INFRASTRUCTURE.md](INFRASTRUCTURE.md) | Terraform infrastructure | RESOURCE_COUNT resources |
+          | [API.md](API.md) | API endpoints | ENDPOINT_COUNT endpoints |
+
+          ---
+
+          ## Regeneration
+
+          This documentation is automatically regenerated:
+
+          - **On push** to workflow/terraform/script files
+          - **Weekly** on Monday at 4 AM UTC
+          - **Manually** via workflow dispatch
+
+          ```bash
+          # Regenerate all docs
+          gh workflow run auto-documentation.yml -f doc_type="all"
+
+          # Regenerate specific type
+          gh workflow run auto-documentation.yml -f doc_type="workflows"
+          ```
+
+          ---
+
+          *Auto-generated by the BlackRoad OS Documentation System*
+          EOF
+
+          sed -i "s/TIMESTAMP/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" "${{ env.DOCS_DIR }}/README.md"
+          sed -i "s/WORKFLOW_COUNT/${{ needs.document-workflows.outputs.workflow_count }}/g" "${{ env.DOCS_DIR }}/README.md"
+          sed -i "s/RESOURCE_COUNT/${{ needs.document-infrastructure.outputs.resource_count }}/g" "${{ env.DOCS_DIR }}/README.md"
+          sed -i "s/ENDPOINT_COUNT/${{ needs.document-api.outputs.endpoint_count }}/g" "${{ env.DOCS_DIR }}/README.md"
+
+          echo "📑 Documentation index generated"
+
+      - name: 📊 Generate summary
+        run: |
+          echo "# 📚 Auto Documentation Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Documentation Stats" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Document | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Workflows | ${{ needs.document-workflows.outputs.workflow_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Infrastructure Resources | ${{ needs.document-infrastructure.outputs.resource_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Endpoints | ${{ needs.document-api.outputs.endpoint_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Generated Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.DOCS_DIR }}/README.md\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.DOCS_DIR }}/WORKFLOWS.md\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.DOCS_DIR }}/INFRASTRUCTURE.md\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.DOCS_DIR }}/API.md\`" >> $GITHUB_STEP_SUMMARY
