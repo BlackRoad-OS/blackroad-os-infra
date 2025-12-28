@@ -249,7 +249,7 @@ jobs:
         run: |
           STABILIZATION_WAIT_SECONDS="${STABILIZATION_WAIT_SECONDS:-60}"
           echo "⏳ Waiting ${STABILIZATION_WAIT_SECONDS} seconds for traffic stabilization..."
-          sleep "${STABILIZATION_WAIT_SECONDS}"  # Shortened to 10 for demo, default 60 for production
+          sleep "${STABILIZATION_WAIT_SECONDS}"  # Default 60 seconds for production, configurable via env var
           echo "✅ Traffic stabilized"
 
       - name: 🏥 Health check - Round 1

@@ -117,55 +117,71 @@ jobs:
 
           mkdir -p .github/audit-trail/changes
 
-          # Get commit info (escape commit message for JSON)
+          # Get commit info
           COMMIT_SHA="${{ github.sha }}"
-          COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null | head -1 | sed 's/"/\\"/g' | sed "s/'/\\'/g" || echo "N/A")
+          RAW_COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null | head -1 || echo "N/A")
 
           # Create signed audit record
           TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           RECORD_HASH=$(echo -n "${CHANGE_ID}${COMMIT_SHA}${TIMESTAMP}" | sha256sum | cut -d' ' -f1)
+          
+          RISK_LEVEL=$( [ "$CHANGE_TYPE" = "security" ] && echo "high" || echo "medium" )
 
-          cat > ".github/audit-trail/changes/${CHANGE_ID}.json" << EOF
-          {
-            "audit_record": {
-              "id": "$CHANGE_ID",
-              "version": "1.0",
-              "record_hash": "$RECORD_HASH"
-            },
-            "event": {
-              "type": "${{ github.event_name }}",
-              "action": "${{ github.event.action }}",
-              "timestamp": "$TIMESTAMP"
-            },
-            "change": {
-              "type": "$CHANGE_TYPE",
-              "files_count": ${{ steps.capture.outputs.files_changed }},
-              "commit_sha": "$COMMIT_SHA",
-              "commit_message": "$COMMIT_MSG",
-              "branch": "${{ github.ref_name }}",
-              "base_ref": "${{ github.base_ref }}"
-            },
-            "actor": {
-              "login": "${{ github.actor }}",
-              "type": "user",
-              "authenticated": true
-            },
-            "repository": {
-              "name": "${{ github.repository }}",
-              "visibility": "private"
-            },
-            "compliance": {
-              "standards": ["SOC2", "ISO27001"],
-              "controls": ["CC6.1", "CC7.2", "A.12.1.2"],
-              "risk_level": "$( [ "$CHANGE_TYPE" = "security" ] && echo "high" || echo "medium" )"
-            },
-            "verification": {
-              "signed": true,
-              "signature_algorithm": "SHA256",
-              "verified_at": "$TIMESTAMP"
-            }
-          }
-          EOF
+          # Use jq to properly escape JSON strings
+          jq -n \
+            --arg change_id "$CHANGE_ID" \
+            --arg record_hash "$RECORD_HASH" \
+            --arg event_type "${{ github.event_name }}" \
+            --arg event_action "${{ github.event.action }}" \
+            --arg timestamp "$TIMESTAMP" \
+            --arg change_type "$CHANGE_TYPE" \
+            --argjson files_count "${{ steps.capture.outputs.files_changed }}" \
+            --arg commit_sha "$COMMIT_SHA" \
+            --arg commit_msg "$RAW_COMMIT_MSG" \
+            --arg branch "${{ github.ref_name }}" \
+            --arg base_ref "${{ github.base_ref }}" \
+            --arg actor "${{ github.actor }}" \
+            --arg repository "${{ github.repository }}" \
+            --arg risk_level "$RISK_LEVEL" \
+            '{
+              "audit_record": {
+                "id": $change_id,
+                "version": "1.0",
+                "record_hash": $record_hash
+              },
+              "event": {
+                "type": $event_type,
+                "action": $event_action,
+                "timestamp": $timestamp
+              },
+              "change": {
+                "type": $change_type,
+                "files_count": $files_count,
+                "commit_sha": $commit_sha,
+                "commit_message": $commit_msg,
+                "branch": $branch,
+                "base_ref": $base_ref
+              },
+              "actor": {
+                "login": $actor,
+                "type": "user",
+                "authenticated": true
+              },
+              "repository": {
+                "name": $repository,
+                "visibility": "private"
+              },
+              "compliance": {
+                "standards": ["SOC2", "ISO27001"],
+                "controls": ["CC6.1", "CC7.2", "A.12.1.2"],
+                "risk_level": $risk_level
+              },
+              "verification": {
+                "signed": true,
+                "signature_algorithm": "SHA256",
+                "verified_at": $timestamp
+              }
+            }' > ".github/audit-trail/changes/${CHANGE_ID}.json"
 
           echo "📜 Audit record created: $CHANGE_ID"
           echo "   Hash: $RECORD_HASH"
