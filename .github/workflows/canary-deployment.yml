@@ -43,7 +43,6 @@ permissions:
   deployments: write
 
 env:
-  CANARY_STAGES: '5,25,50,100'
   HEALTH_CHECK_RETRIES: 3
   ROLLBACK_THRESHOLD: 10
 
