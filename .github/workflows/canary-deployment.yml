@@ -44,7 +44,6 @@ permissions:
 
 env:
   HEALTH_CHECK_RETRIES: 3
-  ROLLBACK_THRESHOLD: 10
 
 jobs:
   # ============================================================
@@ -60,6 +59,7 @@ jobs:
       canary_start: ${{ steps.validate.outputs.canary_start }}
       deployment_id: ${{ steps.validate.outputs.deployment_id }}
       can_proceed: ${{ steps.validate.outputs.can_proceed }}
+      start_time: ${{ steps.validate.outputs.start_time }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -105,24 +105,19 @@ jobs:
           fi
 
           # Check for existing canary deployments
-          EXISTING_CANARY=$(cat .github/canary-state.json 2>/dev/null | jq -r ".active_canaries.\"$SERVICE\"" || echo "null")
+          if [ -f .github/canary-state.json ]; then
+            EXISTING_CANARY=$(jq -r ".active_canaries.\"$SERVICE\"" .github/canary-state.json 2>/dev/null || echo "null")
+          else
+            EXISTING_CANARY="null"
+          fi
           if [ "$EXISTING_CANARY" != "null" ] && [ -n "$EXISTING_CANARY" ]; then
             echo "⚠️  Warning: Existing canary deployment detected for $SERVICE"
             echo "   Previous deployment: $EXISTING_CANARY"
             echo "   This will replace the existing canary"
           fi
 
-          # Production deployment window check (8AM-6PM UTC on weekdays)
-          if [ "$ENVIRONMENT" = "production" ]; then
-            HOUR=$(date -u +%H)
-            DAY=$(date -u +%u)
-
-            if [ "$DAY" -gt 5 ]; then
-              echo "⚠️  Warning: Weekend production deployment"
-            elif [ "$HOUR" -lt 8 ] || [ "$HOUR" -gt 18 ]; then
-              echo "⚠️  Warning: Off-hours production deployment"
-            fi
-          fi
+          # Production deployment window check (delegated to shared script)
+          bash .github/scripts/check-production-deployment-window.sh "$ENVIRONMENT"
 
           if [ "$CAN_PROCEED" = "false" ]; then
             echo ""
@@ -133,12 +128,15 @@ jobs:
 
           echo "✅ Validation passed"
 
+          START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
           echo "service=$SERVICE" >> $GITHUB_OUTPUT
           echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "canary_start=$CANARY_START" >> $GITHUB_OUTPUT
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           echo "can_proceed=$CAN_PROCEED" >> $GITHUB_OUTPUT
+          echo "start_time=$START_TIME" >> $GITHUB_OUTPUT
 
       - name: 📊 Check service health baseline
         id: baseline
@@ -249,8 +247,9 @@ jobs:
 
       - name: ⏳ Wait for traffic stabilization
         run: |
-          echo "⏳ Waiting 60 seconds for traffic stabilization..."
-          sleep 10  # Shortened for demo, would be 60 in production
+          STABILIZATION_WAIT_SECONDS="${STABILIZATION_WAIT_SECONDS:-60}"
+          echo "⏳ Waiting ${STABILIZATION_WAIT_SECONDS} seconds for traffic stabilization..."
+          sleep "${STABILIZATION_WAIT_SECONDS}"  # Shortened to 10 for demo, default 60 for production
           echo "✅ Traffic stabilized"
 
       - name: 🏥 Health check - Round 1
@@ -539,6 +538,14 @@ jobs:
 
           mkdir -p .github/deployment-history
 
+          START_TIME="${{ needs.validate-deployment.outputs.start_time }}"
+          COMPLETED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          # Calculate actual duration in seconds
+          START_EPOCH=$(date -u -d "$START_TIME" +%s)
+          COMPLETED_EPOCH=$(date -u +%s)
+          DURATION_SECONDS=$((COMPLETED_EPOCH - START_EPOCH))
+
           cat > ".github/deployment-history/${DEPLOYMENT_ID}.json" << EOF
           {
             "deployment_id": "$DEPLOYMENT_ID",
@@ -547,9 +554,9 @@ jobs:
             "environment": "${{ needs.validate-deployment.outputs.environment }}",
             "type": "canary",
             "stages_completed": ["5%", "25%", "50%", "100%"],
-            "started_at": "$(date -u -d '5 minutes ago' +%Y-%m-%dT%H:%M:%SZ)",
-            "completed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "duration_seconds": 300,
+            "started_at": "$START_TIME",
+            "completed_at": "$COMPLETED_AT",
+            "duration_seconds": $DURATION_SECONDS,
             "status": "success",
             "initiated_by": "${{ github.actor }}",
             "health_checks_passed": 14,
@@ -642,6 +649,9 @@ jobs:
 
           mkdir -p .github/deployment-history
 
+          START_TIME="${{ needs.validate-deployment.outputs.start_time }}"
+          ROLLED_BACK_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
           cat > ".github/deployment-history/${DEPLOYMENT_ID}.json" << EOF
           {
             "deployment_id": "$DEPLOYMENT_ID",
@@ -650,8 +660,8 @@ jobs:
             "environment": "${{ needs.validate-deployment.outputs.environment }}",
             "type": "canary",
             "status": "rolled_back",
-            "started_at": "$(date -u -d '3 minutes ago' +%Y-%m-%dT%H:%M:%SZ)",
-            "rolled_back_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "started_at": "$START_TIME",
+            "rolled_back_at": "$ROLLED_BACK_AT",
             "initiated_by": "${{ github.actor }}",
             "failure_reason": "health_check_failed"
           }
