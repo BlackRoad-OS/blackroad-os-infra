@@ -81,8 +81,14 @@ jobs:
           if [ "$EVENT_TYPE" = "push" ]; then
             CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
           else
-            # Use base ref from PR event, with repository default branch as final fallback
-            BASE_REF="${{ github.event.pull_request.base.ref || github.base_ref || github.event.repository.default_branch }}"
+            # Use base ref from PR event, with fallbacks to base_ref or repository default branch
+            if [ -n "${{ github.event.pull_request.base.ref }}" ]; then
+              BASE_REF="${{ github.event.pull_request.base.ref }}"
+            elif [ -n "${{ github.base_ref }}" ]; then
+              BASE_REF="${{ github.base_ref }}"
+            else
+              BASE_REF="${{ github.event.repository.default_branch }}"
+            fi
             CHANGED_FILES=$(git diff --name-only origin/$BASE_REF...HEAD 2>/dev/null || echo "")
           fi
 
