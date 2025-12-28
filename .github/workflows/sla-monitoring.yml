@@ -49,7 +49,7 @@ jobs:
   check-slas:
     name: 🏥 Check SLAs
     runs-on: ubuntu-latest
-    if: github.event.schedule == '*/15 * * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-slas')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check-slas'
     outputs:
       overall_status: ${{ steps.check.outputs.overall_status }}
       sla_breached: ${{ steps.check.outputs.sla_breached }}
