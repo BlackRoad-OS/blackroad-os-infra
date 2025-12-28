@@ -81,7 +81,9 @@ jobs:
           if [ "$EVENT_TYPE" = "push" ]; then
             CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
           else
-            CHANGED_FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || echo "")
+            # Use base ref from PR event instead of hardcoding 'main'
+            BASE_REF="${{ github.event.pull_request.base.ref || github.base_ref || 'main' }}"
+            CHANGED_FILES=$(git diff --name-only origin/$BASE_REF...HEAD 2>/dev/null || echo "")
           fi
 
           # Categorize change type
@@ -115,9 +117,9 @@ jobs:
 
           mkdir -p .github/audit-trail/changes
 
-          # Get commit info
+          # Get commit info (escape commit message for JSON)
           COMMIT_SHA="${{ github.sha }}"
-          COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null | head -1 || echo "N/A")
+          COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null | head -1 | sed 's/"/\\"/g' | sed "s/'/\\'/g" || echo "N/A")
 
           # Create signed audit record
           TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -560,9 +562,9 @@ jobs:
           sed -i "s/REPORT_ID/$REPORT_ID/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
           sed -i "s/REPORT_TIMESTAMP/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
           sed -i "s/OVERALL_SCORE/$OVERALL_SCORE/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
-          sed -i "s/CHANGES_COUNT/0/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
-          sed -i "s/DEPLOYMENTS_COUNT/0/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
-          sed -i "s/WORKFLOWS_COUNT/0/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
+          sed -i "s/CHANGES_COUNT/$CHANGES_COUNT/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
+          sed -i "s/DEPLOYMENTS_COUNT/$DEPLOYMENTS_COUNT/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
+          sed -i "s/WORKFLOWS_COUNT/$WORKFLOWS_COUNT/g" ".github/audit-trail/reports/html/${REPORT_ID}.html"
 
           echo "📝 HTML report generated"
 
