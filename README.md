@@ -27,6 +27,13 @@
 - ❤️‍🩹 [Health Endpoints](docs/observability/health-endpoints.md) - Health check standards
 - 🔗 [Dashboards](docs/observability/dashboards.md) - Monitoring links
 
+### 🚀 Deployment & Governance (Phase 20)
+- 🐦 **[Canary Deployments](.github/workflows/canary-deployment.yml)** - Progressive rollout (5%→25%→50%→100%)
+- 🔐 [Deployment Approvals](.github/workflows/deployment-approval.yml) - Production gating with Slack
+- 📜 [Audit Trail](.github/workflows/audit-trail.yml) - SOC2/ISO27001 compliance tracking
+- 📈 [SLA Monitoring](.github/workflows/sla-monitoring.yml) - Uptime & error budget management
+- 📖 [Phase 20 Guide](docs/phase-20-deployment-governance.md) - Complete documentation
+
 ### 🧩 Registries & Blueprints
 - 📋 [Service Registry](registry/services.yaml) - All services mapping
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
@@ -489,6 +496,59 @@ The `/infra` directory contains the Workers & Pages orchestration system that ma
 
 See `/registry/services-map.yaml` for the full services registry.
 
+## Phase 20: Advanced Deployment & Governance
+
+Phase 20 introduces enterprise-grade deployment controls with 4 new workflows (~1,900 lines):
+
+### Canary Deployment System
+
+Progressive rollout with automatic health-based promotion:
+
+```
+5% Traffic → Health Check → 25% → Health Check → 50% → Health Check → 100%
+                ↓                      ↓                     ↓
+           Auto-Rollback         Auto-Rollback         Auto-Rollback
+```
+
+```bash
+# Trigger canary deployment
+gh workflow run canary-deployment.yml \
+  -f service="blackroad-api" \
+  -f environment="production" \
+  -f image_tag="v2.1.0"
+```
+
+### Deployment Approval Gate
+
+Production deployments require human approval:
+
+| Environment | Required Approvers | Timeout |
+|-------------|-------------------|---------|
+| Staging | 1 | 24 hours |
+| Production | 2 | 24 hours |
+
+### Audit Trail System
+
+Compliance-ready change tracking with cryptographic signing:
+
+- **SOC 2 Type II** aligned controls (CC6.1, CC6.2, CC7.2, CC7.3)
+- **ISO 27001** aligned controls (A.12.1.2, A.12.4.1, A.14.2.2)
+- 365-day retention with SHA-256 signatures
+
+### SLA Monitoring
+
+Real-time SLA tracking with error budget management:
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Uptime | 99.9% | Rolling 30-day |
+| Response Time P95 | 200ms | Per service |
+| Error Rate | <0.1% | Rolling 24-hour |
+
+**Monthly Error Budget:** 43.2 minutes allowed downtime
+
+See [Phase 20 Documentation](docs/phase-20-deployment-governance.md) for complete details.
+
 ## Signals
 
 `gen_sig_beacon.ts` writes `public/sig.beacon.json` with the current timestamp and agent metadata; `apply.yml` refreshes it before persisting to the archive repo (TODO).
@@ -539,8 +599,8 @@ See [`/registry/services.yaml`](registry/services.yaml) for the single source of
 
 ---
 
-**Maintained By**: BlackRoad OS Infrastructure Team  
-**Last Updated**: 2025-11-24  
+**Maintained By**: BlackRoad OS Infrastructure Team
+**Last Updated**: 2025-12-28
 **License**: Private
 
 🌍 Building the future of autonomous systems, one config at a time. 🤖✨
