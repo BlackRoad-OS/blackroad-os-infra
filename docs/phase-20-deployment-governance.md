@@ -202,6 +202,7 @@ Comprehensive SLA tracking with error budget management.
 ```
 Monthly Error Budget = Total Minutes × (100% - SLO Target)
                      = 43,200 minutes × (100% - 99.9%)
+                     = 43,200 minutes × 0.1%
                      = 43,200 minutes × 0.001
                      = 43.2 minutes allowed downtime
 ```
