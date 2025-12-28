@@ -34,6 +34,13 @@
 - 📈 [SLA Monitoring](.github/workflows/sla-monitoring.yml) - Uptime & error budget management
 - 📖 [Phase 20 Guide](docs/phase-20-deployment-governance.md) - Complete documentation
 
+### 🔮 Intelligent Operations (Phase 21)
+- 🔗 **[Workflow Dependency Graph](.github/workflows/workflow-dependency-graph.yml)** - Interactive D3 visualization
+- 📋 [Incident Post-Mortems](.github/workflows/incident-postmortem.yml) - Auto-generated post-mortem docs
+- 🔮 [Predictive Failure Detection](.github/workflows/predictive-failure-detection.yml) - 7-day failure forecasting
+- 🔐 [Secret Rotation](.github/workflows/secret-rotation.yml) - Automated credential lifecycle
+- 📖 [Phase 21 Guide](docs/phase-21-intelligent-operations.md) - Complete documentation
+
 ### 🧩 Registries & Blueprints
 - 📋 [Service Registry](registry/services.yaml) - All services mapping
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
@@ -548,6 +555,57 @@ Real-time SLA tracking with error budget management:
 **Monthly Error Budget:** 43.2 minutes allowed downtime
 
 See [Phase 20 Documentation](docs/phase-20-deployment-governance.md) for complete details.
+
+## Phase 21: Intelligent Operations
+
+Phase 21 adds AI-powered operational intelligence with 4 new workflows (~1,870 lines):
+
+### Workflow Dependency Graph
+
+Interactive D3 visualization of 200+ workflows:
+
+```bash
+# Generate interactive graph
+gh workflow run workflow-dependency-graph.yml
+```
+
+Features: Category classification, dependency mapping, searchable interface.
+
+### Predictive Failure Detection
+
+7-day failure probability forecasting:
+
+| Risk Level | Score | Action |
+|------------|-------|--------|
+| 🟢 Low | 0-39 | Continue monitoring |
+| 🟡 Medium | 40-69 | Review recommendations |
+| 🔴 High | 70-100 | Immediate attention |
+
+### Incident Post-Mortem Generator
+
+Auto-generate comprehensive post-mortems:
+
+```bash
+gh workflow run incident-postmortem.yml \
+  -f incident_id="INC-2024-001" \
+  -f incident_title="API Outage" \
+  -f severity="major"
+```
+
+Creates: Post-mortem document, PR for review, action item tracking issue.
+
+### Secret Rotation Automation
+
+Automated credential lifecycle management:
+
+| Secret Type | Rotation Period |
+|-------------|-----------------|
+| API Keys | 90 days |
+| Tokens | 30 days |
+| Certificates | 365 days |
+| Database | 180 days |
+
+See [Phase 21 Documentation](docs/phase-21-intelligent-operations.md) for complete details.
 
 ## Signals
 

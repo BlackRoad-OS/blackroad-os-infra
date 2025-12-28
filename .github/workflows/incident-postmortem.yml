@@ -1,0 +1,584 @@
+name: 📋 Incident Post-Mortem Generator
+
+on:
+  workflow_dispatch:
+    inputs:
+      incident_id:
+        description: 'Incident ID (e.g., INC-2024-001)'
+        required: true
+        type: string
+      incident_title:
+        description: 'Brief incident title'
+        required: true
+        type: string
+      severity:
+        description: 'Incident severity'
+        required: true
+        type: choice
+        options:
+          - critical
+          - major
+          - minor
+          - low
+      start_time:
+        description: 'Incident start time (ISO 8601)'
+        required: true
+        type: string
+      end_time:
+        description: 'Incident end time (ISO 8601)'
+        required: true
+        type: string
+      affected_services:
+        description: 'Affected services (comma-separated)'
+        required: true
+        type: string
+      root_cause:
+        description: 'Root cause summary'
+        required: true
+        type: string
+      resolution:
+        description: 'Resolution summary'
+        required: true
+        type: string
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  POSTMORTEM_DIR: 'docs/postmortems'
+
+jobs:
+  # ============================================================
+  # JOB 1: Gather Incident Data
+  # ============================================================
+  gather-data:
+    name: 📊 Gather Incident Data
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && github.event.label.name == 'postmortem')
+    outputs:
+      incident_id: ${{ steps.data.outputs.incident_id }}
+      incident_title: ${{ steps.data.outputs.incident_title }}
+      severity: ${{ steps.data.outputs.severity }}
+      start_time: ${{ steps.data.outputs.start_time }}
+      end_time: ${{ steps.data.outputs.end_time }}
+      duration_minutes: ${{ steps.data.outputs.duration_minutes }}
+      affected_services: ${{ steps.data.outputs.affected_services }}
+      root_cause: ${{ steps.data.outputs.root_cause }}
+      resolution: ${{ steps.data.outputs.resolution }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📊 Extract incident data
+        id: data
+        run: |
+          echo "📊 Gathering Incident Data"
+          echo "=========================="
+          echo ""
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Use workflow dispatch inputs
+            INCIDENT_ID="${{ github.event.inputs.incident_id }}"
+            INCIDENT_TITLE="${{ github.event.inputs.incident_title }}"
+            SEVERITY="${{ github.event.inputs.severity }}"
+            START_TIME="${{ github.event.inputs.start_time }}"
+            END_TIME="${{ github.event.inputs.end_time }}"
+            AFFECTED_SERVICES="${{ github.event.inputs.affected_services }}"
+            ROOT_CAUSE="${{ github.event.inputs.root_cause }}"
+            RESOLUTION="${{ github.event.inputs.resolution }}"
+          else
+            # Extract from issue (when labeled with 'postmortem')
+            INCIDENT_ID="INC-$(date +%Y)-${{ github.event.issue.number }}"
+            INCIDENT_TITLE="${{ github.event.issue.title }}"
+            SEVERITY="major"
+            START_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            AFFECTED_SERVICES="unknown"
+            ROOT_CAUSE="To be determined"
+            RESOLUTION="To be documented"
+          fi
+
+          # Calculate duration
+          START_EPOCH=$(date -d "$START_TIME" +%s 2>/dev/null || echo "0")
+          END_EPOCH=$(date -d "$END_TIME" +%s 2>/dev/null || echo "0")
+          DURATION_MINUTES=$(( (END_EPOCH - START_EPOCH) / 60 ))
+
+          if [ "$DURATION_MINUTES" -lt 0 ]; then
+            DURATION_MINUTES=0
+          fi
+
+          echo "Incident ID: $INCIDENT_ID"
+          echo "Title: $INCIDENT_TITLE"
+          echo "Severity: $SEVERITY"
+          echo "Duration: $DURATION_MINUTES minutes"
+          echo "Affected: $AFFECTED_SERVICES"
+
+          echo "incident_id=$INCIDENT_ID" >> $GITHUB_OUTPUT
+          echo "incident_title=$INCIDENT_TITLE" >> $GITHUB_OUTPUT
+          echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
+          echo "start_time=$START_TIME" >> $GITHUB_OUTPUT
+          echo "end_time=$END_TIME" >> $GITHUB_OUTPUT
+          echo "duration_minutes=$DURATION_MINUTES" >> $GITHUB_OUTPUT
+          echo "affected_services=$AFFECTED_SERVICES" >> $GITHUB_OUTPUT
+          echo "root_cause=$ROOT_CAUSE" >> $GITHUB_OUTPUT
+          echo "resolution=$RESOLUTION" >> $GITHUB_OUTPUT
+
+      - name: 🔍 Collect related logs
+        id: logs
+        run: |
+          echo "🔍 Collecting Related Logs"
+          echo "=========================="
+          echo ""
+
+          START_TIME="${{ steps.data.outputs.start_time }}"
+          END_TIME="${{ steps.data.outputs.end_time }}"
+
+          # Collect recent workflow runs in the timeframe
+          echo "Recent workflow runs during incident:"
+          gh run list --limit 20 --json name,conclusion,createdAt,updatedAt \
+            --jq '.[] | "\(.createdAt) | \(.name) | \(.conclusion)"' || echo "Unable to fetch runs"
+
+          # Collect recent deployments
+          echo ""
+          echo "Recent deployments:"
+          gh api repos/${{ github.repository }}/deployments --jq '.[0:5] | .[] | "\(.created_at) | \(.environment) | \(.ref)"' || echo "Unable to fetch deployments"
+
+          # Store findings
+          echo "log_collection=complete" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📈 Analyze impact
+        id: impact
+        run: |
+          echo "📈 Analyzing Impact"
+          echo "==================="
+          echo ""
+
+          DURATION="${{ steps.data.outputs.duration_minutes }}"
+          SEVERITY="${{ steps.data.outputs.severity }}"
+
+          # Calculate SLA impact
+          MONTHLY_BUDGET=43  # 43.2 minutes at 99.9%
+
+          if [ "$DURATION" -gt 0 ]; then
+            BUDGET_IMPACT=$(echo "scale=1; $DURATION * 100 / $MONTHLY_BUDGET" | bc)
+          else
+            BUDGET_IMPACT="0"
+          fi
+
+          # Estimate affected users (mock calculation)
+          case "$SEVERITY" in
+            critical) AFFECTED_USERS="10000+" ;;
+            major) AFFECTED_USERS="1000-10000" ;;
+            minor) AFFECTED_USERS="100-1000" ;;
+            low) AFFECTED_USERS="<100" ;;
+          esac
+
+          echo "Duration: $DURATION minutes"
+          echo "Error Budget Impact: ${BUDGET_IMPACT}%"
+          echo "Estimated Affected Users: $AFFECTED_USERS"
+
+          echo "budget_impact=$BUDGET_IMPACT" >> $GITHUB_OUTPUT
+          echo "affected_users=$AFFECTED_USERS" >> $GITHUB_OUTPUT
+
+  # ============================================================
+  # JOB 2: Generate Post-Mortem Document
+  # ============================================================
+  generate-postmortem:
+    name: 📝 Generate Post-Mortem
+    needs: gather-data
+    runs-on: ubuntu-latest
+    outputs:
+      postmortem_file: ${{ steps.generate.outputs.postmortem_file }}
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📝 Generate post-mortem document
+        id: generate
+        run: |
+          echo "📝 Generating Post-Mortem Document"
+          echo "==================================="
+          echo ""
+
+          INCIDENT_ID="${{ needs.gather-data.outputs.incident_id }}"
+          INCIDENT_TITLE="${{ needs.gather-data.outputs.incident_title }}"
+          SEVERITY="${{ needs.gather-data.outputs.severity }}"
+          START_TIME="${{ needs.gather-data.outputs.start_time }}"
+          END_TIME="${{ needs.gather-data.outputs.end_time }}"
+          DURATION="${{ needs.gather-data.outputs.duration_minutes }}"
+          AFFECTED="${{ needs.gather-data.outputs.affected_services }}"
+          ROOT_CAUSE="${{ needs.gather-data.outputs.root_cause }}"
+          RESOLUTION="${{ needs.gather-data.outputs.resolution }}"
+
+          # Create directory
+          mkdir -p ${{ env.POSTMORTEM_DIR }}
+
+          # Generate filename
+          FILENAME="${INCIDENT_ID}-postmortem.md"
+          FILEPATH="${{ env.POSTMORTEM_DIR }}/${FILENAME}"
+
+          # Severity badge
+          case "$SEVERITY" in
+            critical) SEVERITY_BADGE="🔴 Critical" ;;
+            major) SEVERITY_BADGE="🟠 Major" ;;
+            minor) SEVERITY_BADGE="🟡 Minor" ;;
+            low) SEVERITY_BADGE="🟢 Low" ;;
+          esac
+
+          cat > "$FILEPATH" << EOF
+          # Post-Mortem: ${INCIDENT_ID}
+
+          ## ${INCIDENT_TITLE}
+
+          | Property | Value |
+          |----------|-------|
+          | **Incident ID** | ${INCIDENT_ID} |
+          | **Severity** | ${SEVERITY_BADGE} |
+          | **Date** | $(date -d "$START_TIME" +%Y-%m-%d 2>/dev/null || date +%Y-%m-%d) |
+          | **Duration** | ${DURATION} minutes |
+          | **Affected Services** | ${AFFECTED} |
+          | **Status** | Resolved |
+
+          ---
+
+          ## Executive Summary
+
+          On $(date -d "$START_TIME" +"%B %d, %Y" 2>/dev/null || date +"%B %d, %Y"), an incident occurred affecting ${AFFECTED}. The incident lasted approximately ${DURATION} minutes and was classified as ${SEVERITY} severity.
+
+          **Impact:** Service degradation affecting estimated users during the incident window.
+
+          ---
+
+          ## Timeline
+
+          | Time (UTC) | Event |
+          |------------|-------|
+          | ${START_TIME} | 🔴 Incident detected |
+          | $(date -u +%Y-%m-%dT%H:%M:%SZ) | 🟡 Investigation started |
+          | $(date -u +%Y-%m-%dT%H:%M:%SZ) | 🔵 Root cause identified |
+          | ${END_TIME} | 🟢 Incident resolved |
+
+          ---
+
+          ## Root Cause Analysis
+
+          ### What Happened
+
+          ${ROOT_CAUSE}
+
+          ### Why It Happened
+
+          *To be completed by the incident team*
+
+          1. **Contributing Factor 1:** [Description]
+          2. **Contributing Factor 2:** [Description]
+          3. **Contributing Factor 3:** [Description]
+
+          ### 5 Whys Analysis
+
+          1. **Why did the incident occur?**
+             - [Answer]
+
+          2. **Why did that happen?**
+             - [Answer]
+
+          3. **Why did that happen?**
+             - [Answer]
+
+          4. **Why did that happen?**
+             - [Answer]
+
+          5. **Why did that happen?**
+             - [Root cause]
+
+          ---
+
+          ## Resolution
+
+          ### Immediate Actions Taken
+
+          ${RESOLUTION}
+
+          ### Mitigation Steps
+
+          1. [Step 1]
+          2. [Step 2]
+          3. [Step 3]
+
+          ---
+
+          ## Impact Assessment
+
+          ### Service Impact
+
+          | Service | Impact Level | Duration |
+          |---------|-------------|----------|
+          EOF
+
+          # Add affected services
+          IFS=',' read -ra SERVICES <<< "$AFFECTED"
+          for service in "${SERVICES[@]}"; do
+            echo "| $(echo $service | xargs) | Degraded | ${DURATION} min |" >> "$FILEPATH"
+          done
+
+          cat >> "$FILEPATH" << EOF
+
+          ### Business Impact
+
+          - **Users Affected:** Estimated based on severity
+          - **Revenue Impact:** To be calculated
+          - **SLA Impact:** ${DURATION} minutes of the monthly error budget consumed
+
+          ### Error Budget Impact
+
+          - **Monthly Budget:** 43.2 minutes (99.9% SLA)
+          - **This Incident:** ${DURATION} minutes
+          - **Remaining Budget:** $(echo "43 - $DURATION" | bc) minutes
+
+          ---
+
+          ## Lessons Learned
+
+          ### What Went Well
+
+          - [ ] Detection was timely
+          - [ ] Communication was clear
+          - [ ] Rollback was fast
+          - [ ] Team coordination was effective
+
+          ### What Could Be Improved
+
+          - [ ] Earlier detection through better monitoring
+          - [ ] Faster rollback procedures
+          - [ ] Better runbooks for this scenario
+          - [ ] Improved testing coverage
+
+          ---
+
+          ## Action Items
+
+          | Priority | Action | Owner | Due Date | Status |
+          |----------|--------|-------|----------|--------|
+          | P0 | Implement immediate fix | TBD | $(date -d "+7 days" +%Y-%m-%d) | 🔴 Open |
+          | P1 | Add monitoring for early detection | TBD | $(date -d "+14 days" +%Y-%m-%d) | 🔴 Open |
+          | P2 | Update runbook | TBD | $(date -d "+30 days" +%Y-%m-%d) | 🔴 Open |
+          | P2 | Add regression test | TBD | $(date -d "+30 days" +%Y-%m-%d) | 🔴 Open |
+
+          ---
+
+          ## Supporting Data
+
+          ### Metrics During Incident
+
+          \`\`\`
+          [Insert graphs or metrics snapshots here]
+          \`\`\`
+
+          ### Related Alerts
+
+          - Alert 1: [Description]
+          - Alert 2: [Description]
+
+          ### Related Commits/Deployments
+
+          - [Commit/Deployment that may have contributed]
+          - [Commit/Deployment for the fix]
+
+          ---
+
+          ## Appendix
+
+          ### Related Documents
+
+          - [Runbook link]
+          - [Architecture diagram]
+          - [Monitoring dashboard]
+
+          ### Incident Response Participants
+
+          | Role | Person |
+          |------|--------|
+          | Incident Commander | TBD |
+          | Technical Lead | TBD |
+          | Communications | TBD |
+
+          ---
+
+          **Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          **Generator:** BlackRoad OS Incident Post-Mortem System
+          **Review Status:** Draft - Pending Review
+          EOF
+
+          echo "✅ Post-mortem generated: $FILEPATH"
+          echo "postmortem_file=$FILEPATH" >> $GITHUB_OUTPUT
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+
+      - name: 📤 Create Pull Request
+        id: pr
+        run: |
+          INCIDENT_ID="${{ needs.gather-data.outputs.incident_id }}"
+          FILEPATH="${{ steps.generate.outputs.postmortem_file }}"
+          BRANCH="postmortem/${INCIDENT_ID}"
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create branch and commit
+          git checkout -b "$BRANCH"
+          git add "$FILEPATH"
+          git commit -m "docs: Add post-mortem for ${INCIDENT_ID}
+
+          - Incident: ${{ needs.gather-data.outputs.incident_title }}
+          - Severity: ${{ needs.gather-data.outputs.severity }}
+          - Duration: ${{ needs.gather-data.outputs.duration_minutes }} minutes
+          - Affected: ${{ needs.gather-data.outputs.affected_services }}"
+
+          git push origin "$BRANCH"
+
+          # Create PR
+          PR_URL=$(gh pr create \
+            --title "📋 Post-Mortem: ${INCIDENT_ID}" \
+            --body "## Post-Mortem Document
+
+          This PR adds the post-mortem document for incident **${INCIDENT_ID}**.
+
+          ### Incident Details
+
+          | Property | Value |
+          |----------|-------|
+          | Incident ID | ${INCIDENT_ID} |
+          | Title | ${{ needs.gather-data.outputs.incident_title }} |
+          | Severity | ${{ needs.gather-data.outputs.severity }} |
+          | Duration | ${{ needs.gather-data.outputs.duration_minutes }} minutes |
+          | Affected | ${{ needs.gather-data.outputs.affected_services }} |
+
+          ### Review Checklist
+
+          - [ ] Timeline is accurate
+          - [ ] Root cause analysis is complete
+          - [ ] Action items are assigned
+          - [ ] Lessons learned are documented
+          - [ ] Impact assessment is accurate
+
+          ---
+
+          *This post-mortem was auto-generated. Please review and complete all sections.*" \
+            --label "postmortem,documentation" \
+            --base main)
+
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
+          echo "✅ PR created: $PR_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================
+  # JOB 3: Create Tracking Issue
+  # ============================================================
+  create-tracking:
+    name: 🎫 Create Tracking Issue
+    needs: [gather-data, generate-postmortem]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🎫 Create action items issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const incidentId = '${{ needs.gather-data.outputs.incident_id }}';
+            const title = '${{ needs.gather-data.outputs.incident_title }}';
+            const severity = '${{ needs.gather-data.outputs.severity }}';
+            const prNumber = '${{ needs.generate-postmortem.outputs.pr_number }}';
+
+            const body = `## 🎯 Post-Mortem Action Items: ${incidentId}
+
+            **Incident:** ${title}
+            **Severity:** ${severity}
+            **Post-Mortem PR:** #${prNumber}
+
+            ---
+
+            ## Action Items Tracker
+
+            ### P0 - Critical (7 days)
+            - [ ] Implement immediate fix to prevent recurrence
+            - [ ] Verify fix in production
+
+            ### P1 - High (14 days)
+            - [ ] Add monitoring/alerting for early detection
+            - [ ] Update incident response runbook
+
+            ### P2 - Medium (30 days)
+            - [ ] Add regression tests
+            - [ ] Review and improve architecture
+            - [ ] Document lessons learned
+
+            ---
+
+            ## Completion Criteria
+
+            - [ ] All P0 items completed
+            - [ ] All P1 items completed
+            - [ ] Post-mortem document reviewed and merged
+            - [ ] Retrospective meeting held
+            - [ ] Action items assigned to owners
+
+            ---
+
+            **Auto-generated by BlackRoad OS Incident Post-Mortem System**
+            `;
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🎯 [ACTION ITEMS] ${incidentId}: ${title}`,
+              body: body,
+              labels: ['postmortem', 'action-items', severity]
+            });
+
+            console.log(`Created tracking issue: ${issue.data.html_url}`);
+
+  # ============================================================
+  # SUMMARY
+  # ============================================================
+  summary:
+    name: 📊 Generate Summary
+    needs: [gather-data, generate-postmortem, create-tracking]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📊 Generate summary
+        run: |
+          echo "# 📋 Incident Post-Mortem Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Incident Details" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Incident ID** | ${{ needs.gather-data.outputs.incident_id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Title** | ${{ needs.gather-data.outputs.incident_title }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Severity** | ${{ needs.gather-data.outputs.severity }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Duration** | ${{ needs.gather-data.outputs.duration_minutes }} minutes |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Affected Services** | ${{ needs.gather-data.outputs.affected_services }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Generated Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 📝 Post-mortem document created" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔀 Pull request opened for review" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎫 Action items tracking issue created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review and complete the post-mortem document" >> $GITHUB_STEP_SUMMARY
+          echo "2. Assign owners to action items" >> $GITHUB_STEP_SUMMARY
+          echo "3. Schedule a retrospective meeting" >> $GITHUB_STEP_SUMMARY
+          echo "4. Merge the post-mortem PR after review" >> $GITHUB_STEP_SUMMARY

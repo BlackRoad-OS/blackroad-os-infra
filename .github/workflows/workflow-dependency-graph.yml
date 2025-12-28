@@ -1,0 +1,624 @@
+name: 🔗 Workflow Dependency Graph
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday at 6 AM UTC
+  push:
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      output_format:
+        description: 'Output format'
+        type: choice
+        options:
+          - html
+          - json
+          - svg
+          - all
+        default: 'all'
+      include_external:
+        description: 'Include external workflow calls'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  GRAPH_OUTPUT_DIR: '.github/workflow-graph'
+
+jobs:
+  # ============================================================
+  # JOB 1: Analyze Workflows
+  # ============================================================
+  analyze-workflows:
+    name: 🔍 Analyze Workflows
+    runs-on: ubuntu-latest
+    outputs:
+      workflow_count: ${{ steps.analyze.outputs.workflow_count }}
+      dependency_count: ${{ steps.analyze.outputs.dependency_count }}
+      trigger_count: ${{ steps.analyze.outputs.trigger_count }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🔍 Analyze workflow dependencies
+        id: analyze
+        run: |
+          echo "🔍 Analyzing Workflow Dependencies"
+          echo "==================================="
+          echo ""
+
+          mkdir -p ${{ env.GRAPH_OUTPUT_DIR }}
+
+          # Initialize counters
+          WORKFLOW_COUNT=0
+          DEPENDENCY_COUNT=0
+          TRIGGER_COUNT=0
+
+          # Create workflows data structure
+          echo '{"workflows": [], "dependencies": [], "triggers": []}' > /tmp/graph-data.json
+
+          # Analyze each workflow file
+          for workflow in .github/workflows/*.yml; do
+            if [ -f "$workflow" ]; then
+              WORKFLOW_COUNT=$((WORKFLOW_COUNT + 1))
+              WORKFLOW_NAME=$(basename "$workflow" .yml)
+
+              echo "Analyzing: $WORKFLOW_NAME"
+
+              # Extract workflow name from file
+              DISPLAY_NAME=$(grep -m1 "^name:" "$workflow" | sed 's/name: *//' | tr -d '"' || echo "$WORKFLOW_NAME")
+
+              # Extract triggers
+              TRIGGERS=$(grep -A 20 "^on:" "$workflow" | grep -E "^\s{2}[a-z]" | sed 's/://g' | tr -d ' ' | head -10 || echo "")
+
+              for trigger in $TRIGGERS; do
+                TRIGGER_COUNT=$((TRIGGER_COUNT + 1))
+              done
+
+              # Check for workflow_run dependencies (workflows that trigger this one)
+              if grep -q "workflow_run:" "$workflow"; then
+                DEPS=$(grep -A 10 "workflow_run:" "$workflow" | grep -E "^\s+- " | sed "s/.*- ['\"]*//" | sed "s/['\"]*//" || echo "")
+                for dep in $DEPS; do
+                  DEPENDENCY_COUNT=$((DEPENDENCY_COUNT + 1))
+                  echo "  → Depends on: $dep"
+                done
+              fi
+
+              # Check for workflow_call (reusable workflows)
+              if grep -q "workflow_call:" "$workflow"; then
+                echo "  → Reusable workflow (can be called by others)"
+              fi
+
+              # Check for uses: ./.github/workflows (local reusable workflow calls)
+              LOCAL_CALLS=$(grep -E "uses: \.\/\.github\/workflows\/" "$workflow" | sed 's/.*uses: //' | sed 's/@.*//' || echo "")
+              for call in $LOCAL_CALLS; do
+                DEPENDENCY_COUNT=$((DEPENDENCY_COUNT + 1))
+                echo "  → Calls: $call"
+              done
+            fi
+          done
+
+          echo ""
+          echo "📊 Analysis Summary"
+          echo "-------------------"
+          echo "Workflows: $WORKFLOW_COUNT"
+          echo "Dependencies: $DEPENDENCY_COUNT"
+          echo "Triggers: $TRIGGER_COUNT"
+
+          echo "workflow_count=$WORKFLOW_COUNT" >> $GITHUB_OUTPUT
+          echo "dependency_count=$DEPENDENCY_COUNT" >> $GITHUB_OUTPUT
+          echo "trigger_count=$TRIGGER_COUNT" >> $GITHUB_OUTPUT
+
+      - name: 📊 Generate dependency matrix
+        id: matrix
+        run: |
+          echo "📊 Generating Dependency Matrix"
+          echo "================================"
+
+          mkdir -p ${{ env.GRAPH_OUTPUT_DIR }}
+
+          # Create comprehensive workflow analysis
+          cat > "${{ env.GRAPH_OUTPUT_DIR }}/workflow-analysis.json" << 'JSONEOF'
+          {
+            "generated_at": "TIMESTAMP",
+            "repository": "${{ github.repository }}",
+            "analysis": {
+              "total_workflows": WORKFLOW_COUNT,
+              "total_dependencies": DEPENDENCY_COUNT,
+              "categories": {
+                "deployment": [],
+                "testing": [],
+                "security": [],
+                "monitoring": [],
+                "automation": [],
+                "agents": [],
+                "other": []
+              }
+            },
+            "workflows": [],
+            "dependencies": [],
+            "trigger_matrix": {}
+          }
+          JSONEOF
+
+          # Replace placeholders
+          sed -i "s/TIMESTAMP/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" "${{ env.GRAPH_OUTPUT_DIR }}/workflow-analysis.json"
+          sed -i "s/WORKFLOW_COUNT/${{ steps.analyze.outputs.workflow_count }}/g" "${{ env.GRAPH_OUTPUT_DIR }}/workflow-analysis.json"
+          sed -i "s/DEPENDENCY_COUNT/${{ steps.analyze.outputs.dependency_count }}/g" "${{ env.GRAPH_OUTPUT_DIR }}/workflow-analysis.json"
+
+          # Generate workflow nodes
+          echo "[]" > /tmp/nodes.json
+          echo "[]" > /tmp/edges.json
+
+          NODE_ID=0
+          for workflow in .github/workflows/*.yml; do
+            if [ -f "$workflow" ]; then
+              WORKFLOW_NAME=$(basename "$workflow" .yml)
+              DISPLAY_NAME=$(grep -m1 "^name:" "$workflow" | sed 's/name: *//' | tr -d '"' | head -c 50 || echo "$WORKFLOW_NAME")
+
+              # Categorize workflow
+              CATEGORY="other"
+              case "$WORKFLOW_NAME" in
+                *deploy*|*canary*|*release*|*rollback*) CATEGORY="deployment" ;;
+                *test*|*ci*|*check*|*lint*|*coverage*) CATEGORY="testing" ;;
+                *security*|*audit*|*scan*|*secret*) CATEGORY="security" ;;
+                *monitor*|*health*|*sla*|*alert*) CATEGORY="monitoring" ;;
+                *auto*|*bot*|*sync*|*schedule*) CATEGORY="automation" ;;
+                *agent*|*gaia*|*orchestrat*) CATEGORY="agents" ;;
+              esac
+
+              # Determine trigger types
+              TRIGGERS=""
+              if grep -q "schedule:" "$workflow"; then TRIGGERS="${TRIGGERS}schedule,"; fi
+              if grep -q "push:" "$workflow"; then TRIGGERS="${TRIGGERS}push,"; fi
+              if grep -q "pull_request:" "$workflow"; then TRIGGERS="${TRIGGERS}pr,"; fi
+              if grep -q "workflow_dispatch:" "$workflow"; then TRIGGERS="${TRIGGERS}manual,"; fi
+              if grep -q "workflow_run:" "$workflow"; then TRIGGERS="${TRIGGERS}workflow_run,"; fi
+              if grep -q "repository_dispatch:" "$workflow"; then TRIGGERS="${TRIGGERS}dispatch,"; fi
+
+              # Add node to JSON
+              jq --arg id "$NODE_ID" \
+                 --arg name "$WORKFLOW_NAME" \
+                 --arg display "$DISPLAY_NAME" \
+                 --arg cat "$CATEGORY" \
+                 --arg triggers "$TRIGGERS" \
+                 '. += [{"id": ($id|tonumber), "name": $name, "display": $display, "category": $cat, "triggers": $triggers}]' \
+                 /tmp/nodes.json > /tmp/nodes.tmp && mv /tmp/nodes.tmp /tmp/nodes.json
+
+              NODE_ID=$((NODE_ID + 1))
+            fi
+          done
+
+          echo "Generated $(jq length /tmp/nodes.json) workflow nodes"
+
+          # Store for next step
+          cp /tmp/nodes.json "${{ env.GRAPH_OUTPUT_DIR }}/nodes.json"
+
+      - name: 🔗 Build dependency edges
+        run: |
+          echo "🔗 Building Dependency Edges"
+          echo "============================"
+
+          echo "[]" > /tmp/edges.json
+          EDGE_ID=0
+
+          # Read nodes for ID lookup
+          NODES=$(cat "${{ env.GRAPH_OUTPUT_DIR }}/nodes.json")
+
+          for workflow in .github/workflows/*.yml; do
+            if [ -f "$workflow" ]; then
+              SOURCE_NAME=$(basename "$workflow" .yml)
+              SOURCE_ID=$(echo "$NODES" | jq -r ".[] | select(.name == \"$SOURCE_NAME\") | .id")
+
+              # Find workflow_run dependencies
+              if grep -q "workflow_run:" "$workflow"; then
+                DEPS=$(grep -A 20 "workflow_run:" "$workflow" | grep -E "^\s+workflows:" -A 10 | grep -E "^\s+- " | sed "s/.*- ['\"]*//" | sed "s/['\"].*//" | sed 's/\s*$//' || echo "")
+
+                for dep in $deps; do
+                  # Find target workflow by name match
+                  TARGET_ID=$(echo "$NODES" | jq -r ".[] | select(.display | contains(\"$dep\")) | .id" | head -1)
+
+                  if [ -n "$TARGET_ID" ] && [ "$TARGET_ID" != "null" ]; then
+                    jq --arg id "$EDGE_ID" \
+                       --arg source "$TARGET_ID" \
+                       --arg target "$SOURCE_ID" \
+                       --arg type "triggers" \
+                       '. += [{"id": ($id|tonumber), "source": ($source|tonumber), "target": ($target|tonumber), "type": $type}]' \
+                       /tmp/edges.json > /tmp/edges.tmp && mv /tmp/edges.tmp /tmp/edges.json
+                    EDGE_ID=$((EDGE_ID + 1))
+                  fi
+                done
+              fi
+
+              # Find reusable workflow calls
+              CALLS=$(grep -E "uses: \.\/\.github\/workflows\/" "$workflow" 2>/dev/null | sed 's/.*uses: .\/\.github\/workflows\///' | sed 's/@.*//' | sed 's/.yml//' || echo "")
+
+              for call in $CALLS; do
+                TARGET_ID=$(echo "$NODES" | jq -r ".[] | select(.name == \"$call\") | .id" | head -1)
+
+                if [ -n "$TARGET_ID" ] && [ "$TARGET_ID" != "null" ]; then
+                  jq --arg id "$EDGE_ID" \
+                     --arg source "$SOURCE_ID" \
+                     --arg target "$TARGET_ID" \
+                     --arg type "calls" \
+                     '. += [{"id": ($id|tonumber), "source": ($source|tonumber), "target": ($target|tonumber), "type": $type}]' \
+                     /tmp/edges.json > /tmp/edges.tmp && mv /tmp/edges.tmp /tmp/edges.json
+                  EDGE_ID=$((EDGE_ID + 1))
+                fi
+              done
+            fi
+          done
+
+          cp /tmp/edges.json "${{ env.GRAPH_OUTPUT_DIR }}/edges.json"
+          echo "Generated $(jq length /tmp/edges.json) dependency edges"
+
+      - name: 📦 Upload analysis artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-analysis
+          path: ${{ env.GRAPH_OUTPUT_DIR }}/
+
+  # ============================================================
+  # JOB 2: Generate Interactive Graph
+  # ============================================================
+  generate-graph:
+    name: 📈 Generate Graph
+    needs: analyze-workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download analysis
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow-analysis
+          path: ${{ env.GRAPH_OUTPUT_DIR }}
+
+      - name: 📈 Generate interactive D3 graph
+        run: |
+          echo "📈 Generating Interactive Graph"
+          echo "================================"
+
+          NODES=$(cat "${{ env.GRAPH_OUTPUT_DIR }}/nodes.json")
+          EDGES=$(cat "${{ env.GRAPH_OUTPUT_DIR }}/edges.json")
+
+          cat > "${{ env.GRAPH_OUTPUT_DIR }}/index.html" << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Workflow Dependency Graph - BlackRoad OS</title>
+            <script src="https://d3js.org/d3.v7.min.js"></script>
+            <style>
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; overflow: hidden; }
+              #container { width: 100vw; height: 100vh; position: relative; }
+              #graph { width: 100%; height: 100%; }
+              .header { position: absolute; top: 20px; left: 20px; z-index: 100; }
+              .header h1 { font-size: 24px; color: #58a6ff; margin-bottom: 5px; }
+              .header p { color: #8b949e; font-size: 14px; }
+              .legend { position: absolute; top: 20px; right: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; z-index: 100; }
+              .legend h3 { color: #8b949e; font-size: 12px; margin-bottom: 10px; text-transform: uppercase; }
+              .legend-item { display: flex; align-items: center; margin: 8px 0; font-size: 13px; }
+              .legend-color { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+              .stats { position: absolute; bottom: 20px; left: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; z-index: 100; }
+              .stats h3 { color: #8b949e; font-size: 12px; margin-bottom: 10px; text-transform: uppercase; }
+              .stat { display: flex; justify-content: space-between; margin: 5px 0; }
+              .stat-value { color: #58a6ff; font-weight: bold; }
+              .controls { position: absolute; bottom: 20px; right: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; z-index: 100; }
+              .controls button { background: #238636; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin: 5px; font-size: 13px; }
+              .controls button:hover { background: #2ea043; }
+              .tooltip { position: absolute; background: #1f2937; border: 1px solid #30363d; border-radius: 8px; padding: 12px; font-size: 13px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 1000; max-width: 300px; }
+              .tooltip h4 { color: #58a6ff; margin-bottom: 8px; }
+              .tooltip p { color: #8b949e; margin: 4px 0; }
+              .tooltip .triggers { margin-top: 8px; }
+              .tooltip .trigger-tag { display: inline-block; background: #30363d; padding: 2px 8px; border-radius: 4px; margin: 2px; font-size: 11px; }
+              .node { cursor: pointer; }
+              .node circle { stroke: #30363d; stroke-width: 2px; transition: all 0.2s; }
+              .node:hover circle { stroke-width: 3px; filter: brightness(1.2); }
+              .node text { fill: #c9d1d9; font-size: 10px; pointer-events: none; }
+              .link { stroke-opacity: 0.6; }
+              .link.triggers { stroke: #f85149; }
+              .link.calls { stroke: #58a6ff; }
+              .search-box { position: absolute; top: 80px; left: 20px; z-index: 100; }
+              .search-box input { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 15px; color: #c9d1d9; width: 250px; font-size: 14px; }
+              .search-box input:focus { outline: none; border-color: #58a6ff; }
+            </style>
+          </head>
+          <body>
+            <div id="container">
+              <div class="header">
+                <h1>🔗 Workflow Dependency Graph</h1>
+                <p>Interactive visualization of GitHub Actions workflows</p>
+              </div>
+
+              <div class="search-box">
+                <input type="text" id="search" placeholder="Search workflows...">
+              </div>
+
+              <div class="legend">
+                <h3>Categories</h3>
+                <div class="legend-item"><div class="legend-color" style="background: #3fb950;"></div> Deployment</div>
+                <div class="legend-item"><div class="legend-color" style="background: #58a6ff;"></div> Testing</div>
+                <div class="legend-item"><div class="legend-color" style="background: #f85149;"></div> Security</div>
+                <div class="legend-item"><div class="legend-color" style="background: #d29922;"></div> Monitoring</div>
+                <div class="legend-item"><div class="legend-color" style="background: #a371f7;"></div> Automation</div>
+                <div class="legend-item"><div class="legend-color" style="background: #f778ba;"></div> Agents</div>
+                <div class="legend-item"><div class="legend-color" style="background: #8b949e;"></div> Other</div>
+              </div>
+
+              <div class="stats">
+                <h3>Statistics</h3>
+                <div class="stat"><span>Workflows</span><span class="stat-value" id="stat-workflows">0</span></div>
+                <div class="stat"><span>Dependencies</span><span class="stat-value" id="stat-deps">0</span></div>
+                <div class="stat"><span>Categories</span><span class="stat-value">7</span></div>
+              </div>
+
+              <div class="controls">
+                <button onclick="resetZoom()">Reset View</button>
+                <button onclick="toggleLabels()">Toggle Labels</button>
+              </div>
+
+              <div class="tooltip" id="tooltip"></div>
+
+              <svg id="graph"></svg>
+            </div>
+
+            <script>
+              // Graph data will be injected here
+              const nodes = NODES_DATA;
+              const links = EDGES_DATA;
+
+              const categoryColors = {
+                deployment: '#3fb950',
+                testing: '#58a6ff',
+                security: '#f85149',
+                monitoring: '#d29922',
+                automation: '#a371f7',
+                agents: '#f778ba',
+                other: '#8b949e'
+              };
+
+              // Update stats
+              document.getElementById('stat-workflows').textContent = nodes.length;
+              document.getElementById('stat-deps').textContent = links.length;
+
+              const width = window.innerWidth;
+              const height = window.innerHeight;
+
+              const svg = d3.select('#graph')
+                .attr('width', width)
+                .attr('height', height);
+
+              const g = svg.append('g');
+
+              // Zoom behavior
+              const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', (event) => g.attr('transform', event.transform));
+
+              svg.call(zoom);
+
+              // Create force simulation
+              const simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(40));
+
+              // Create links
+              const link = g.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', d => `link ${d.type}`)
+                .attr('stroke-width', 2)
+                .attr('marker-end', 'url(#arrow)');
+
+              // Arrow marker
+              svg.append('defs').append('marker')
+                .attr('id', 'arrow')
+                .attr('viewBox', '0 -5 10 10')
+                .attr('refX', 25)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto')
+                .append('path')
+                .attr('d', 'M0,-5L10,0L0,5')
+                .attr('fill', '#8b949e');
+
+              // Create nodes
+              const node = g.append('g')
+                .selectAll('.node')
+                .data(nodes)
+                .enter().append('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                  .on('start', dragstarted)
+                  .on('drag', dragged)
+                  .on('end', dragended));
+
+              node.append('circle')
+                .attr('r', 15)
+                .attr('fill', d => categoryColors[d.category] || categoryColors.other);
+
+              let showLabels = true;
+              const labels = node.append('text')
+                .attr('dy', 25)
+                .attr('text-anchor', 'middle')
+                .text(d => d.name.substring(0, 15));
+
+              // Tooltip
+              const tooltip = d3.select('#tooltip');
+
+              node.on('mouseover', (event, d) => {
+                const triggers = d.triggers ? d.triggers.split(',').filter(t => t).map(t =>
+                  `<span class="trigger-tag">${t}</span>`
+                ).join('') : 'None';
+
+                tooltip.html(`
+                  <h4>${d.display || d.name}</h4>
+                  <p><strong>Category:</strong> ${d.category}</p>
+                  <p><strong>File:</strong> ${d.name}.yml</p>
+                  <div class="triggers"><strong>Triggers:</strong> ${triggers}</div>
+                `)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 10) + 'px')
+                .style('opacity', 1);
+              })
+              .on('mouseout', () => tooltip.style('opacity', 0));
+
+              // Simulation tick
+              simulation.on('tick', () => {
+                link
+                  .attr('x1', d => d.source.x)
+                  .attr('y1', d => d.source.y)
+                  .attr('x2', d => d.target.x)
+                  .attr('y2', d => d.target.y);
+
+                node.attr('transform', d => `translate(${d.x},${d.y})`);
+              });
+
+              // Drag functions
+              function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+              }
+
+              function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+              }
+
+              function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+              }
+
+              // Control functions
+              function resetZoom() {
+                svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+              }
+
+              function toggleLabels() {
+                showLabels = !showLabels;
+                labels.style('opacity', showLabels ? 1 : 0);
+              }
+
+              // Search functionality
+              document.getElementById('search').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                node.style('opacity', d =>
+                  d.name.toLowerCase().includes(query) ||
+                  (d.display && d.display.toLowerCase().includes(query)) ? 1 : 0.2
+                );
+              });
+            </script>
+          </body>
+          </html>
+          HTMLEOF
+
+          # Inject actual data
+          NODES_JSON=$(cat "${{ env.GRAPH_OUTPUT_DIR }}/nodes.json")
+          EDGES_JSON=$(cat "${{ env.GRAPH_OUTPUT_DIR }}/edges.json")
+
+          # Use node for safer JSON injection
+          node -e "
+            const fs = require('fs');
+            let html = fs.readFileSync('${{ env.GRAPH_OUTPUT_DIR }}/index.html', 'utf8');
+            const nodes = ${NODES_JSON};
+            const edges = ${EDGES_JSON};
+            html = html.replace('NODES_DATA', JSON.stringify(nodes));
+            html = html.replace('EDGES_DATA', JSON.stringify(edges));
+            fs.writeFileSync('${{ env.GRAPH_OUTPUT_DIR }}/index.html', html);
+          "
+
+          echo "✅ Interactive graph generated: ${{ env.GRAPH_OUTPUT_DIR }}/index.html"
+
+      - name: 📊 Generate summary report
+        run: |
+          WORKFLOW_COUNT=${{ needs.analyze-workflows.outputs.workflow_count }}
+          DEP_COUNT=${{ needs.analyze-workflows.outputs.dependency_count }}
+
+          cat > "${{ env.GRAPH_OUTPUT_DIR }}/REPORT.md" << EOF
+          # Workflow Dependency Graph Report
+
+          **Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          **Repository:** ${{ github.repository }}
+
+          ## Summary
+
+          | Metric | Value |
+          |--------|-------|
+          | Total Workflows | $WORKFLOW_COUNT |
+          | Dependencies | $DEP_COUNT |
+          | Categories | 7 |
+
+          ## Categories
+
+          - **Deployment**: Release, deploy, canary, rollback workflows
+          - **Testing**: CI, lint, test, coverage workflows
+          - **Security**: Audit, scan, secret rotation workflows
+          - **Monitoring**: Health checks, SLA, alerting workflows
+          - **Automation**: Bots, sync, scheduled tasks
+          - **Agents**: AI agents, orchestration
+          - **Other**: Miscellaneous workflows
+
+          ## Files Generated
+
+          - \`index.html\` - Interactive D3 visualization
+          - \`nodes.json\` - Workflow node data
+          - \`edges.json\` - Dependency edge data
+          - \`workflow-analysis.json\` - Full analysis data
+
+          ## Usage
+
+          Open \`index.html\` in a browser to explore the interactive graph.
+
+          ### Features
+
+          - **Zoom & Pan**: Use mouse wheel and drag
+          - **Search**: Filter workflows by name
+          - **Hover**: View workflow details
+          - **Drag**: Rearrange node positions
+          EOF
+
+          echo "📊 Report generated"
+
+      - name: 📊 Generate summary
+        run: |
+          echo "# 🔗 Workflow Dependency Graph" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Analysis Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Workflows Analyzed | ${{ needs.analyze-workflows.outputs.workflow_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependencies Found | ${{ needs.analyze-workflows.outputs.dependency_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger Types | ${{ needs.analyze-workflows.outputs.trigger_count }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Generated Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- \`index.html\` - Interactive D3 visualization" >> $GITHUB_STEP_SUMMARY
+          echo "- \`nodes.json\` - Workflow nodes" >> $GITHUB_STEP_SUMMARY
+          echo "- \`edges.json\` - Dependency edges" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📦 Upload graph artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-graph
+          path: ${{ env.GRAPH_OUTPUT_DIR }}/
