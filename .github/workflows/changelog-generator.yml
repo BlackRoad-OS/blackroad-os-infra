@@ -1,0 +1,401 @@
+name: 📝 Intelligent Changelog Generator
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to generate changelog for'
+        required: true
+        type: string
+      from_ref:
+        description: 'Starting reference (tag/commit)'
+        required: false
+        type: string
+      to_ref:
+        description: 'Ending reference (default: HEAD)'
+        required: false
+        default: 'HEAD'
+        type: string
+      include_breaking:
+        description: 'Highlight breaking changes'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  CHANGELOG_FILE: 'CHANGELOG.md'
+
+jobs:
+  # ============================================================
+  # JOB 1: Collect Commits
+  # ============================================================
+  collect-commits:
+    name: 📊 Collect Commits
+    runs-on: ubuntu-latest
+    outputs:
+      commit_count: ${{ steps.collect.outputs.commit_count }}
+      version: ${{ steps.collect.outputs.version }}
+      from_ref: ${{ steps.collect.outputs.from_ref }}
+      categories: ${{ steps.collect.outputs.categories }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📊 Collect and categorize commits
+        id: collect
+        run: |
+          echo "📊 Collecting Commits"
+          echo "====================="
+          echo ""
+
+          # Determine version and refs
+          if [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+            TO_REF="$VERSION"
+            # Get previous tag
+            FROM_REF=$(git describe --tags --abbrev=0 "$VERSION^" 2>/dev/null || echo "")
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            TO_REF="$VERSION"
+            FROM_REF=$(git describe --tags --abbrev=0 "$VERSION^" 2>/dev/null || echo "")
+          else
+            VERSION="${{ github.event.inputs.version }}"
+            TO_REF="${{ github.event.inputs.to_ref }}"
+            FROM_REF="${{ github.event.inputs.from_ref }}"
+          fi
+
+          if [ -z "$FROM_REF" ]; then
+            # First release - get all commits
+            FROM_REF=$(git rev-list --max-parents=0 HEAD | head -1)
+          fi
+
+          echo "Version: $VERSION"
+          echo "From: $FROM_REF"
+          echo "To: $TO_REF"
+          echo ""
+
+          # Count commits
+          COMMIT_COUNT=$(git rev-list --count "${FROM_REF}..${TO_REF}" 2>/dev/null || echo "0")
+          echo "Commits in range: $COMMIT_COUNT"
+
+          # Categorize commits by conventional commit type
+          echo ""
+          echo "📋 Categorizing commits..."
+
+          mkdir -p /tmp/changelog
+
+          # Features
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%s|%h|%an" 2>/dev/null | \
+            grep -E "^feat(\(.+\))?:" > /tmp/changelog/features.txt || true
+          FEAT_COUNT=$(wc -l < /tmp/changelog/features.txt | tr -d ' ')
+
+          # Fixes
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%s|%h|%an" 2>/dev/null | \
+            grep -E "^fix(\(.+\))?:" > /tmp/changelog/fixes.txt || true
+          FIX_COUNT=$(wc -l < /tmp/changelog/fixes.txt | tr -d ' ')
+
+          # Breaking changes
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%s|%h|%an" 2>/dev/null | \
+            grep -E "^.*!:" > /tmp/changelog/breaking.txt || true
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%B|%h|%an" 2>/dev/null | \
+            grep -i "BREAKING CHANGE" >> /tmp/changelog/breaking.txt || true
+          BREAK_COUNT=$(wc -l < /tmp/changelog/breaking.txt | tr -d ' ')
+
+          # Performance
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%s|%h|%an" 2>/dev/null | \
+            grep -E "^perf(\(.+\))?:" > /tmp/changelog/perf.txt || true
+          PERF_COUNT=$(wc -l < /tmp/changelog/perf.txt | tr -d ' ')
+
+          # Docs
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%s|%h|%an" 2>/dev/null | \
+            grep -E "^docs(\(.+\))?:" > /tmp/changelog/docs.txt || true
+          DOC_COUNT=$(wc -l < /tmp/changelog/docs.txt | tr -d ' ')
+
+          # Refactor
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%s|%h|%an" 2>/dev/null | \
+            grep -E "^refactor(\(.+\))?:" > /tmp/changelog/refactor.txt || true
+          REF_COUNT=$(wc -l < /tmp/changelog/refactor.txt | tr -d ' ')
+
+          # CI/CD
+          git log "${FROM_REF}..${TO_REF}" --pretty=format:"%s|%h|%an" 2>/dev/null | \
+            grep -E "^ci(\(.+\))?:" > /tmp/changelog/ci.txt || true
+          CI_COUNT=$(wc -l < /tmp/changelog/ci.txt | tr -d ' ')
+
+          echo ""
+          echo "📊 Commit Categories:"
+          echo "  Features: $FEAT_COUNT"
+          echo "  Fixes: $FIX_COUNT"
+          echo "  Breaking: $BREAK_COUNT"
+          echo "  Performance: $PERF_COUNT"
+          echo "  Documentation: $DOC_COUNT"
+          echo "  Refactoring: $REF_COUNT"
+          echo "  CI/CD: $CI_COUNT"
+
+          # Store categories as JSON
+          CATEGORIES="{\"features\":$FEAT_COUNT,\"fixes\":$FIX_COUNT,\"breaking\":$BREAK_COUNT,\"perf\":$PERF_COUNT,\"docs\":$DOC_COUNT}"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "from_ref=$FROM_REF" >> $GITHUB_OUTPUT
+          echo "to_ref=$TO_REF" >> $GITHUB_OUTPUT
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+          echo "categories=$CATEGORIES" >> $GITHUB_OUTPUT
+
+      - name: 📦 Upload commit data
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-data
+          path: /tmp/changelog/
+
+  # ============================================================
+  # JOB 2: Generate Changelog
+  # ============================================================
+  generate-changelog:
+    name: 📝 Generate Changelog
+    needs: collect-commits
+    runs-on: ubuntu-latest
+    outputs:
+      changelog_content: ${{ steps.generate.outputs.content_file }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download commit data
+        uses: actions/download-artifact@v4
+        with:
+          name: commit-data
+          path: /tmp/changelog/
+
+      - name: 📝 Generate changelog content
+        id: generate
+        run: |
+          echo "📝 Generating Changelog"
+          echo "======================="
+          echo ""
+
+          VERSION="${{ needs.collect-commits.outputs.version }}"
+          FROM_REF="${{ needs.collect-commits.outputs.from_ref }}"
+          DATE=$(date +%Y-%m-%d)
+
+          # Start building changelog entry
+          cat > /tmp/changelog-entry.md << EOF
+          ## [$VERSION] - $DATE
+
+          EOF
+
+          # Breaking Changes (if any)
+          if [ -s /tmp/changelog/breaking.txt ]; then
+            echo "### ⚠️ Breaking Changes" >> /tmp/changelog-entry.md
+            echo "" >> /tmp/changelog-entry.md
+            while IFS='|' read -r message hash author; do
+              # Clean up message
+              CLEAN_MSG=$(echo "$message" | sed 's/^[^:]*: //')
+              echo "- $CLEAN_MSG (\`$hash\`) - @$author" >> /tmp/changelog-entry.md
+            done < /tmp/changelog/breaking.txt
+            echo "" >> /tmp/changelog-entry.md
+          fi
+
+          # Features
+          if [ -s /tmp/changelog/features.txt ]; then
+            echo "### ✨ Features" >> /tmp/changelog-entry.md
+            echo "" >> /tmp/changelog-entry.md
+            while IFS='|' read -r message hash author; do
+              CLEAN_MSG=$(echo "$message" | sed 's/^feat[^:]*: //')
+              echo "- $CLEAN_MSG (\`$hash\`)" >> /tmp/changelog-entry.md
+            done < /tmp/changelog/features.txt
+            echo "" >> /tmp/changelog-entry.md
+          fi
+
+          # Bug Fixes
+          if [ -s /tmp/changelog/fixes.txt ]; then
+            echo "### 🐛 Bug Fixes" >> /tmp/changelog-entry.md
+            echo "" >> /tmp/changelog-entry.md
+            while IFS='|' read -r message hash author; do
+              CLEAN_MSG=$(echo "$message" | sed 's/^fix[^:]*: //')
+              echo "- $CLEAN_MSG (\`$hash\`)" >> /tmp/changelog-entry.md
+            done < /tmp/changelog/fixes.txt
+            echo "" >> /tmp/changelog-entry.md
+          fi
+
+          # Performance
+          if [ -s /tmp/changelog/perf.txt ]; then
+            echo "### ⚡ Performance" >> /tmp/changelog-entry.md
+            echo "" >> /tmp/changelog-entry.md
+            while IFS='|' read -r message hash author; do
+              CLEAN_MSG=$(echo "$message" | sed 's/^perf[^:]*: //')
+              echo "- $CLEAN_MSG (\`$hash\`)" >> /tmp/changelog-entry.md
+            done < /tmp/changelog/perf.txt
+            echo "" >> /tmp/changelog-entry.md
+          fi
+
+          # Documentation
+          if [ -s /tmp/changelog/docs.txt ]; then
+            echo "### 📚 Documentation" >> /tmp/changelog-entry.md
+            echo "" >> /tmp/changelog-entry.md
+            while IFS='|' read -r message hash author; do
+              CLEAN_MSG=$(echo "$message" | sed 's/^docs[^:]*: //')
+              echo "- $CLEAN_MSG (\`$hash\`)" >> /tmp/changelog-entry.md
+            done < /tmp/changelog/docs.txt
+            echo "" >> /tmp/changelog-entry.md
+          fi
+
+          # Refactoring
+          if [ -s /tmp/changelog/refactor.txt ]; then
+            echo "### 🔧 Refactoring" >> /tmp/changelog-entry.md
+            echo "" >> /tmp/changelog-entry.md
+            while IFS='|' read -r message hash author; do
+              CLEAN_MSG=$(echo "$message" | sed 's/^refactor[^:]*: //')
+              echo "- $CLEAN_MSG (\`$hash\`)" >> /tmp/changelog-entry.md
+            done < /tmp/changelog/refactor.txt
+            echo "" >> /tmp/changelog-entry.md
+          fi
+
+          # CI/CD
+          if [ -s /tmp/changelog/ci.txt ]; then
+            echo "### 🔄 CI/CD" >> /tmp/changelog-entry.md
+            echo "" >> /tmp/changelog-entry.md
+            while IFS='|' read -r message hash author; do
+              CLEAN_MSG=$(echo "$message" | sed 's/^ci[^:]*: //')
+              echo "- $CLEAN_MSG (\`$hash\`)" >> /tmp/changelog-entry.md
+            done < /tmp/changelog/ci.txt
+            echo "" >> /tmp/changelog-entry.md
+          fi
+
+          # Add comparison link
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${FROM_REF}...${VERSION}" >> /tmp/changelog-entry.md
+          echo "" >> /tmp/changelog-entry.md
+
+          echo "Generated changelog entry:"
+          echo "=========================="
+          cat /tmp/changelog-entry.md
+
+          echo "content_file=/tmp/changelog-entry.md" >> $GITHUB_OUTPUT
+
+      - name: 📄 Update CHANGELOG.md
+        run: |
+          VERSION="${{ needs.collect-commits.outputs.version }}"
+
+          # Create or update CHANGELOG.md
+          if [ -f "${{ env.CHANGELOG_FILE }}" ]; then
+            # Insert new entry after header
+            if grep -q "# Changelog" "${{ env.CHANGELOG_FILE }}"; then
+              # Has header, insert after it
+              head -n 5 "${{ env.CHANGELOG_FILE }}" > /tmp/changelog-new.md
+              echo "" >> /tmp/changelog-new.md
+              cat /tmp/changelog-entry.md >> /tmp/changelog-new.md
+              tail -n +6 "${{ env.CHANGELOG_FILE }}" >> /tmp/changelog-new.md
+              mv /tmp/changelog-new.md "${{ env.CHANGELOG_FILE }}"
+            else
+              # No header, prepend
+              cat /tmp/changelog-entry.md "${{ env.CHANGELOG_FILE }}" > /tmp/changelog-new.md
+              mv /tmp/changelog-new.md "${{ env.CHANGELOG_FILE }}"
+            fi
+          else
+            # Create new CHANGELOG.md
+            cat > "${{ env.CHANGELOG_FILE }}" << 'HEADER'
+          # Changelog
+
+          All notable changes to this project will be documented in this file.
+
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+          HEADER
+            cat /tmp/changelog-entry.md >> "${{ env.CHANGELOG_FILE }}"
+          fi
+
+          echo "✅ CHANGELOG.md updated"
+
+      - name: 📦 Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: |
+            ${{ env.CHANGELOG_FILE }}
+            /tmp/changelog-entry.md
+
+  # ============================================================
+  # JOB 3: Create Release Notes
+  # ============================================================
+  create-release-notes:
+    name: 🚀 Create Release Notes
+    needs: [collect-commits, generate-changelog]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'release'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: /tmp/
+
+      - name: 🚀 Update release with notes
+        run: |
+          VERSION="${{ needs.collect-commits.outputs.version }}"
+
+          echo "🚀 Creating/Updating Release Notes"
+          echo "==================================="
+
+          # Read changelog entry
+          NOTES=$(cat /tmp/changelog-entry.md)
+
+          # Update or create release
+          if gh release view "$VERSION" &>/dev/null; then
+            echo "Updating existing release..."
+            gh release edit "$VERSION" --notes "$NOTES"
+          else
+            echo "Creating new release..."
+            gh release create "$VERSION" \
+              --title "Release $VERSION" \
+              --notes "$NOTES" \
+              --latest
+          fi
+
+          echo "✅ Release notes updated for $VERSION"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================
+  # SUMMARY
+  # ============================================================
+  summary:
+    name: 📊 Generate Summary
+    needs: [collect-commits, generate-changelog]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📊 Generate summary
+        run: |
+          VERSION="${{ needs.collect-commits.outputs.version }}"
+          COMMITS="${{ needs.collect-commits.outputs.commit_count }}"
+
+          echo "# 📝 Changelog Generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Version: $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commits** | $COMMITS |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Categories" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Commits were automatically categorized using conventional commit format." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- \`CHANGELOG.md\` - Updated with new entry" >> $GITHUB_STEP_SUMMARY
+          echo "- GitHub Release - Notes attached" >> $GITHUB_STEP_SUMMARY

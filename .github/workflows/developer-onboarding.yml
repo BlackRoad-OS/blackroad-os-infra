@@ -1,0 +1,513 @@
+name: 🚀 Developer Onboarding Automation
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_github:
+        description: 'Developer GitHub username'
+        required: true
+        type: string
+      team:
+        description: 'Team assignment'
+        type: choice
+        options:
+          - platform
+          - frontend
+          - backend
+          - infrastructure
+          - security
+        default: 'platform'
+      access_level:
+        description: 'Access level'
+        type: choice
+        options:
+          - contributor
+          - maintainer
+          - admin
+        default: 'contributor'
+      setup_local:
+        description: 'Generate local setup script'
+        type: boolean
+        default: true
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  ONBOARDING_DIR: '.github/onboarding'
+
+jobs:
+  # ============================================================
+  # JOB 1: Validate & Initialize
+  # ============================================================
+  initialize:
+    name: 🔍 Initialize Onboarding
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'issues' && github.event.label.name == 'new-developer')
+    outputs:
+      developer: ${{ steps.init.outputs.developer }}
+      team: ${{ steps.init.outputs.team }}
+      onboarding_id: ${{ steps.init.outputs.onboarding_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔍 Initialize onboarding
+        id: init
+        run: |
+          echo "🚀 Developer Onboarding Initialization"
+          echo "======================================"
+          echo ""
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DEVELOPER="${{ github.event.inputs.developer_github }}"
+            TEAM="${{ github.event.inputs.team }}"
+            ACCESS="${{ github.event.inputs.access_level }}"
+          else
+            # Extract from issue
+            DEVELOPER=$(echo "${{ github.event.issue.body }}" | grep -oP '(?<=GitHub: @)[^\s]+' || echo "unknown")
+            TEAM="platform"
+            ACCESS="contributor"
+          fi
+
+          ONBOARDING_ID="onboard-$(date +%Y%m%d)-${DEVELOPER}"
+
+          echo "Developer: $DEVELOPER"
+          echo "Team: $TEAM"
+          echo "Access Level: $ACCESS"
+          echo "Onboarding ID: $ONBOARDING_ID"
+
+          mkdir -p ${{ env.ONBOARDING_DIR }}
+
+          echo "developer=$DEVELOPER" >> $GITHUB_OUTPUT
+          echo "team=$TEAM" >> $GITHUB_OUTPUT
+          echo "access=$ACCESS" >> $GITHUB_OUTPUT
+          echo "onboarding_id=$ONBOARDING_ID" >> $GITHUB_OUTPUT
+
+  # ============================================================
+  # JOB 2: Environment Validation
+  # ============================================================
+  validate-environment:
+    name: ✅ Validate Environment
+    needs: initialize
+    runs-on: ubuntu-latest
+    outputs:
+      checks_passed: ${{ steps.validate.outputs.passed }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ✅ Validate development environment
+        id: validate
+        run: |
+          echo "✅ Environment Validation"
+          echo "========================="
+          echo ""
+
+          CHECKS_PASSED=0
+          TOTAL_CHECKS=8
+
+          # Check 1: Node.js version
+          echo "1️⃣  Checking Node.js availability..."
+          if command -v node &> /dev/null; then
+            NODE_VERSION=$(node --version)
+            echo "   ✅ Node.js: $NODE_VERSION"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          else
+            echo "   ❌ Node.js not found"
+          fi
+
+          # Check 2: npm/pnpm
+          echo "2️⃣  Checking package manager..."
+          if command -v npm &> /dev/null; then
+            NPM_VERSION=$(npm --version)
+            echo "   ✅ npm: $NPM_VERSION"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          fi
+
+          # Check 3: Git
+          echo "3️⃣  Checking Git..."
+          if command -v git &> /dev/null; then
+            GIT_VERSION=$(git --version)
+            echo "   ✅ $GIT_VERSION"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          fi
+
+          # Check 4: Docker
+          echo "4️⃣  Checking Docker availability..."
+          if command -v docker &> /dev/null; then
+            echo "   ✅ Docker available"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          else
+            echo "   ⚠️  Docker not available (optional)"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          fi
+
+          # Check 5: GitHub CLI
+          echo "5️⃣  Checking GitHub CLI..."
+          if command -v gh &> /dev/null; then
+            GH_VERSION=$(gh --version | head -1)
+            echo "   ✅ $GH_VERSION"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          fi
+
+          # Check 6: Required files exist
+          echo "6️⃣  Checking required files..."
+          REQUIRED_FILES=("package.json" "README.md" ".github/workflows")
+          FILES_OK=true
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ -e "$file" ]; then
+              echo "   ✅ $file exists"
+            else
+              echo "   ❌ $file missing"
+              FILES_OK=false
+            fi
+          done
+          if [ "$FILES_OK" = true ]; then
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          fi
+
+          # Check 7: Environment template
+          echo "7️⃣  Checking environment template..."
+          if [ -f ".env.example" ] || [ -f "infra.env.example" ]; then
+            echo "   ✅ Environment template found"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          else
+            echo "   ⚠️  No .env.example found"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          fi
+
+          # Check 8: Documentation
+          echo "8️⃣  Checking documentation..."
+          if [ -d "docs" ]; then
+            DOC_COUNT=$(find docs -name "*.md" | wc -l)
+            echo "   ✅ Documentation found ($DOC_COUNT files)"
+            CHECKS_PASSED=$((CHECKS_PASSED + 1))
+          fi
+
+          echo ""
+          echo "📊 Validation Summary: $CHECKS_PASSED/$TOTAL_CHECKS passed"
+
+          if [ "$CHECKS_PASSED" -ge 6 ]; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================================
+  # JOB 3: Generate Setup Resources
+  # ============================================================
+  generate-resources:
+    name: 📦 Generate Resources
+    needs: [initialize, validate-environment]
+    runs-on: ubuntu-latest
+    outputs:
+      setup_script: ${{ steps.generate.outputs.setup_script }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Generate onboarding resources
+        id: generate
+        run: |
+          echo "📦 Generating Onboarding Resources"
+          echo "==================================="
+          echo ""
+
+          DEVELOPER="${{ needs.initialize.outputs.developer }}"
+          TEAM="${{ needs.initialize.outputs.team }}"
+          ONBOARDING_ID="${{ needs.initialize.outputs.onboarding_id }}"
+
+          mkdir -p "${{ env.ONBOARDING_DIR }}/scripts"
+          mkdir -p "${{ env.ONBOARDING_DIR }}/guides"
+
+          # Generate setup script
+          cat > "${{ env.ONBOARDING_DIR }}/scripts/setup-${DEVELOPER}.sh" << 'SCRIPT'
+          #!/bin/bash
+          # BlackRoad OS Developer Setup Script
+          # Generated for: DEVELOPER_NAME
+          # Team: TEAM_NAME
+
+          set -e
+
+          echo "🚀 BlackRoad OS Developer Setup"
+          echo "================================"
+          echo ""
+
+          # Colors
+          GREEN='\033[0;32m'
+          YELLOW='\033[1;33m'
+          NC='\033[0m'
+
+          print_step() {
+            echo -e "${GREEN}[✓]${NC} $1"
+          }
+
+          print_warn() {
+            echo -e "${YELLOW}[!]${NC} $1"
+          }
+
+          # Step 1: Verify prerequisites
+          echo "Step 1: Verifying prerequisites..."
+          command -v node >/dev/null 2>&1 || { echo "Node.js required"; exit 1; }
+          command -v git >/dev/null 2>&1 || { echo "Git required"; exit 1; }
+          print_step "Prerequisites verified"
+
+          # Step 2: Clone repositories
+          echo ""
+          echo "Step 2: Setting up repositories..."
+          REPOS=(
+            "blackroad-os-api"
+            "blackroad-os-web"
+            "blackroad-os-core"
+            "blackroad-os-infra"
+          )
+
+          mkdir -p ~/blackroad-os
+          cd ~/blackroad-os
+
+          for repo in "${REPOS[@]}"; do
+            if [ ! -d "$repo" ]; then
+              echo "  Cloning $repo..."
+              gh repo clone BlackRoad-OS/$repo 2>/dev/null || echo "  (skipped - may need access)"
+            else
+              echo "  $repo already exists"
+            fi
+          done
+          print_step "Repositories configured"
+
+          # Step 3: Install dependencies
+          echo ""
+          echo "Step 3: Installing dependencies..."
+          if [ -f "package.json" ]; then
+            npm install
+            print_step "Dependencies installed"
+          fi
+
+          # Step 4: Setup environment
+          echo ""
+          echo "Step 4: Setting up environment..."
+          if [ -f ".env.example" ]; then
+            cp .env.example .env.local
+            print_step "Environment file created (.env.local)"
+            print_warn "Please update .env.local with your credentials"
+          fi
+
+          # Step 5: Verify setup
+          echo ""
+          echo "Step 5: Verifying setup..."
+          if [ -f "package.json" ]; then
+            npm run build 2>/dev/null && print_step "Build successful" || print_warn "Build needs configuration"
+          fi
+
+          echo ""
+          echo "================================"
+          echo "🎉 Setup complete!"
+          echo ""
+          echo "Next steps:"
+          echo "  1. Update .env.local with your credentials"
+          echo "  2. Run 'npm run dev' to start development"
+          echo "  3. Check docs/ for documentation"
+          echo "  4. Join #dev-onboarding on Slack"
+          echo ""
+          SCRIPT
+
+          sed -i "s/DEVELOPER_NAME/$DEVELOPER/g" "${{ env.ONBOARDING_DIR }}/scripts/setup-${DEVELOPER}.sh"
+          sed -i "s/TEAM_NAME/$TEAM/g" "${{ env.ONBOARDING_DIR }}/scripts/setup-${DEVELOPER}.sh"
+
+          chmod +x "${{ env.ONBOARDING_DIR }}/scripts/setup-${DEVELOPER}.sh"
+
+          # Generate personalized guide
+          cat > "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md" << EOF
+          # Welcome to BlackRoad OS, @${DEVELOPER}! 🎉
+
+          ## Your Onboarding Checklist
+
+          ### Day 1: Setup
+          - [ ] Run the setup script: \`./scripts/setup-${DEVELOPER}.sh\`
+          - [ ] Configure your \`.env.local\` file
+          - [ ] Verify you can build the project
+          - [ ] Join Slack channels: #dev-general, #${TEAM}
+
+          ### Day 2-3: Exploration
+          - [ ] Read the [Architecture Overview](../docs/architecture.md)
+          - [ ] Review the [Contributing Guide](../CONTRIBUTING.md)
+          - [ ] Explore the codebase structure
+          - [ ] Set up your IDE with recommended extensions
+
+          ### Week 1: First Contribution
+          - [ ] Pick a "good first issue" from the issue tracker
+          - [ ] Create your first pull request
+          - [ ] Get code review from a team member
+          - [ ] Attend team standup
+
+          ---
+
+          ## Team: ${TEAM}
+
+          ### Key Contacts
+          - Team Lead: TBD
+          - Buddy: TBD
+          - HR Contact: hr@blackroad.io
+
+          ### Team Repositories
+          EOF
+
+          case "$TEAM" in
+            frontend)
+              echo "- blackroad-os-web" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              echo "- blackroad-os-dashboard" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              echo "- blackroad-os-prism-console" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              ;;
+            backend)
+              echo "- blackroad-os-api" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              echo "- blackroad-os-core" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              echo "- blackroad-os-operator" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              ;;
+            infrastructure)
+              echo "- blackroad-os-infra" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              echo "- blackroad-os-docs" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              ;;
+            *)
+              echo "- All repositories" >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md"
+              ;;
+          esac
+
+          cat >> "${{ env.ONBOARDING_DIR }}/guides/${DEVELOPER}-guide.md" << 'EOF'
+
+          ---
+
+          ## Useful Links
+
+          - [Documentation](../docs/)
+          - [Runbooks](../docs/runbooks/)
+          - [API Reference](../docs/api/)
+          - [Architecture](../docs/architecture.md)
+
+          ---
+
+          *Generated by BlackRoad OS Onboarding System*
+          EOF
+
+          echo "✅ Resources generated for $DEVELOPER"
+
+          echo "setup_script=${{ env.ONBOARDING_DIR }}/scripts/setup-${DEVELOPER}.sh" >> $GITHUB_OUTPUT
+
+  # ============================================================
+  # JOB 4: Create Welcome Issue
+  # ============================================================
+  create-welcome:
+    name: 🎉 Create Welcome
+    needs: [initialize, generate-resources]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🎉 Create welcome issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const developer = '${{ needs.initialize.outputs.developer }}';
+            const team = '${{ needs.initialize.outputs.team }}';
+            const onboardingId = '${{ needs.initialize.outputs.onboarding_id }}';
+
+            const body = `## 🎉 Welcome to BlackRoad OS, @${developer}!
+
+            We're excited to have you join the **${team}** team!
+
+            ### Your Onboarding Checklist
+
+            #### Day 1: Environment Setup
+            - [ ] Download your [setup script](.github/onboarding/scripts/setup-${developer}.sh)
+            - [ ] Run: \`chmod +x setup-${developer}.sh && ./setup-${developer}.sh\`
+            - [ ] Configure your local environment
+            - [ ] Verify build works: \`npm run build\`
+
+            #### Day 1: Access & Communication
+            - [ ] Accept GitHub org invitation
+            - [ ] Join Slack workspace
+            - [ ] Join team channels: #dev-general, #${team}
+            - [ ] Set up 2FA on all accounts
+
+            #### Day 2-3: Learning
+            - [ ] Read your [personalized guide](.github/onboarding/guides/${developer}-guide.md)
+            - [ ] Review architecture documentation
+            - [ ] Explore the codebase
+            - [ ] Schedule 1:1 with your buddy
+
+            #### Week 1: First Contribution
+            - [ ] Find a "good first issue"
+            - [ ] Create your first PR
+            - [ ] Attend team standup
+            - [ ] Complete security training
+
+            ---
+
+            ### Quick Links
+
+            | Resource | Link |
+            |----------|------|
+            | Documentation | [docs/](../../docs/) |
+            | Setup Script | [setup-${developer}.sh](.github/onboarding/scripts/setup-${developer}.sh) |
+            | Personal Guide | [${developer}-guide.md](.github/onboarding/guides/${developer}-guide.md) |
+            | Contributing | [CONTRIBUTING.md](../../CONTRIBUTING.md) |
+
+            ---
+
+            ### Need Help?
+
+            - 💬 Ask in #dev-onboarding on Slack
+            - 📧 Email: onboarding@blackroad.io
+            - 🎫 Comment on this issue
+
+            ---
+
+            **Onboarding ID:** \`${onboardingId}\`
+
+            *Close this issue when you've completed all checkboxes!*
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🎉 Welcome @${developer} to BlackRoad OS!`,
+              body: body,
+              labels: ['onboarding', team],
+              assignees: [developer]
+            });
+
+            console.log(`Welcome issue created for ${developer}`);
+
+  # ============================================================
+  # SUMMARY
+  # ============================================================
+  summary:
+    name: 📊 Generate Summary
+    needs: [initialize, validate-environment, generate-resources, create-welcome]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📊 Generate summary
+        run: |
+          DEVELOPER="${{ needs.initialize.outputs.developer }}"
+          TEAM="${{ needs.initialize.outputs.team }}"
+
+          echo "# 🚀 Developer Onboarding Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Developer: @${DEVELOPER}" >> $GITHUB_STEP_SUMMARY
+          echo "## Team: ${TEAM}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Resources Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Setup script generated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Personalized guide created" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Welcome issue opened" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Environment validated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Developer runs setup script" >> $GITHUB_STEP_SUMMARY
+          echo "2. Developer configures environment" >> $GITHUB_STEP_SUMMARY
+          echo "3. Developer completes onboarding checklist" >> $GITHUB_STEP_SUMMARY

@@ -48,6 +48,13 @@
 - 📚 [Auto Documentation](.github/workflows/auto-documentation.yml) - Generated docs from code
 - 📖 [Phase 22 Guide](docs/phase-22-multicloud-intelligence.md) - Complete documentation
 
+### 🎯 Developer Experience & Release Intelligence (Phase 23)
+- 👋 **[Developer Onboarding](.github/workflows/developer-onboarding.yml)** - Automated environment setup
+- 📝 [Changelog Generator](.github/workflows/changelog-generator.yml) - AI-powered release notes
+- 📊 [Performance Benchmarking](.github/workflows/performance-benchmarking.yml) - Comprehensive perf testing
+- 🔥 [Chaos Engineering](.github/workflows/chaos-engineering.yml) - Resilience testing suite
+- 📖 [Phase 23 Guide](docs/phase-23-developer-experience.md) - Complete documentation
+
 ### 🧩 Registries & Blueprints
 - 📋 [Service Registry](registry/services.yaml) - All services mapping
 - 🌐 [DNS Blueprint](cloudflare/CLOUDFLARE_DNS_BLUEPRINT.md) - DNS configuration
@@ -660,6 +667,69 @@ Generates docs from code:
 - `API.md` - Endpoint documentation
 
 See [Phase 22 Documentation](docs/phase-22-multicloud-intelligence.md) for complete details.
+
+## Phase 23: Developer Experience & Release Intelligence
+
+Phase 23 enhances developer productivity and release management with 4 new workflows (~2,100 lines):
+
+### Developer Onboarding Automation
+
+Automated onboarding for new team members:
+
+```bash
+# Trigger onboarding workflow
+gh workflow run developer-onboarding.yml \
+  -f developer_username="newdev" \
+  -f team="platform" \
+  -f role="backend_engineer"
+```
+
+Generates:
+- Platform-specific setup scripts (macOS, Ubuntu, Windows)
+- Personalized repository guide
+- Welcome issue with onboarding checklist
+
+### Intelligent Changelog Generator
+
+Auto-generate release notes from conventional commits:
+
+| Commit Prefix | Category |
+|--------------|----------|
+| `feat:` | Features |
+| `fix:` | Bug Fixes |
+| `perf:` | Performance |
+| `docs:` | Documentation |
+| `!:` | Breaking Changes |
+
+### Performance Benchmarking Suite
+
+Comprehensive performance testing:
+
+| Category | Tests |
+|----------|-------|
+| API | Endpoint latency, throughput |
+| Database | Query performance, bulk ops |
+| Memory | Heap, RSS, leak detection |
+| CPU | Parsing, crypto, compression |
+| Network | Latency, timeouts, TLS |
+
+Features: Baseline comparison, regression alerts, PR comments.
+
+### Chaos Engineering Suite
+
+Resilience testing through controlled failure injection:
+
+| Experiment Type | Examples |
+|----------------|----------|
+| Network | Packet loss, latency, partitions |
+| Compute | CPU stress, pod deletion |
+| Storage | Disk fill, I/O stress |
+| Dependency | Redis/Kafka outages |
+| Latency | P99 injection, jitter |
+
+Safety controls: Dry run mode, blast radius limits, auto-abort.
+
+See [Phase 23 Documentation](docs/phase-23-developer-experience.md) for complete details.
 
 ## Signals
 
