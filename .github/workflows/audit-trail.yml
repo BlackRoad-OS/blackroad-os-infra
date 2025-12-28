@@ -628,7 +628,8 @@ jobs:
           echo ""
 
           if [ "$OLD_RECORDS" -gt 0 ]; then
-            echo "ℹ️  Old records would be archived (dry run)"
+            echo "ℹ️  Retention check is a dry run only; no files are automatically deleted or archived."
+            echo "    These records are eligible for manual archival or for future automated handling if explicitly enabled."
           else
             echo "✅ All records within retention period"
           fi
