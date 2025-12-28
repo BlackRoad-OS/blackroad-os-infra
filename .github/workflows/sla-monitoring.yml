@@ -223,8 +223,8 @@ jobs:
 
           # Calculate SLA budget
           MONTHLY_BUDGET_MINUTES=$((30 * 24 * 60))  # 43200 minutes
-          ALLOWED_DOWNTIME=$(echo "scale=2; $MONTHLY_BUDGET_MINUTES * (100 - ${{ env.SLA_UPTIME_TARGET }}) / 100" | bc)
-          REMAINING_BUDGET=$(echo "scale=2; $ALLOWED_DOWNTIME - $DOWNTIME_MINUTES" | bc)
+          ALLOWED_DOWNTIME=$(awk "BEGIN {printf \"%.2f\", $MONTHLY_BUDGET_MINUTES * (100 - ${{ env.SLA_UPTIME_TARGET }}) / 100}")
+          REMAINING_BUDGET=$(awk "BEGIN {printf \"%.2f\", $ALLOWED_DOWNTIME - $DOWNTIME_MINUTES}")
 
           echo "📈 Daily Metrics Summary"
           echo "------------------------"
