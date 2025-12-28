@@ -252,19 +252,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🔄 Record workflow execution
+        env:
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ACTOR_LOGIN: ${{ github.event.workflow_run.actor.login }}
+          RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
-          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
-          WORKFLOW_CONCLUSION="${{ github.event.workflow_run.conclusion }}"
-          RUN_ID="${{ github.event.workflow_run.id }}"
-
           echo "🔄 Workflow Execution Audit"
           echo "==========================="
           echo ""
           echo "Workflow: $WORKFLOW_NAME"
           echo "Run ID: $RUN_ID"
           echo "Conclusion: $WORKFLOW_CONCLUSION"
-          echo "Actor: ${{ github.event.workflow_run.actor.login }}"
-          echo "Duration: ${{ github.event.workflow_run.run_started_at }} → $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Actor: $ACTOR_LOGIN"
+          echo "Duration: $RUN_STARTED_AT → $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
           mkdir -p .github/audit-trail/workflows
 
@@ -280,15 +284,15 @@ jobs:
               "name": "$WORKFLOW_NAME",
               "run_id": $RUN_ID,
               "conclusion": "$WORKFLOW_CONCLUSION",
-              "started_at": "${{ github.event.workflow_run.run_started_at }}",
+              "started_at": "$RUN_STARTED_AT",
               "completed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             },
             "actor": {
-              "login": "${{ github.event.workflow_run.actor.login }}"
+              "login": "$ACTOR_LOGIN"
             },
             "commit": {
-              "sha": "${{ github.event.workflow_run.head_sha }}",
-              "branch": "${{ github.event.workflow_run.head_branch }}"
+              "sha": "$HEAD_SHA",
+              "branch": "$HEAD_BRANCH"
             }
           }
           EOF
