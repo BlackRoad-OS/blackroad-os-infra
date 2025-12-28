@@ -136,12 +136,13 @@ jobs:
           echo "   ✅ No active incidents"
           CHECKS_PASSED=$((CHECKS_PASSED + 1))
 
-          # Check 3: Within deployment window
+          # Check 3: Within deployment window (warning-only, does not block deployment)
           echo "3️⃣  Checking deployment window..."
           HOUR=$(date -u +%H)
           DAY=$(date -u +%u)
           if [ "$ENVIRONMENT" = "production" ] && ([ "$DAY" -gt 5 ] || [ "$HOUR" -lt 8 ] || [ "$HOUR" -gt 18 ]); then
             echo "   ⚠️  Outside recommended window (weekdays 8AM-6PM UTC)"
+            echo "   ℹ️  This is a warning only - deployment may proceed"
           else
             echo "   ✅ Within deployment window"
           fi
@@ -325,6 +326,11 @@ jobs:
           echo ""
           echo "The GitHub Environment protection rules will gate this workflow."
           echo "Approvers must review and approve via the GitHub UI or issue."
+          echo ""
+          echo "⚠️  Note: This workflow assumes GitHub Environment protection is properly configured."
+          echo "   Production environment should require 2 approvals."
+          echo "   Staging environment should require 1 approval."
+          echo "   If environment protection is not configured, workflow will proceed immediately."
 
       - name: ✅ Approval received
         id: check
@@ -372,6 +378,8 @@ jobs:
 
           if [ "$DEPLOYMENT_TYPE" = "canary" ]; then
             echo "🐦 Triggering Canary Deployment workflow..."
+            # TODO: Uncomment when canary deployment workflow integration is ready
+            # Requires GitHub token with workflow dispatch permissions
             # gh workflow run canary-deployment.yml \
             #   -f service="$SERVICE" \
             #   -f environment="$ENVIRONMENT" \
