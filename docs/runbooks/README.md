@@ -38,6 +38,16 @@ Standard operating procedures (in `docs/`):
 
 ---
 
+## 🧩 Templates & Examples
+
+Reusable templates and examples for operational workflows:
+
+| Template | Version | Purpose |
+|----------|---------|---------|
+| [Ops Runbook Example](./ops-runbook-example-v26.md) | v26 | 7-routine × 7-step operational tracking template |
+
+---
+
 ## 🧭 Quick Reference
 
 ### Incident Response Priority
@@ -80,4 +90,4 @@ When adding a new runbook:
 
 ---
 
-**Last Updated**: 2025-11-25
+**Last Updated**: 2025-12-25
