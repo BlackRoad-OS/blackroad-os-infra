@@ -98,6 +98,8 @@ Run validations locally before opening a PR:
 /templates             # Reusable templates
   .env.example         # Environment variables template
   SERVICE_INFRA_TEMPLATE.md  # New service template
+  MARKETING_CAMPAIGN_TRACKER.md  # Marketing campaign tracker
+  README.md            # Templates documentation
 
 /terraform             # Terraform IaC (existing)
   main.tf
@@ -406,6 +408,8 @@ See `terraform/` directory for IaC definitions.
 - **Railway Guide**: `railway/README.md`
 - **Workflow Templates**: `github/workflows/README.md`
 - **Service Template**: `templates/SERVICE_INFRA_TEMPLATE.md`
+- **Marketing Campaign Tracker**: `templates/MARKETING_CAMPAIGN_TRACKER.md`
+- **Templates Overview**: `templates/README.md`
 
 ### Existing Terraform Docs
 - DNS Playbook: `docs/dns-playbook.md`
