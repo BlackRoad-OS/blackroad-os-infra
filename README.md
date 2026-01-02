@@ -39,6 +39,11 @@
 - 🎯 [Agent Orchestrator](agents/src/orchestrator.ts) - Agent coordination system
 - ⚡ [Truth Manifest Workflow](.github/workflows/gaia-truth-manifest.yml) - Automated manifest generation
 
+### 📚 Examples & Templates
+- 🧩 **[Examples Directory](docs/examples/)** - Templates, patterns, and reference examples
+- 🚦 [Quality Gates v9](docs/examples/quality-gates-v9.md) - 7-gate quality tracking framework
+- 🔔 [SIG Beacon Examples](docs/examples/sig.beacon.sample.json) - Service health beacon format
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
