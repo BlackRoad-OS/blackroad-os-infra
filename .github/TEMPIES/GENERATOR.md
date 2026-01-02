@@ -17,7 +17,7 @@ Every template = 1️⃣ header + 2️⃣ core board + 3️⃣ three blocks.
 - 🗂 retention stamps
 - 🔐 worm board
 - 📣 ad review
-- 🏦 osj review
+- 🏦 OSJ review
 - 😡 complaint
 - 🎓 training
 - 📞 outreach
