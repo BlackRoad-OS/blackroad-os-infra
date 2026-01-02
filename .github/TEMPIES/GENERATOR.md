@@ -96,4 +96,4 @@ TEMPIES_4_2_infra_worm_deps
 TEMPIES_3_2_compliance_retention_worm
 TEMPIES_5_2_ads_review_retention
 
-Say Next and I'll drop v114: a "TEMPIES mega list" of 49 template names (7×7) already prefilled so you can bulk-create them.
+You can create a "TEMPIES mega list" of 49 template names (7×7), already prefilled, to bulk-create them efficiently.
