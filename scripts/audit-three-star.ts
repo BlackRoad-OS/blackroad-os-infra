@@ -16,8 +16,73 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+interface DeploymentInfo {
+  milestone: number;
+  timestamp: string;
+  phase: string;
+  previous_phase: string;
+  codebase_lines: number;
+  audit_standard: string;
+}
+
+interface Layer4Metrics {
+  gate_fidelity_dimension: number;
+  gates_per_second: number;
+  qubit_count: number;
+  circuit_type: string;
+  active_agents: number;
+  information_density_advantage: string;
+  stability_target: string;
+}
+
+interface Layer3Metrics {
+  logic_basis: string;
+  density_advantage_percentage: number;
+  vision_inference_fps: number;
+  compute_units_per_watt: number;
+  activation_functions: string;
+}
+
+interface EdgeMetrics {
+  operator_scripts: number;
+  latency_target: string;
+  hailo_acceleration_tops: number;
+  independence_level: string;
+  cloud_dependency: string;
+  execution_model: string;
+}
+
+interface MilestoneConfig {
+  deployment: DeploymentInfo;
+  metrics: {
+    layer4_quantum: Layer4Metrics;
+    layer3_trinary: Layer3Metrics;
+    edge_sovereignty: EdgeMetrics;
+  };
+  comparison: {
+    big_7_fast_food: Record<string, string>;
+    blackroad_michelin: Record<string, string>;
+  };
+  audit_areas: string[];
+  quality_statement: string;
+}
+
 const REPO_ROOT = path.join(__dirname, '..');
 const AUDIT_DIR = path.join(REPO_ROOT, 'services', 'aiops', 'audit');
+
+// Configuration thresholds
+const THRESHOLDS = {
+  GATE_FIDELITY_DIMENSION: 8,
+  GATES_PER_SECOND: 18923,
+  VARIANCE_TOLERANCE: 0.05,
+  QUBIT_COUNT: 12,
+  ACTIVE_AGENTS_MIN: 1000,
+  DENSITY_ADVANTAGE_MIN: 58.5,
+  VISION_FPS_MIN: 120,
+  COMPUTE_UNITS_PER_WATT_MIN: 1200000,
+  OPERATOR_SCRIPTS_MIN: 188,
+  HAILO_TOPS_MIN: 26,
+};
 
 interface AuditResult {
   category: string;
@@ -69,7 +134,7 @@ function subheader(message: string): void {
 /**
  * Load JSON configuration file
  */
-function loadConfig(filename: string): any {
+function loadConfig(filename: string): MilestoneConfig | any {
   const filepath = path.join(AUDIT_DIR, filename);
   
   if (!fs.existsSync(filepath)) {
@@ -80,8 +145,9 @@ function loadConfig(filename: string): any {
   try {
     const content = fs.readFileSync(filepath, 'utf-8');
     return JSON.parse(content);
-  } catch (err: any) {
-    error(`Failed to parse ${filename}: ${err?.message || err}`);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    error(`Failed to parse ${filename}: ${errorMsg}`);
     return null;
   }
 }
@@ -132,8 +198,8 @@ function auditLayer4Quantum(): AuditResult {
   
   // Check 2: Gates per second (18,923)
   info('Verifying gate processing throughput...');
-  const expectedGates = 18923;
-  const variance = 0.05; // 5% tolerance
+  const expectedGates = THRESHOLDS.GATES_PER_SECOND;
+  const variance = THRESHOLDS.VARIANCE_TOLERANCE;
   if (metrics.gates_per_second >= expectedGates * (1 - variance)) {
     success(`Gate throughput: ${metrics.gates_per_second.toLocaleString()} gates/sec 🚀`);
     checks.push({
@@ -155,7 +221,7 @@ function auditLayer4Quantum(): AuditResult {
   
   // Check 3: Qubit count and circuit type
   info('Verifying quantum circuit configuration...');
-  if (metrics.qubit_count === 12 && metrics.circuit_type === 'quoctit') {
+  if (metrics.qubit_count === THRESHOLDS.QUBIT_COUNT && metrics.circuit_type === 'quoctit') {
     success(`Quantum circuit: ${metrics.qubit_count}-qubit ${metrics.circuit_type} circuits ⚛️`);
     checks.push({
       id: 'quantum_circuit',
@@ -175,7 +241,7 @@ function auditLayer4Quantum(): AuditResult {
   
   // Check 4: Active agents load (1,000+)
   info('Verifying system stability under load...');
-  if (metrics.active_agents >= 1000) {
+  if (metrics.active_agents >= THRESHOLDS.ACTIVE_AGENTS_MIN) {
     success(`Active agents: ${metrics.active_agents.toLocaleString()}+ maintaining stability 💪`);
     checks.push({
       id: 'stability_under_load',
@@ -271,7 +337,7 @@ function auditLayer3Trinary(): AuditResult {
   
   // Check 2: Density advantage (58.5%)
   info('Verifying density advantage...');
-  if (metrics.density_advantage_percentage >= 58.5) {
+  if (metrics.density_advantage_percentage >= THRESHOLDS.DENSITY_ADVANTAGE_MIN) {
     success(`Density advantage: ${metrics.density_advantage_percentage}% over binary 📈`);
     checks.push({
       id: 'density_advantage',
@@ -291,7 +357,7 @@ function auditLayer3Trinary(): AuditResult {
   
   // Check 3: Vision inference FPS (122)
   info('Verifying vision inference performance...');
-  if (metrics.vision_inference_fps >= 120) {
+  if (metrics.vision_inference_fps >= THRESHOLDS.VISION_FPS_MIN) {
     success(`Vision inference: ${metrics.vision_inference_fps} FPS 👁️`);
     checks.push({
       id: 'vision_inference',
@@ -311,7 +377,7 @@ function auditLayer3Trinary(): AuditResult {
   
   // Check 4: Energy efficiency (1.2M units/watt)
   info('Verifying energy efficiency...');
-  if (metrics.compute_units_per_watt >= 1200000) {
+  if (metrics.compute_units_per_watt >= THRESHOLDS.COMPUTE_UNITS_PER_WATT_MIN) {
     success(`Energy efficiency: ${(metrics.compute_units_per_watt / 1000000).toFixed(1)}M units/watt ⚡`);
     checks.push({
       id: 'energy_efficiency',
@@ -386,7 +452,7 @@ function auditEdgeSovereignty(): AuditResult {
   
   // Check 1: Operator scripts count (188)
   info('Verifying operator scripts availability...');
-  if (metrics.operator_scripts >= 188) {
+  if (metrics.operator_scripts >= THRESHOLDS.OPERATOR_SCRIPTS_MIN) {
     success(`Operator scripts: ${metrics.operator_scripts} available 📜`);
     checks.push({
       id: 'operator_scripts',
@@ -426,7 +492,7 @@ function auditEdgeSovereignty(): AuditResult {
   
   // Check 3: Hailo-8 acceleration (26 TOPS)
   info('Verifying Hailo-8 acceleration...');
-  if (metrics.hailo_acceleration_tops >= 26) {
+  if (metrics.hailo_acceleration_tops >= THRESHOLDS.HAILO_TOPS_MIN) {
     success(`Hailo-8 acceleration: ${metrics.hailo_acceleration_tops} TOPS 🚀`);
     checks.push({
       id: 'hailo_acceleration',
