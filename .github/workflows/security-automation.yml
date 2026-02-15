@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Run npm audit
         id: audit
@@ -57,7 +57,7 @@ Fixed ${{ steps.audit.outputs.vulnerabilities }} vulnerabilities
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
@@ -99,7 +99,7 @@ Fixed ${{ steps.audit.outputs.vulnerabilities }} vulnerabilities
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -117,7 +117,7 @@ Fixed ${{ steps.audit.outputs.vulnerabilities }} vulnerabilities
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📜 Check licenses
         run: |

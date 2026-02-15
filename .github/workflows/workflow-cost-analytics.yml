@@ -30,7 +30,7 @@ jobs:
       workflows_analyzed: ${{ steps.calculate.outputs.workflows }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Collect workflow usage
         run: |
@@ -309,7 +309,7 @@ EOF
     if: github.event.inputs.generate_report != 'false'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Generate comprehensive cost report
         run: |

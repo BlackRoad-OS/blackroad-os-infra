@@ -19,7 +19,7 @@ jobs:
       issues_found: ${{ steps.predict.outputs.issues_found }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 100
 
@@ -116,7 +116,7 @@ EOF
       smell_count: ${{ steps.detect.outputs.count }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 👃 Detect code smells
         id: detect
@@ -176,7 +176,7 @@ EOF
       vulnerabilities: ${{ steps.check.outputs.vulns }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔒 Analyze security trends
         id: check
@@ -240,7 +240,7 @@ EOF
       performance_issues: ${{ steps.predict.outputs.issues }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: ⚡ Predict performance issues
         id: predict
@@ -286,7 +286,7 @@ EOF
     if: needs.analyze-trends.outputs.issues_found > 0 || needs.detect-code-smells.outputs.smell_count > 0
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Auto-fix issues
         run: |

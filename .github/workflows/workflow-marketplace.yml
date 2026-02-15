@@ -36,7 +36,7 @@ jobs:
       template_count: ${{ steps.build.outputs.count }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🏗️ Build workflow catalog
         id: build
@@ -298,12 +298,12 @@ Updated catalog with ${{ steps.build.outputs.count }} templates.
     if: github.event.inputs.action == 'install'
     steps:
       - name: 📥 Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           path: source
 
       - name: 📥 Checkout target
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: BlackRoad-OS/${{ github.event.inputs.target_repo }}
           path: target
@@ -386,7 +386,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     if: github.event.inputs.action == 'publish'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📤 Publish template
         run: |

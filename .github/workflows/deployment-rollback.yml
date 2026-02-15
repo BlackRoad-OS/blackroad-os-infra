@@ -64,7 +64,7 @@ jobs:
       last_good_date: ${{ steps.find.outputs.date }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 50
 
@@ -102,7 +102,7 @@ jobs:
       branch_name: ${{ steps.create.outputs.branch }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
@@ -167,7 +167,7 @@ This rollback reverts to last known good deployment from ${{ needs.find-last-goo
           - prism
     steps:
       - name: 📥 Checkout rollback branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ needs.create-rollback-branch.outputs.branch_name }}
 
@@ -318,7 +318,7 @@ This rollback reverts to last known good deployment from ${{ needs.find-last-goo
     if: needs.verify-rollback.result == 'success'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔀 Create and merge rollback PR
         run: |

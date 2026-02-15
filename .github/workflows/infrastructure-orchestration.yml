@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Validate YAML files
         run: |
@@ -96,7 +96,7 @@ jobs:
     if: github.event.inputs.action == 'sync-dns' || github.event.inputs.action == 'deploy-all'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Setup dependencies
         run: |
@@ -180,7 +180,7 @@ EOF
           - blackroad-os-web
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📋 Parse service config
         run: |
@@ -243,7 +243,7 @@ EOF
           - espocrm
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Check service config
         run: |

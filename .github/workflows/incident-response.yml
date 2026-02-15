@@ -168,7 +168,7 @@ jobs:
     if: needs.detect-incident.outputs.severity == 'critical'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🚨 Execute emergency procedures
         run: |
@@ -216,7 +216,7 @@ jobs:
     needs: [detect-incident, create-incident-issue]
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Collect system diagnostics
         run: |
@@ -257,7 +257,7 @@ jobs:
     if: needs.detect-incident.outputs.type == 'outage' || needs.detect-incident.outputs.type == 'performance'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔄 Identify rollback target
         id: rollback

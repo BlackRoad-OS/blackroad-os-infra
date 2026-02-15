@@ -29,7 +29,7 @@ jobs:
       optimization_count: ${{ steps.analyze.outputs.count }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Collect workflow data
         run: |
@@ -265,7 +265,7 @@ EOF
     if: needs.analyze-workflows.outputs.optimization_count > 0
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Apply optimizations
         run: |

@@ -26,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -69,7 +69,7 @@ jobs:
     needs: lint
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🧪 Analyze code coverage
         id: coverage
@@ -129,10 +129,10 @@ jobs:
         node-version: [18, 20, 22]
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -162,7 +162,7 @@ jobs:
     if: contains(github.event.head_commit.message, 'frontend') || contains(github.event.head_commit.message, 'ui')
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🎨 Run visual regression tests
         run: |
@@ -176,7 +176,7 @@ jobs:
     needs: test
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: ⚡ Run performance benchmarks
         run: |
@@ -190,7 +190,7 @@ jobs:
     needs: test
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🛡️ Run npm audit
         run: |
@@ -214,10 +214,10 @@ jobs:
       build_success: ${{ steps.build.outcome }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -247,7 +247,7 @@ jobs:
     needs: build
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📤 Download build artifacts
         uses: actions/download-artifact@v4
@@ -260,7 +260,7 @@ jobs:
           echo "Preview URL: https://preview-pr-${{ github.event.pull_request.number }}.blackroad.io" >> $GITHUB_STEP_SUMMARY
 
       - name: 💬 Comment preview URL on PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         with:
           script: |
             github.rest.issues.createComment({
@@ -278,7 +278,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🎭 Run Playwright tests
         run: |
@@ -315,7 +315,7 @@ jobs:
       url: https://blackroad.io
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📤 Download build artifacts
         uses: actions/download-artifact@v4

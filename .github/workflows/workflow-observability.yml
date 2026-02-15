@@ -25,7 +25,7 @@ jobs:
       avg_duration: ${{ steps.metrics.outputs.avg_duration }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Collect workflow metrics
         id: metrics
@@ -204,7 +204,7 @@ EOF
       issue_count: ${{ steps.detect.outputs.count }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Detect workflow issues
         id: detect
@@ -304,7 +304,7 @@ EOF
     if: needs.detect-workflow-issues.outputs.has_issues == 'true'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Auto-remediate issues
         run: |
@@ -375,7 +375,7 @@ $WORKFLOWS
     needs: collect-workflow-metrics
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Generate HTML dashboard
         run: |

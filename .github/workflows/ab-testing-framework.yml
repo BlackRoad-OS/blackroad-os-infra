@@ -36,7 +36,7 @@ jobs:
       workflow_file: ${{ steps.setup.outputs.workflow_file }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Setup A/B test
         id: setup
@@ -90,7 +90,7 @@ EOF
         run_number: ${{ fromJson(format('[{0}]', join(range(1, fromJson(github.event.inputs.test_runs) + 1), ','))) }}
     steps:
       - name: 📥 Checkout Variant A
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.event.inputs.variant_a }}
 
@@ -147,7 +147,7 @@ EOF
         run_number: ${{ fromJson(format('[{0}]', join(range(1, fromJson(github.event.inputs.test_runs) + 1), ','))) }}
     steps:
       - name: 📥 Checkout Variant B
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.event.inputs.variant_b }}
 
@@ -363,7 +363,7 @@ EOF
     needs: [setup-ab-test, analyze-results]
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📝 Generate recommendation report
         run: |

@@ -197,7 +197,7 @@ EOF
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Check action versions
         run: |
@@ -268,7 +268,7 @@ EOF
     if: needs.workflow-performance-analysis.outputs.optimization_needed == 'true'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Apply automatic optimizations
         run: |
@@ -321,7 +321,7 @@ EOF
     if: always()
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Update health badge
         run: |

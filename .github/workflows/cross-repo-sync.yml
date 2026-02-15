@@ -40,7 +40,7 @@ jobs:
       repo_count: ${{ steps.discover.outputs.count }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Discover repositories
         id: discover
@@ -104,7 +104,7 @@ jobs:
       workflow_count: ${{ steps.analyze.outputs.count }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Analyze workflow templates
         id: analyze
@@ -223,12 +223,12 @@ EOF
         repo: ${{ fromJson(needs.discover-repositories.outputs.repos) }}
     steps:
       - name: 📥 Checkout source (infra)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           path: infra
 
       - name: 📥 Checkout target repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: BlackRoad-OS/${{ matrix.repo }}
           path: target

@@ -28,7 +28,7 @@ jobs:
       critical_paths: ${{ steps.analyze.outputs.critical }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Analyze workflow dependencies
         id: analyze
@@ -252,7 +252,7 @@ EOF
     if: github.event.inputs.output_format == 'svg' || github.event.inputs.output_format == ''
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🎨 Generate SVG graph with D3.js
         run: |

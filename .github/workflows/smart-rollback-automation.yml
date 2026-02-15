@@ -142,7 +142,7 @@ EOF
     if: needs.detect-failures.outputs.failures_found > 0
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 100  # Get history
 
@@ -233,7 +233,7 @@ EOF
     if: github.event.inputs.rollback_mode != 'dry-run'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 100
 
@@ -397,7 +397,7 @@ EOF
     if: always() && needs.detect-failures.outputs.failures_found > 0
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📝 Generate rollback report
         run: |

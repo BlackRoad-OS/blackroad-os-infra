@@ -28,7 +28,7 @@ jobs:
       recommendations: ${{ steps.analyze.outputs.recommendations }}
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔍 Analyze historical execution patterns
         id: analyze
@@ -331,7 +331,7 @@ EOF
     if: github.event.inputs.auto_optimize == 'true'
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 🔧 Apply schedule optimizations
         run: |
@@ -427,7 +427,7 @@ Based on analysis of execution patterns
     needs: [analyze-execution-patterns, generate-optimal-schedules]
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: 📊 Generate schedule report
         run: |

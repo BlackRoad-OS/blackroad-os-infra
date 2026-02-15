@@ -36,7 +36,7 @@ jobs:
           - blackroad-quantum
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Deploy ${{ matrix.site }}
         uses: cloudflare/pages-action@v1
@@ -54,7 +54,7 @@ jobs:
     needs: [deploy-cloudflare]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
@@ -79,7 +79,7 @@ jobs:
     needs: [deploy-cloudflare, deploy-railway]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Deploy to Droplet
         uses: appleboy/ssh-action@v1.0.0
@@ -99,7 +99,7 @@ jobs:
     needs: [deploy-cloudflare, deploy-railway, deploy-droplet]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Update Cloudflare DNS
         run: |
@@ -112,7 +112,7 @@ jobs:
     needs: [update-dns]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Test All Endpoints
         run: |
