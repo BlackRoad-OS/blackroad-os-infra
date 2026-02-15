@@ -1,0 +1,903 @@
+name: Learning & Knowledge Synthesis Engine
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # Every Monday at noon UTC
+  workflow_dispatch:
+    inputs:
+      synthesis_scope:
+        description: 'Knowledge synthesis scope'
+        required: true
+        type: choice
+        options:
+          - weekly-learnings      # This week's learnings
+          - monthly-insights      # This month's insights
+          - project-knowledge     # Project-specific knowledge
+          - technical-discoveries # Technical discoveries
+          - team-wisdom          # Team wisdom synthesis
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  capture-learnings:
+    name: Capture This Week's Learnings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Extract learnings from PRs and issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('📚 Capturing Learnings from Last Week\n');
+            
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            // Look for learning indicators in PRs
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              sort: 'updated',
+              per_page: 50
+            });
+            
+            const recentPRs = prs.data.filter(pr => 
+              new Date(pr.updated_at) > oneWeekAgo
+            );
+            
+            console.log('🔍 Learning Indicators Found:\n');
+            
+            const learningKeywords = ['TIL', 'learned', 'discovered', 'realized', 'found out', 'figured out'];
+            const learnings = [];
+            
+            for (const pr of recentPRs) {
+              const body = (pr.body || '').toLowerCase();
+              
+              for (const keyword of learningKeywords) {
+                if (body.includes(keyword)) {
+                  learnings.push({
+                    title: pr.title,
+                    url: pr.html_url,
+                    author: pr.user.login,
+                    keyword: keyword
+                  });
+                  console.log(`  📝 PR #${pr.number}: "${pr.title}"`);
+                  console.log(`     Keyword: "${keyword}"`);
+                  console.log(`     Author: @${pr.user.login}\n`);
+                  break;
+                }
+              }
+            }
+            
+            console.log(`Total learnings captured: ${learnings.length}\n`);
+            
+            return learnings;
+      
+      - name: Generate learning capture template
+        run: |
+          cat > weekly-learnings-template.md << 'EOFTEMPLATE'
+          # 📚 Weekly Learnings - $(date +%Y-%m-%d)
+          
+          ## Technical Learnings 💻
+          
+          **What technical things did you learn this week?**
+          
+          ### New Technologies/Tools
+          - **What:** ________________
+          - **Why it matters:** ________________
+          - **How to use it:** ________________
+          - **Resources:** ________________
+          
+          ### Coding Techniques
+          - **Technique:** ________________
+          - **Problem it solves:** ________________
+          - **Example:** ________________
+          - **When to use:** ________________
+          
+          ### Debugging Insights
+          - **Bug/Issue:** ________________
+          - **Root cause:** ________________
+          - **Solution:** ________________
+          - **Prevention:** ________________
+          
+          ---
+          
+          ## Process Learnings 🔄
+          
+          **What did you learn about how we work?**
+          
+          ### What Worked
+          - **Practice:** ________________
+          - **Why it worked:** ________________
+          - **How to repeat:** ________________
+          
+          ### What Didn't Work
+          - **Issue:** ________________
+          - **Why it failed:** ________________
+          - **Better approach:** ________________
+          
+          ### Workflow Improvements
+          - **Current state:** ________________
+          - **Proposed improvement:** ________________
+          - **Expected benefit:** ________________
+          
+          ---
+          
+          ## People Learnings 👥
+          
+          **What did you learn about working with others?**
+          
+          ### Communication
+          - **What worked:** ________________
+          - **What didn't:** ________________
+          - **Next time I'll:** ________________
+          
+          ### Collaboration
+          - **Best moment:** ________________
+          - **What made it great:** ________________
+          - **How to enable more:** ________________
+          
+          ### Giving/Receiving Feedback
+          - **Feedback given:** ________________
+          - **Feedback received:** ________________
+          - **Impact:** ________________
+          
+          ---
+          
+          ## Domain Knowledge 🎓
+          
+          **What did you learn about the business/product?**
+          
+          ### User Insights
+          - **User need:** ________________
+          - **How we addressed it:** ________________
+          - **Impact:** ________________
+          
+          ### Business Context
+          - **Insight:** ________________
+          - **Why it matters:** ________________
+          - **How it affects our work:** ________________
+          
+          ### Product Understanding
+          - **Feature:** ________________
+          - **Purpose:** ________________
+          - **Trade-offs:** ________________
+          
+          ---
+          
+          ## Mistakes & Failures 💡
+          
+          **What mistakes taught you valuable lessons?**
+          
+          ### Mistake 1
+          - **What happened:** ________________
+          - **Impact:** ________________
+          - **Root cause:** ________________
+          - **Lesson learned:** ________________
+          - **Prevention strategy:** ________________
+          
+          ### Mistake 2
+          - **What happened:** ________________
+          - **Lesson learned:** ________________
+          
+          ---
+          
+          ## Surprises & Discoveries ✨
+          
+          **What surprised you or changed your thinking?**
+          
+          ### Technical Surprise
+          - **What I thought:** ________________
+          - **What I discovered:** ________________
+          - **Why it matters:** ________________
+          
+          ### Assumption Challenged
+          - **Assumption:** ________________
+          - **Reality:** ________________
+          - **New understanding:** ________________
+          
+          ---
+          
+          ## Questions Raised 🤔
+          
+          **What new questions emerged from your learning?**
+          
+          1. ________________
+          2. ________________
+          3. ________________
+          
+          **How will you find answers?**
+          - ________________
+          
+          ---
+          
+          ## Wisdom to Share 💎
+          
+          **What would you tell your past self from a week ago?**
+          
+          Dear past me,
+          
+          ________________
+          
+          Signed, future you
+          
+          ---
+          
+          ## Action Items 🎯
+          
+          **Based on this week's learnings, what will you do differently?**
+          
+          1. **Start:** ________________
+          2. **Stop:** ________________
+          3. **Continue:** ________________
+          4. **Learn more about:** ________________
+          5. **Share with team:** ________________
+          
+          ---
+          
+          ## Learning Goals for Next Week 🎓
+          
+          1. ________________
+          2. ________________
+          3. ________________
+          
+          **Success looks like:** ________________
+          
+          EOFTEMPLATE
+          
+          echo "✅ Learning capture template created"
+
+  synthesize-team-knowledge:
+    name: Synthesize Team Knowledge
+    runs-on: ubuntu-latest
+    needs: capture-learnings
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create knowledge synthesis
+        run: |
+          cat > knowledge-synthesis.md << 'EOFSYNTHESIS'
+          # 🧠 Team Knowledge Synthesis
+          
+          ## Purpose
+          Transform individual learnings into collective team wisdom
+          
+          ---
+          
+          ## Knowledge Synthesis Process
+          
+          ### Step 1: Collect Individual Learnings
+          - Each team member fills out weekly learning template
+          - Share in team channel or docs
+          - Review each other's learnings
+          
+          ### Step 2: Identify Patterns
+          **Look for:**
+          - **Recurring themes** - Multiple people learning similar things
+          - **Complementary insights** - Different perspectives on same topic
+          - **Knowledge gaps** - What nobody knows but should
+          - **Contradictions** - Different conclusions that need discussion
+          
+          ### Step 3: Synthesize into Team Knowledge
+          **Create:**
+          - **Shared mental models** - How we collectively understand things
+          - **Best practices** - What works well for us
+          - **Gotchas list** - Things to avoid
+          - **Decision records** - Why we chose what we chose
+          
+          ### Step 4: Document & Share
+          **Outputs:**
+          - Team wiki pages
+          - README updates
+          - Architecture decision records
+          - Onboarding materials
+          - Tech talks / lunch & learns
+          
+          ---
+          
+          ## Knowledge Synthesis Template
+          
+          ### This Week's Collective Learnings
+          
+          #### 🎯 Key Insights (Top 3)
+          
+          **1. [Insight Title]**
+          - **What we learned:** ________________
+          - **Who contributed:** ________________
+          - **Why it matters:** ________________
+          - **How it changes our approach:** ________________
+          
+          **2. [Insight Title]**
+          - **What we learned:** ________________
+          - **Impact:** ________________
+          
+          **3. [Insight Title]**
+          - **What we learned:** ________________
+          - **Next steps:** ________________
+          
+          ---
+          
+          #### 📚 Technical Knowledge Gained
+          
+          **New Technologies/Tools:**
+          - Tool X: [Summary of team learnings]
+          - Tool Y: [Summary of team learnings]
+          
+          **Coding Patterns:**
+          - Pattern A: [When to use, benefits, trade-offs]
+          - Pattern B: [Team consensus on best practices]
+          
+          **Architecture Insights:**
+          - Decision: [What we decided and why]
+          - Trade-offs: [What we're accepting]
+          
+          ---
+          
+          #### 🔄 Process Improvements
+          
+          **What's Working:**
+          - Practice 1: [Why it's effective]
+          - Practice 2: [Team feedback]
+          
+          **What's Not Working:**
+          - Issue 1: [Problem + proposed solution]
+          - Issue 2: [Consensus on change needed]
+          
+          **Experiments to Try:**
+          - Experiment 1: [Hypothesis + success criteria]
+          - Experiment 2: [Who's leading, timeline]
+          
+          ---
+          
+          #### 💡 Mistakes That Taught Us
+          
+          **Valuable Failures:**
+          1. **Mistake:** [What happened]
+             - **Lesson:** [What we all learned]
+             - **Prevention:** [How we'll avoid it]
+             - **Documentation:** [Where we recorded this]
+          
+          2. **Mistake:** [What happened]
+             - **Lesson:** [Collective insight]
+          
+          **Near Misses:**
+          - What almost went wrong and how we caught it
+          
+          ---
+          
+          #### 🤔 Open Questions
+          
+          **Questions That Need Answers:**
+          1. [Question] - **Assigned to:** ______ | **By:** ______
+          2. [Question] - **Needs research:** ______
+          3. [Question] - **Needs discussion:** ______
+          
+          **Debates to Resolve:**
+          - Topic: [Different viewpoints that need resolution]
+          
+          ---
+          
+          #### 📖 Documentation Created/Updated
+          
+          - **New docs:** [What was created]
+          - **Updated docs:** [What was improved]
+          - **Needed docs:** [Gaps we identified]
+          
+          ---
+          
+          #### 🎓 Skill Development
+          
+          **Team Skills Growing:**
+          - Skill 1: [Who's learning, progress]
+          - Skill 2: [Collective improvement]
+          
+          **Skills We Need:**
+          - Gap 1: [Why we need it, plan to learn]
+          - Gap 2: [Priority, owner]
+          
+          ---
+          
+          #### 🌟 Wisdom to Preserve
+          
+          **Quotable Insights:**
+          - "___________" - @person
+          - "___________" - @person
+          
+          **Hard-Won Knowledge:**
+          - [Thing that took effort to learn]
+          - [Non-obvious insight worth remembering]
+          
+          ---
+          
+          #### 🎯 Actions for Next Week
+          
+          **Based on our collective learning:**
+          
+          1. **Document:** [What needs to be written down]
+          2. **Share:** [What needs broader visibility]
+          3. **Practice:** [What we'll try applying]
+          4. **Investigate:** [What needs deeper exploration]
+          5. **Improve:** [What process changes to make]
+          
+          ---
+          
+          ## Knowledge Repository Structure
+          
+          ```
+          /docs
+            /learnings
+              /weekly
+                2025-01-13-learnings.md
+                2025-01-20-learnings.md
+              /monthly
+                2025-01-synthesis.md
+              /technical
+                react-patterns.md
+                database-lessons.md
+              /process
+                pr-review-best-practices.md
+                deployment-wisdom.md
+              /mistakes
+                what-we-learned-from-failures.md
+              /decisions
+                adr-001-use-typescript.md
+                adr-002-monorepo-structure.md
+          ```
+          
+          ---
+          
+          ## Sharing Practices
+          
+          **Weekly:**
+          - Learning standup (15 min) - Everyone shares #1 learning
+          - Learning slack thread - Post learnings async
+          
+          **Biweekly:**
+          - Tech talk - Deep dive on biggest learning
+          - Pair knowledge sharing - Teach each other
+          
+          **Monthly:**
+          - Knowledge synthesis review - Collective reflection
+          - Update team playbook - Codify what we learned
+          
+          **Quarterly:**
+          - Skills inventory - What we know now vs then
+          - Learning retrospective - How we're improving at learning
+          
+          ---
+          
+          ## Making Knowledge Stick
+          
+          **Techniques:**
+          
+          1. **Spaced Repetition**
+             - Review key learnings after 1 day, 1 week, 1 month
+          
+          2. **Teaching Others**
+             - Present your learning to the team
+             - Write a blog post or doc
+             - Pair with someone to show them
+          
+          3. **Application**
+             - Use the knowledge in next sprint
+             - Find 3 places to apply the pattern
+             - Practice the skill deliberately
+          
+          4. **Connection**
+             - Link new knowledge to existing understanding
+             - Build mental models
+             - Create analogies and metaphors
+          
+          5. **Reflection**
+             - Weekly learning journal
+             - Monthly learning review
+             - Quarterly skill assessment
+          
+          ---
+          
+          **Remember:** Learning that isn't shared is learning half-done.
+          Knowledge synthesis turns individual insights into team superpowers! 🚀
+          EOFSYNTHESIS
+          
+          echo "✅ Knowledge synthesis guide created"
+
+  create-til-system:
+    name: Create TIL (Today I Learned) System
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate TIL template and system
+        run: |
+          cat > til-system.md << 'EOFTIL'
+          # 💡 TIL (Today I Learned) System
+          
+          ## What is TIL?
+          
+          A lightweight way to capture and share micro-learnings daily.
+          
+          **Philosophy:**
+          - Small, specific learnings
+          - Quick to write (< 5 minutes)
+          - Easy to share
+          - Builds learning habit
+          
+          ---
+          
+          ## TIL Template
+          
+          ```markdown
+          # TIL: [One sentence summary]
+          
+          **Date:** YYYY-MM-DD
+          **Category:** [Technical/Process/People/Product]
+          **Tags:** #tag1 #tag2 #tag3
+          
+          ## What I Learned
+          
+          [2-3 sentences explaining the learning]
+          
+          ## Why It Matters
+          
+          [1-2 sentences on significance]
+          
+          ## How I'll Use It
+          
+          [Specific application or next step]
+          
+          ## Resources
+          
+          - [Link to docs/article if applicable]
+          - [Related PR/issue if applicable]
+          ```
+          
+          ---
+          
+          ## Examples
+          
+          ### Technical TIL
+          
+          ```markdown
+          # TIL: React useCallback only prevents re-renders if dependencies don't change
+          
+          **Date:** 2025-01-13
+          **Category:** Technical
+          **Tags:** #react #performance #hooks
+          
+          ## What I Learned
+          
+          useCallback returns a memoized callback, but it only helps performance
+          if you pass it to optimized child components that use React.memo or
+          if it's used in dependency arrays. Without these, it actually adds
+          overhead without benefit.
+          
+          ## Why It Matters
+          
+          I've been wrapping every callback in useCallback thinking it helps
+          performance, but it was actually making things worse in many cases.
+          
+          ## How I'll Use It
+          
+          Only use useCallback when:
+          1. Passing to React.memo'd components
+          2. Using in useEffect/useMemo dependencies
+          3. Passing to expensive child components
+          
+          ## Resources
+          
+          - https://react.dev/reference/react/useCallback
+          - PR #245 where I removed unnecessary useCallbacks
+          ```
+          
+          ### Process TIL
+          
+          ```markdown
+          # TIL: Smaller PRs get reviewed 3x faster
+          
+          **Date:** 2025-01-13
+          **Category:** Process
+          **Tags:** #pr-review #process #velocity
+          
+          ## What I Learned
+          
+          Tracked my last 10 PRs and found that PRs under 200 lines got
+          reviewed within 2 hours, while PRs over 500 lines took 6+ hours
+          on average.
+          
+          ## Why It Matters
+          
+          My big PRs are blocking me for days. Breaking them up could
+          significantly improve my velocity.
+          
+          ## How I'll Use It
+          
+          New rule: If a PR is getting big, split it into:
+          1. Infrastructure/setup PR
+          2. Implementation PR
+          3. Tests/docs PR
+          
+          ## Resources
+          
+          - Data: [spreadsheet of PR review times]
+          ```
+          
+          ### People TIL
+          
+          ```markdown
+          # TIL: Asking "what do you think?" before giving solutions leads to better discussions
+          
+          **Date:** 2025-01-13
+          **Category:** People
+          **Tags:** #communication #collaboration
+          
+          ## What I Learned
+          
+          In PR reviews, when I ask "what do you think about X?" before
+          suggesting my solution, I get much better engagement and often
+          learn about constraints I wasn't aware of.
+          
+          ## Why It Matters
+          
+          I was getting defensive reactions to my PR comments. This approach
+          makes it collaborative instead of confrontational.
+          
+          ## How I'll Use It
+          
+          New PR review template:
+          "I noticed X. What do you think about Y?" 
+          vs old: "You should do Y."
+          
+          ## Resources
+          
+          - Inspired by: "The Coaching Habit" book
+          ```
+          
+          ---
+          
+          ## TIL Workflow
+          
+          ### Daily
+          
+          1. **Capture** (End of day, 5 min)
+             - What's one thing you learned today?
+             - Use TIL template
+             - Save to `/docs/til/YYYY-MM-DD.md`
+          
+          2. **Share** (Optional)
+             - Post in team Slack channel
+             - Add to weekly learning summary
+             - Mention in standup
+          
+          ### Weekly
+          
+          3. **Review** (Friday, 10 min)
+             - Read through week's TILs
+             - Identify patterns
+             - Pick top 3 to share in retro
+          
+          4. **Organize** (As needed)
+             - Tag and categorize
+             - Move important ones to knowledge base
+             - Create docs from common themes
+          
+          ### Monthly
+          
+          5. **Synthesize** (First Monday, 20 min)
+             - Review month's TILs
+             - What themes emerged?
+             - What changed in your understanding?
+             - Update team docs with insights
+          
+          ---
+          
+          ## TIL Categories
+          
+          **Technical:**
+          - Code patterns
+          - Tool discoveries
+          - Debugging techniques
+          - Performance insights
+          
+          **Process:**
+          - Workflow improvements
+          - Time management
+          - Collaboration practices
+          - Meeting effectiveness
+          
+          **People:**
+          - Communication breakthroughs
+          - Feedback techniques
+          - Conflict resolution
+          - Team dynamics
+          
+          **Product:**
+          - User insights
+          - Feature understanding
+          - Business context
+          - Domain knowledge
+          
+          **Personal:**
+          - Productivity hacks
+          - Learning techniques
+          - Mindset shifts
+          - Health/wellness
+          
+          ---
+          
+          ## TIL Storage
+          
+          ```
+          /docs/til
+            /2025
+              /01-january
+                01-monday.md
+                02-tuesday.md
+                ...
+              /02-february
+                ...
+            /by-category
+              technical.md (aggregated)
+              process.md (aggregated)
+              people.md (aggregated)
+            /greatest-hits
+              top-learnings-2025.md
+          ```
+          
+          ---
+          
+          ## Making It Stick
+          
+          **Habits to Build:**
+          
+          1. **End-of-day TIL** (5 min before closing laptop)
+             - Set calendar reminder
+             - Make it part of shutdown routine
+          
+          2. **Morning TIL review** (2 min with coffee)
+             - Read yesterday's TIL
+             - Reinforces learning
+          
+          3. **Weekly TIL sharing** (Friday standup)
+             - Everyone shares favorite TIL
+             - Builds team learning culture
+          
+          4. **Monthly TIL synthesis** (First Monday)
+             - Review patterns
+             - Update documentation
+             - Set learning goals
+          
+          ---
+          
+          ## Benefits
+          
+          **Individual:**
+          - Reinforces learning
+          - Builds documentation habit
+          - Creates personal knowledge base
+          - Tracks growth over time
+          
+          **Team:**
+          - Shared learning
+          - Faster knowledge transfer
+          - Cultural norm of learning
+          - Living documentation
+          
+          **Organization:**
+          - Institutional knowledge
+          - Onboarding materials
+          - Best practices library
+          - Innovation capture
+          
+          ---
+          
+          ## Start Small
+          
+          **Week 1:** Just try writing one TIL
+          **Week 2:** Write TIL 3 days this week
+          **Week 3:** Daily TIL habit
+          **Week 4:** Share TILs with team
+          
+          **Remember:** Done is better than perfect.
+          A simple TIL is infinitely more valuable than the perfect one you never write.
+          
+          *Start today! What did you learn?* 💡
+          EOFTIL
+          
+          echo "✅ TIL system created"
+
+  generate-reflection-report:
+    name: Generate Reflection Report
+    runs-on: ubuntu-latest
+    needs: [capture-learnings, synthesize-team-knowledge, create-til-system]
+    steps:
+      - name: Create comprehensive report
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOFREPORT'
+          # 📚 Learning & Knowledge Synthesis Complete!
+          
+          ## Reflection Systems Created
+          
+          ✅ **Weekly Learning Capture** - Template for individual learnings
+          ✅ **Knowledge Synthesis** - Team wisdom aggregation
+          ✅ **TIL System** - Daily micro-learning capture
+          
+          ---
+          
+          ## Learning Capture Framework
+          
+          ### Individual Learning (Weekly)
+          - Technical learnings
+          - Process learnings
+          - People learnings
+          - Domain knowledge
+          - Mistakes & failures
+          - Surprises & discoveries
+          - Questions raised
+          - Wisdom to share
+          
+          ### Team Synthesis (Weekly/Monthly)
+          - Collective insights
+          - Pattern identification
+          - Best practices
+          - Knowledge gaps
+          - Documentation needs
+          
+          ### Daily TIL
+          - Quick capture (< 5 min)
+          - Specific learnings
+          - Easy sharing
+          - Habit building
+          
+          ---
+          
+          ## Implementation Guide
+          
+          **Daily:**
+          - Write one TIL at end of day (5 min)
+          
+          **Weekly:**
+          - Fill learning capture template (20 min)
+          - Share in team channel
+          - Review others' learnings
+          
+          **Biweekly:**
+          - Team knowledge synthesis session (30 min)
+          - Update documentation
+          
+          **Monthly:**
+          - Deep reflection on patterns (45 min)
+          - Update team playbook
+          - Set learning goals
+          
+          ---
+          
+          ## Benefits
+          
+          **Individual Growth:**
+          - Reinforce learning
+          - Track progress
+          - Build knowledge base
+          - Develop expertise
+          
+          **Team Intelligence:**
+          - Shared understanding
+          - Faster onboarding
+          - Collective wisdom
+          - Innovation capture
+          
+          **Organizational Knowledge:**
+          - Living documentation
+          - Best practices
+          - Institutional memory
+          - Continuous improvement
+          
+          ---
+          
+          **Next Learning Capture:** Monday at noon UTC
+          
+          **Remember:** Reflection turns experience into wisdom! 📚
+          EOFREPORT
