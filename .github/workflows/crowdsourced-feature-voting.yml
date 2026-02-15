@@ -1,0 +1,260 @@
+name: Crowdsourced Feature Voting System
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+  schedule:
+    - cron: '0 12 * * 1'  # Weekly Monday noon
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  setup-voting:
+    name: Setup Feature Voting
+    runs-on: ubuntu-latest
+    if: github.event.issue && contains(github.event.issue.labels.*.name, 'feature-request')
+    steps:
+      - name: Add voting reactions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `## 🗳️ Feature Voting
+
+              **Help us prioritize!** Vote on this feature request:
+
+              - 👍 **Yes, I want this!** - High priority
+              - ❤️ **I need this!** - Critical for my workflow
+              - 🚀 **This would be amazing!** - Game changer
+              - 👀 **I'm interested** - Would be nice to have
+
+              **Add your voice:**
+              - React to this issue (not this comment!)
+              - Comment with your use case
+              - Share why this matters to you
+
+              We review votes weekly and prioritize the most wanted features!
+
+              ---
+              Current votes: 0 | Status: 🟡 Gathering feedback`
+            });
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: ['voting-enabled', 'community-input']
+            }).catch(() => {});
+
+  tally-votes:
+    name: Tally Feature Votes
+    runs-on: ubuntu-latest
+    outputs:
+      top_features: ${{ steps.tally.outputs.top }}
+      vote_summary: ${{ steps.tally.outputs.summary }}
+    steps:
+      - name: Count votes
+        id: tally
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: features } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'feature-request,voting-enabled',
+              state: 'open',
+              per_page: 100
+            });
+
+            const votes = features.map(issue => ({
+              number: issue.number,
+              title: issue.title,
+              votes: (issue.reactions['+1'] || 0) +
+                     (issue.reactions.heart || 0) * 2 +
+                     (issue.reactions.rocket || 0) * 3 +
+                     (issue.reactions.eyes || 0),
+              thumbsup: issue.reactions['+1'] || 0,
+              hearts: issue.reactions.heart || 0,
+              rockets: issue.reactions.rocket || 0,
+              comments: issue.comments || 0
+            })).sort((a, b) => b.votes - a.votes);
+
+            const top = votes.slice(0, 10).map(v =>
+              `${v.number}:${v.votes}`
+            ).join(',');
+
+            const summary = votes.slice(0, 5).map(v =>
+              `#${v.number} - ${v.title} (${v.votes} votes)`
+            ).join('\n');
+
+            core.setOutput('top', top);
+            core.setOutput('summary', summary);
+
+            console.log('Top features by votes:');
+            console.log(summary);
+
+  update-vote-counts:
+    name: Update Vote Counts
+    runs-on: ubuntu-latest
+    needs: tally-votes
+    steps:
+      - name: Update feature statuses
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const topFeatures = '${{ needs.tally-votes.outputs.top }}'.split(',');
+
+            for (const feature of topFeatures) {
+              if (!feature) continue;
+
+              const [number, votes] = feature.split(':');
+              const voteCount = parseInt(votes);
+
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(number)
+              });
+
+              let status = '🟡 Gathering feedback';
+              if (voteCount >= 50) status = '🔥 High demand - In planning';
+              else if (voteCount >= 20) status = '🟢 Popular - Under review';
+              else if (voteCount >= 10) status = '🟡 Moderate interest';
+
+              // Update or add vote count comment
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(number)
+              });
+
+              const botComment = comments.find(c =>
+                c.user.type === 'Bot' && c.body.includes('Current votes:')
+              );
+
+              if (botComment) {
+                const newBody = botComment.body.replace(
+                  /Current votes: \d+/,
+                  `Current votes: ${voteCount}`
+                ).replace(
+                  /Status: .+$/m,
+                  `Status: ${status}`
+                );
+
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: newBody
+                });
+              }
+            }
+
+  create-voting-dashboard:
+    name: Create Voting Dashboard
+    runs-on: ubuntu-latest
+    needs: tally-votes
+    steps:
+      - name: Generate dashboard
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const topStr = '${{ needs.tally-votes.outputs.top }}';
+            const features = topStr.split(',').filter(x => x);
+
+            let dashboard = `## 🗳️ Community Feature Voting Dashboard
+
+            **Last Updated:** ${new Date().toISOString().split('T')[0]}
+
+            ### 🏆 Top Requested Features
+
+            `;
+
+            for (let i = 0; i < Math.min(10, features.length); i++) {
+              const [number, votes] = features[i].split(':');
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(number)
+              });
+
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+              dashboard += `${medal} [${issue.title}](#${number}) - **${votes} votes**\n`;
+            }
+
+            dashboard += `
+
+            ### 📊 Voting Stats
+
+            - Total Features: ${features.length}
+            - Total Votes Cast: ${features.reduce((sum, f) => sum + parseInt(f.split(':')[1]), 0)}
+            - Average Votes: ${Math.round(features.reduce((sum, f) => sum + parseInt(f.split(':')[1]), 0) / features.length)}
+
+            ### 🎯 How to Vote
+
+            1. Browse [feature requests](https://github.com/${context.repo.owner}/${context.repo.repo}/issues?q=is%3Aissue+is%3Aopen+label%3Afeature-request)
+            2. React with:
+               - 👍 = 1 vote (I want this)
+               - ❤️ = 2 votes (I need this)
+               - 🚀 = 3 votes (This is critical)
+            3. Comment with your use case
+            4. Share with others!
+
+            ### 📅 Next Review
+
+            Features are reviewed weekly. High-vote features get prioritized!
+
+            ---
+            🤖 Your vote matters! Help shape the roadmap!
+            `;
+
+            // Create or update dashboard
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'voting-dashboard',
+              state: 'open'
+            });
+
+            if (existing.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                body: dashboard
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🗳️ Community Feature Voting Dashboard',
+                body: dashboard,
+                labels: ['voting-dashboard', 'pinned']
+              });
+            }
+
+  voting-summary:
+    name: Voting Summary
+    runs-on: ubuntu-latest
+    needs: tally-votes
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🗳️ Feature Voting Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Top Requested Features" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.tally-votes.outputs.vote_summary }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the Voting Dashboard for full rankings!" >> $GITHUB_STEP_SUMMARY
