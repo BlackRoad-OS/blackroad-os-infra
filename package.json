@@ -8,7 +8,8 @@
     "build:types": "tsc --noEmit",
     "gen:sig": "ts-node scripts/gen_sig_beacon.ts",
     "lint:infra": "bash scripts/fmt.sh",
-    "validate": "ts-node scripts/validate-infra.ts"
+    "validate": "ts-node scripts/validate-infra.ts",
+    "audit:deployment": "ts-node scripts/audit-three-star.ts"
   },
   "dependencies": {
     "ajv": "^8.17.1",
