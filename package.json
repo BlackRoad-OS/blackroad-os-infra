@@ -11,7 +11,7 @@
     "validate": "ts-node scripts/validate-infra.ts"
   },
   "dependencies": {
-    "ajv": "^8.17.1",
+    "ajv": "^8.18.0",
     "dotenv": "^16.4.5",
     "js-yaml": "^4.1.0",
     "yaml": "^2.3.4"
