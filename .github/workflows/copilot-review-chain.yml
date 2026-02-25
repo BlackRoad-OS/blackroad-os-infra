@@ -1,0 +1,221 @@
+name: 🔗 Copilot Review Chain
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Orchestrates the full BlackRoad OS agent pipeline:
+#
+#   Agent Session → PR → Dependabot → Copilot review → @Lucidia deploy
+#
+# Stages:
+#   1. pr-setup      — labels, size checks, posts pipeline overview comment
+#   2. request-review — requests Copilot (and optionally other agents) as reviewers
+#   3. green-check   — runs on PR synchronise; confirms all checks pass; posts
+#                       a ready-to-deploy summary so the author knows to type
+#                       @Lucidia when they are happy.
+#
+# Actual deployment is handled by lucidia-deploy-trigger.yml, which fires
+# when a PR comment contains @Lucidia.
+# ──────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # 1. PR Setup — labels, Dependabot annotation, pipeline overview
+  # ────────────────────────────────────────────────────────────────────────────
+  pr-setup:
+    name: 📋 PR Setup
+    runs-on: ubuntu-latest
+    # Skip draft PRs and bot-authored Dependabot PRs (they have their own flow)
+    if: |
+      github.event.pull_request.draft == false &&
+      github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Apply size label
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const changed = pr.changed_files || 0;
+            let sizeLabel;
+            if (changed <= 5)       sizeLabel = 'size:small';
+            else if (changed <= 20) sizeLabel = 'size:medium';
+            else                    sizeLabel = 'size:large';
+
+            // Remove stale size labels
+            const { data: existing } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+            });
+            for (const l of existing) {
+              if (l.name.startsWith('size:') && l.name !== sizeLabel) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: l.name,
+                }).catch(() => {});
+              }
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: [sizeLabel],
+            }).catch(() => {});
+
+      - name: Post pipeline overview (on open/reopen only)
+        if: |
+          github.event.action == 'opened' ||
+          github.event.action == 'reopened'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: >
+            const pr = context.payload.pull_request;
+
+            const actor = pr.user.login;
+
+            const body = [
+              '## \uD83D\uDD17 BlackRoad OS Agent Pipeline',
+              '',
+              `Hey @${actor}! Here is what happens next for this PR:`,
+              '',
+              '| Step | Agent | Status |',
+              '|---|---|---|',
+              '| 1\uFE0F\u20E3 PR opened | _you_ | \u2705 Done |',
+              '| 2\uFE0F\u20E3 Dependency & security checks | \uD83E\uDD16 Dependabot | \u23F3 Automatic |',
+              '| 3\uFE0F\u20E3 Code review | \uD83D\uDC65 Copilot | \u23F3 Requested |',
+              '| 4\uFE0F\u20E3 All checks green | CI / Status checks | \u23F3 Pending |',
+              '| 5\uFE0F\u20E3 Deploy to Pi | \uD83D\uDD2E @Lucidia | \u23F3 Awaiting your trigger |',
+              '',
+              '### \uD83D\uDE80 How to deploy',
+              'Once all checks are **green** and you are happy with the review, comment:',
+              '',
+              '```',
+              '@Lucidia deploy',
+              '```',
+              '',
+              '**Target options:**',
+              '- `@Lucidia deploy` \u2192 deploys to **Lucidia** (192.168.4.38, default)',
+              '- `@Lucidia deploy --target octavia` \u2192 deploys to **Octavia** (Hailo AI)',
+              '- `@Lucidia deploy --target alice` \u2192 deploys to **Alice**',
+              '- `@Lucidia deploy <service>` \u2192 deploys a specific service only',
+              '',
+              'Lucidia will SSH into the Pi via Tailscale and run the deployment script. \uD83E\uDD67',
+              '',
+              '---',
+              '\uD83D\uDD2E _BlackRoad OS \u2014 Agent-driven deployment pipeline_',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body,
+            });
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 2. Request Copilot Review
+  # ────────────────────────────────────────────────────────────────────────────
+  request-review:
+    name: 👥 Request Copilot Review
+    runs-on: ubuntu-latest
+    needs: pr-setup
+    if: |
+      github.event.action == 'opened' ||
+      github.event.action == 'reopened'
+
+    steps:
+      - name: Request Copilot as reviewer
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            // Request Copilot review.  GitHub Copilot appears as 'Copilot' in the
+            // reviewers list when the GitHub Copilot for PRs feature is enabled on
+            // the repository.  Fallback: post a comment asking for a review.
+            const pr = context.payload.pull_request;
+
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                reviewers: ['copilot'],
+              });
+              console.log('Copilot review requested successfully.');
+            } catch (err) {
+              // If Copilot is not a collaborator the API returns 422 — that's fine,
+              // Copilot will still analyse the PR when @copilot is mentioned.
+              console.log(`Could not request Copilot reviewer (${err.message}). ` +
+                          'Copilot will review via @copilot mention.');
+            }
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # 3. Green-check gate — tells the author the PR is ready for @Lucidia
+  # ────────────────────────────────────────────────────────────────────────────
+  green-check:
+    name: ✅ All Checks Gate
+    runs-on: ubuntu-latest
+    # Run on every push to the PR branch to update the status message
+    if: github.event.action == 'synchronize' || github.event.action == 'ready_for_review'
+
+    steps:
+      - name: Evaluate check suite
+        id: eval
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+
+            const { data: suite } = await github.rest.repos.getCombinedStatusForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+            });
+
+            const { data: runs } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+            });
+
+            const failed  = runs.check_runs.filter(
+              c => c.status === 'completed' &&
+                   c.conclusion !== 'success' &&
+                   c.conclusion !== 'skipped' &&
+                   c.conclusion !== 'neutral',
+            );
+            const pending = runs.check_runs.filter(c => c.status !== 'completed');
+
+            const allGreen =
+              (suite.state === 'success' || suite.total_count === 0) &&
+              failed.length === 0 &&
+              pending.length === 0;
+
+            core.setOutput('all_green', allGreen ? 'true' : 'false');
+
+      - name: Post ready-to-deploy notice
+        if: steps.eval.outputs.all_green == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const actor = pr.user.login;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: `✅ **All checks are green!** The PR is ready for deployment.\n\n` +
+                    `@${actor} — when you're happy with the review, comment \`@Lucidia deploy\` ` +
+                    `and Lucidia will SSH into the Pi and deploy via Tailscale. 🔮`,
+            });

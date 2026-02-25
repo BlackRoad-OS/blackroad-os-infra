@@ -36,6 +36,8 @@ const ROUTES = {
   'demo.blackroad.systems': { service: 'blackroad-os-demo', port: 3000 },
   'archive.blackroad.systems': { service: 'blackroad-os-archive', port: 8080 },
   'agents.blackroad.systems': { service: 'blackroad-os-agents', port: 8080 },
+  // Lucidia Gateway is served by its own dedicated Worker (lucidia-gateway.js)
+  // and does NOT proxy to a Railway service — requests are handled at the edge.
 };
 
 // Railway internal domain pattern
