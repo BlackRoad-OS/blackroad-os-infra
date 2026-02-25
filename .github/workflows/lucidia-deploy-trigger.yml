@@ -1,0 +1,218 @@
+name: 🔮 Lucidia Deploy Trigger
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Fires when anyone comments @Lucidia on a pull request.
+# The workflow:
+#   1. Confirms all required status checks are green.
+#   2. Resolves the target Pi (Lucidia, Octavia, or Alice) from the comment.
+#   3. Calls the Lucidia Gateway Cloudflare Worker which SSHes via Tailscale.
+#   4. Posts the deployment status back as a PR comment.
+# ──────────────────────────────────────────────────────────────────────────────
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: read
+  checks: read
+
+jobs:
+  lucidia-deploy:
+    name: 🔮 @Lucidia Deployment
+    runs-on: ubuntu-latest
+    # Only run when the comment is on a PR and mentions @Lucidia
+    if: |
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '@Lucidia')
+
+    steps:
+      - name: Acknowledge trigger
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'eyes',
+            });
+
+      - name: Check PR status checks
+        id: checks
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const sha = pr.data.head.sha;
+
+            // Fetch combined commit status
+            const { data: combined } = await github.rest.repos.getCombinedStatusForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+            });
+
+            // Fetch check runs (GitHub Actions)
+            const { data: checkRuns } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+            });
+
+            const failedChecks = checkRuns.check_runs.filter(
+              c => c.status === 'completed' && c.conclusion !== 'success' && c.conclusion !== 'skipped' && c.conclusion !== 'neutral',
+            );
+
+            const pendingChecks = checkRuns.check_runs.filter(c => c.status !== 'completed');
+
+            const allGreen =
+              (combined.state === 'success' || combined.total_count === 0) &&
+              failedChecks.length === 0 &&
+              pendingChecks.length === 0;
+
+            core.setOutput('all_green', allGreen ? 'true' : 'false');
+            core.setOutput('head_sha', sha);
+            core.setOutput('pr_number', context.issue.number);
+            core.setOutput('failed_checks', failedChecks.map(c => c.name).join(', '));
+            core.setOutput('pending_checks', pendingChecks.map(c => c.name).join(', '));
+
+            return { allGreen, sha };
+
+      - name: Block if checks are not green
+        if: steps.checks.outputs.all_green != 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const failed  = '${{ steps.checks.outputs.failed_checks }}';
+            const pending = '${{ steps.checks.outputs.pending_checks }}';
+
+            const lines = ['🔮 **@Lucidia cannot deploy yet** — not all checks are green.\n'];
+            if (failed)  lines.push(`❌ **Failed checks:** ${failed}`);
+            if (pending) lines.push(`⏳ **Pending checks:** ${pending}`);
+            lines.push('\nPlease resolve the above before requesting deployment.');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: lines.join('\n'),
+            });
+
+            core.setFailed('Checks are not green — blocking deployment.');
+
+      - name: Resolve deployment target
+        id: target
+        if: steps.checks.outputs.all_green == 'true'
+        run: |
+          COMMENT='${{ github.event.comment.body }}'
+          if echo "$COMMENT" | grep -qi "octavia\|hailo"; then
+            echo "host=octavia"   >> "$GITHUB_OUTPUT"
+            echo "label=Octavia (Hailo)" >> "$GITHUB_OUTPUT"
+          elif echo "$COMMENT" | grep -qi "alice"; then
+            echo "host=alice"     >> "$GITHUB_OUTPUT"
+            echo "label=Alice"    >> "$GITHUB_OUTPUT"
+          else
+            echo "host=lucidia"   >> "$GITHUB_OUTPUT"
+            echo "label=Lucidia (192.168.4.38)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Parse service and branch from comment
+        id: opts
+        if: steps.checks.outputs.all_green == 'true'
+        run: |
+          COMMENT='${{ github.event.comment.body }}'
+
+          # Extract optional service: @Lucidia deploy <service>
+          SERVICE=$(echo "$COMMENT" | grep -oP '(?<=@[Ll]ucidia\s+deploy\s)\S+' || echo "all")
+          SERVICE=${SERVICE:-all}
+
+          # Extract optional branch: --branch <name>
+          BRANCH=$(echo "$COMMENT" | grep -oP '(?<=--branch\s)\S+' || echo "")
+
+          echo "service=$SERVICE" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH"   >> "$GITHUB_OUTPUT"
+
+      - name: Call Lucidia Gateway
+        id: gateway
+        if: steps.checks.outputs.all_green == 'true'
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg target   "${{ steps.target.outputs.host }}" \
+            --arg service  "${{ steps.opts.outputs.service }}" \
+            --arg branch   "${{ steps.opts.outputs.branch }}" \
+            --arg repo     "${{ github.repository }}" \
+            --argjson pr   ${{ steps.checks.outputs.pr_number }} \
+            '{target: $target, service: $service, branch: $branch, repo: $repo, pr: $pr}')
+
+          HTTP_STATUS=$(curl -s -o /tmp/gateway-response.json -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${{ secrets.LUCIDIA_DEPLOY_API_KEY }}" \
+            "${{ secrets.LUCIDIA_GATEWAY_URL }}/deploy" \
+            -d "$PAYLOAD")
+
+          echo "http_status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
+          cat /tmp/gateway-response.json
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "Gateway returned HTTP $HTTP_STATUS" >&2
+            exit 1
+          fi
+        env:
+          LUCIDIA_GATEWAY_URL: ${{ secrets.LUCIDIA_GATEWAY_URL }}
+
+      - name: Post deployment status
+        if: always() && steps.checks.outputs.all_green == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const success = '${{ steps.gateway.outcome }}' === 'success';
+            const target  = '${{ steps.target.outputs.label }}';
+            const service = '${{ steps.opts.outputs.service }}';
+            const branch  = '${{ steps.opts.outputs.branch }}';
+
+            let body;
+            if (success) {
+              body = [
+                `🔮 **@Lucidia deployment dispatched!** ✅`,
+                '',
+                `| Field | Value |`,
+                `|---|---|`,
+                `| **Target Pi** | ${target} |`,
+                `| **Service** | ${service} |`,
+                branch ? `| **Branch** | ${branch} |` : null,
+                `| **PR** | #${{ github.event.issue.number }} |`,
+                `| **Triggered by** | @${{ github.event.comment.user.login }} |`,
+                '',
+                `The deployment script is now running on **${target}** via Tailscale. Check the Pi logs for progress.`,
+              ].filter(Boolean).join('\n');
+            } else {
+              body = [
+                `🔮 **@Lucidia deployment failed** ❌`,
+                '',
+                `The Lucidia Gateway returned an error. Please check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.`,
+              ].join('\n');
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+            // Add reaction to the original comment
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: success ? 'rocket' : '-1',
+            });
