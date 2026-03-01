@@ -39,6 +39,10 @@
 - 🎯 [Agent Orchestrator](agents/src/orchestrator.ts) - Agent coordination system
 - ⚡ [Truth Manifest Workflow](.github/workflows/gaia-truth-manifest.yml) - Automated manifest generation
 
+### 🎨 Visual Resources
+- 🧩 **[Forge Shapes Chart Pack](docs/FORGE_SHAPES_CHART_PACK.md)** - Visual pattern library (triangles, diamonds, waves, spirals, gates)
+- 🚦 [Trinity System](trinity/README.md) - Complete visual language framework
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
