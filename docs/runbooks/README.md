@@ -38,6 +38,16 @@ Standard operating procedures (in `docs/`):
 
 ---
 
+## 🧩 Templates & Examples
+
+Copy/paste templates for operational tracking:
+
+| Template | Purpose |
+|----------|---------|
+| [Examples Pack v4](./EXAMPLES_PACK_V4.md) | Incident timeline, on-call handoff, and SLA dashboard templates with visual indicators |
+
+---
+
 ## 🧭 Quick Reference
 
 ### Incident Response Priority
@@ -80,4 +90,4 @@ When adding a new runbook:
 
 ---
 
-**Last Updated**: 2025-11-25
+**Last Updated**: 2025-12-25
