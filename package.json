@@ -9,7 +9,9 @@
     "gen:sig": "ts-node scripts/gen_sig_beacon.ts",
     "lint:infra": "bash scripts/fmt.sh",
     "validate": "ts-node scripts/validate-infra.ts",
-    "audit:deployment": "ts-node scripts/audit-three-star.ts"
+    "audit:deployment": "ts-node scripts/audit-three-star.ts",
+    "format": "prettier --write .",
+    "lint:format": "prettier --check ."
   },
   "dependencies": {
     "ajv": "^8.17.1",
