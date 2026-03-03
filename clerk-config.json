@@ -1,18 +1,31 @@
 {
   "repo": "BlackRoad-OS/blackroad-os-infra",
+  "authProvider": "clerk",
   "authEndpoints": [
     "/api/auth/signin",
     "/api/auth/signup",
-    "/api/auth/signout"
+    "/api/auth/signout",
+    "/api/auth/callback"
   ],
+  "oauthProviders": {
+    "github": { "enabled": true },
+    "google": { "enabled": true }
+  },
   "protectedRoutes": [
     "/dashboard/*",
     "/admin/*",
-    "/api/private/*"
+    "/api/private/*",
+    "/billing/*"
   ],
   "publicRoutes": [
     "/",
     "/api/public/*",
-    "/docs/*"
-  ]
+    "/docs/*",
+    "/webhook/*",
+    "/health"
+  ],
+  "afterSignInUrl": "/dashboard",
+  "afterSignUpUrl": "/onboarding",
+  "signInUrl": "/sign-in",
+  "signUpUrl": "/sign-up"
 }

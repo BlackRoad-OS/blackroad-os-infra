@@ -70,9 +70,27 @@ records:
   # Product & Research
   - name: research
     type: CNAME
-    target: blackroad-os-research.pages.dev
+    target: blackroad-os-research-production.up.railway.app
     proxied: true
-    comment: "Research portal"
+    comment: "Research portal (Railway)"
+
+  - name: beacon
+    type: CNAME
+    target: blackroad-os-beacon-production.up.railway.app
+    proxied: true
+    comment: "Beacon identity and heartbeat service (Railway)"
+
+  - name: agents
+    type: CNAME
+    target: blackroad-os-agents-production.up.railway.app
+    proxied: true
+    comment: "Agent orchestration service (Railway)"
+
+  - name: console
+    type: CNAME
+    target: blackroad-os-prism-console-production.up.railway.app
+    proxied: true
+    comment: "Prism console interface (Railway)"
 
   - name: brand
     type: CNAME

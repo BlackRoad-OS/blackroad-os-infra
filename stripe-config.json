@@ -1,26 +1,50 @@
 {
   "repo": "BlackRoad-OS/blackroad-os-infra",
+  "webhook_endpoint": "https://stripe.blackroad.io/webhook/stripe",
+  "webhook_description": "BlackRoad OS production Stripe webhook (Cloudflare Worker)",
   "products": [
     {
       "name": "blackroad-os-infra - Basic",
       "price": 900,
-      "interval": "month"
+      "interval": "month",
+      "currency": "usd",
+      "description": "BlackRoad OS Basic — infrastructure access for individuals and small teams"
     },
     {
       "name": "blackroad-os-infra - Pro",
       "price": 2900,
-      "interval": "month"
+      "interval": "month",
+      "currency": "usd",
+      "description": "BlackRoad OS Pro — full platform access with priority support"
     },
     {
       "name": "blackroad-os-infra - Enterprise",
       "price": 9900,
-      "interval": "month"
+      "interval": "month",
+      "currency": "usd",
+      "description": "BlackRoad OS Enterprise — dedicated infrastructure and SLA"
     }
   ],
   "webhooks": [
     "checkout.session.completed",
     "customer.subscription.created",
     "customer.subscription.updated",
-    "invoice.paid"
-  ]
+    "customer.subscription.deleted",
+    "invoice.paid",
+    "invoice.payment_failed",
+    "payment_intent.succeeded",
+    "payment_intent.payment_failed"
+  ],
+  "portal": {
+    "features": {
+      "subscription_cancel": true,
+      "subscription_pause": false,
+      "subscription_update": true,
+      "invoice_history": true,
+      "payment_method_update": true
+    },
+    "return_url": "https://app.blackroad.io/billing"
+  },
+  "success_url": "https://app.blackroad.io/billing?success=true",
+  "cancel_url": "https://app.blackroad.io/billing?canceled=true"
 }

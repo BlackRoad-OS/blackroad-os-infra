@@ -1,0 +1,71 @@
+# BlackRoad OS — Tailscale Configuration
+# Tailscale mesh network for BlackRoad infrastructure
+#
+# Since the Raspberry Pi cluster is offline, Tailscale is now operated as a
+# Railway-hosted exit node + subnet router.  All internal service traffic
+# (Railway ↔ Cloudflare, monitoring, ops) routes through this node instead of
+# the Pi hardware.
+#
+# Network topology (Pi-less mode):
+#   Cloudflare Tunnel → Railway Tailscale node → Railway services
+#   Developer device  → Tailscale WARP / exit node → Railway private network
+#
+# Setup:
+#   1. Generate an auth key:  Tailscale Admin → Settings → Keys → Generate auth key
+#      (tag:server, reusable, no expiry)
+#   2. Add to Railway env:    TAILSCALE_AUTHKEY=tskey-auth-<...>
+#   3. Deploy this service on Railway (it runs as a sidecar exit node)
+#   4. Add ACL tag in tailnet policy to allow this node to route 100.64.0.0/10
+#
+# Environment variables:
+#   TAILSCALE_AUTHKEY    – Tailscale pre-auth key (required, Railway secret)
+#   TAILSCALE_HOSTNAME   – Advertised hostname (default: blackroad-railway-node)
+#   TAILSCALE_TAGS       – Comma-separated ACL tags (default: tag:server,tag:railway)
+#   ROUTE_SUBNETS        – Subnets to advertise (default: 100.64.0.0/10)
+#
+# References:
+#   https://tailscale.com/kb/1019/subnets/
+#   https://tailscale.com/kb/1103/exit-nodes/
+
+network: tailscale
+mode: railway-exit-node
+hostname: blackroad-railway-node
+
+# ACL tags applied to this node in the tailnet policy
+tags:
+  - tag:server
+  - tag:railway
+  - tag:blackroad-infra
+
+# Subnets advertised by this node (Railway internal range)
+advertise_routes:
+  - 100.64.0.0/10   # Tailscale CGNAT range (peers reachable via this node)
+
+# Exit node: allow peers to route internet traffic through this Railway node
+advertise_exit_node: true
+
+# Key expiry: disabled for long-running server nodes
+key_expiry_disabled: true
+
+# Tailscale ACL policy snippet (merge into tailnet policy JSON):
+# {
+#   "tagOwners": {
+#     "tag:server":  ["autogroup:admin"],
+#     "tag:railway": ["autogroup:admin"]
+#   },
+#   "acls": [
+#     {
+#       "action": "accept",
+#       "src": ["tag:server", "autogroup:member"],
+#       "dst": ["tag:railway:*"]
+#     }
+#   ],
+#   "ssh": [
+#     {
+#       "action": "accept",
+#       "src": ["autogroup:admin"],
+#       "dst": ["tag:server"],
+#       "users": ["autogroup:nonroot"]
+#     }
+#   ]
+# }
