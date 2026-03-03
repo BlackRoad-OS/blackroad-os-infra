@@ -75,6 +75,48 @@ ingress:
     originRequest:
       noTLSVerify: true
 
+  # Beacon (identity + heartbeat)
+  - hostname: beacon.blackroad.io
+    service: https://blackroad-os-beacon-production.up.railway.app
+    originRequest:
+      noTLSVerify: true
+
+  # Research portal
+  - hostname: research.blackroad.io
+    service: https://blackroad-os-research-production.up.railway.app
+    originRequest:
+      noTLSVerify: true
+
+  # Agents
+  - hostname: agents.blackroad.io
+    service: https://blackroad-os-agents-production.up.railway.app
+    originRequest:
+      noTLSVerify: true
+
+  # Core API
+  - hostname: api.blackroad.io
+    service: https://blackroad-os-api-production.up.railway.app
+    originRequest:
+      noTLSVerify: true
+
+  # Console
+  - hostname: console.blackroad.io
+    service: https://blackroad-os-prism-console-production.up.railway.app
+    originRequest:
+      noTLSVerify: true
+
+  # Home
+  - hostname: home.blackroad.io
+    service: https://blackroad-os-home-production.up.railway.app
+    originRequest:
+      noTLSVerify: true
+
+  # Core
+  - hostname: core.blackroad.io
+    service: https://blackroad-os-core-production.up.railway.app
+    originRequest:
+      noTLSVerify: true
+
   # ============================================
   # CATCH-ALL
   # ============================================

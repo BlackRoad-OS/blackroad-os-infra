@@ -19,6 +19,15 @@ const ROUTES = {
   'os.blackroad.io': { service: 'blackroad-os', port: 8080 },
   'creator.blackroad.io': { service: 'blackroad-os-pack-creator-studio', port: 3000 },
   'api.blackroad.io': { service: 'blackroad-os-api', port: 8080 },
+  'beacon.blackroad.io': { service: 'blackroad-os-beacon', port: 8080 },
+  'research.blackroad.io': { service: 'blackroad-os-research', port: 8080 },
+  'agents.blackroad.io': { service: 'blackroad-os-agents', port: 8080 },
+  'console.blackroad.io': { service: 'blackroad-os-prism-console', port: 3000 },
+  'core.blackroad.io': { service: 'blackroad-os-core', port: 8080 },
+  'operator.blackroad.io': { service: 'blackroad-os-operator', port: 8080 },
+  'prism.blackroad.io': { service: 'blackroad-os-prism-console', port: 3000 },
+  'demo.blackroad.io': { service: 'blackroad-os-demo', port: 3000 },
+  'docs.blackroad.io': { service: 'blackroad-os-docs', port: 3000 },
 
   // blackroad.systems subdomains
   'api.blackroad.systems': { service: 'blackroad-os-api-gateway', port: 8080 },
