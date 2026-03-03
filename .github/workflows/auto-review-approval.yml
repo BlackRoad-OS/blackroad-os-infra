@@ -1,0 +1,367 @@
+name: Auto-Review and Approval System
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: read
+
+jobs:
+  analyze-pr-risk:
+    name: Analyze PR Risk Level
+    runs-on: ubuntu-latest
+    outputs:
+      risk_level: ${{ steps.risk.outputs.level }}
+      risk_score: ${{ steps.risk.outputs.score }}
+      auto_approvable: ${{ steps.risk.outputs.auto_approve }}
+      change_types: ${{ steps.risk.outputs.types }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request || await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            }).then(r => r.data);
+
+            return pr;
+
+      - name: Analyze risk level
+        id: risk
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = ${{ steps.pr.outputs.result }};
+
+            // Get changed files
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            let riskScore = 0;
+            const changeTypes = new Set();
+
+            // Analyze file changes
+            for (const file of files) {
+              const { filename, additions, deletions, status } = file;
+
+              // High risk: workflow files
+              if (filename.startsWith('.github/workflows/')) {
+                riskScore += 30;
+                changeTypes.add('workflow');
+              }
+
+              // High risk: security files
+              if (filename.includes('security') || filename.includes('auth')) {
+                riskScore += 25;
+                changeTypes.add('security');
+              }
+
+              // Medium risk: configuration
+              if (filename.match(/\.(ya?ml|json|toml|ini|conf)$/)) {
+                riskScore += 15;
+                changeTypes.add('config');
+              }
+
+              // Medium risk: dependencies
+              if (filename.match(/package\.json|requirements\.txt|Gemfile|go\.mod|Cargo\.toml/)) {
+                riskScore += 20;
+                changeTypes.add('dependencies');
+              }
+
+              // Low risk: documentation
+              if (filename.match(/\.(md|txt|rst)$/)) {
+                riskScore += 2;
+                changeTypes.add('docs');
+              }
+
+              // Low risk: tests
+              if (filename.includes('test') || filename.includes('spec')) {
+                riskScore += 5;
+                changeTypes.add('tests');
+              }
+
+              // Size factor
+              const totalChanges = additions + deletions;
+              if (totalChanges > 500) riskScore += 20;
+              else if (totalChanges > 200) riskScore += 10;
+              else if (totalChanges > 50) riskScore += 5;
+
+              // Deletion risk
+              if (status === 'removed') riskScore += 15;
+            }
+
+            // Determine risk level
+            let riskLevel;
+            if (riskScore < 20) riskLevel = 'low';
+            else if (riskScore < 50) riskLevel = 'medium';
+            else if (riskScore < 80) riskLevel = 'high';
+            else riskLevel = 'critical';
+
+            // Auto-approval criteria
+            const autoApprove = (
+              riskScore < 20 &&
+              files.length < 10 &&
+              pr.changed_files < 10 &&
+              [...changeTypes].every(t => ['docs', 'tests'].includes(t))
+            );
+
+            core.setOutput('level', riskLevel);
+            core.setOutput('score', riskScore);
+            core.setOutput('auto_approve', autoApprove ? 'true' : 'false');
+            core.setOutput('types', [...changeTypes].join(','));
+
+            console.log(`Risk Level: ${riskLevel} (Score: ${riskScore})`);
+            console.log(`Change Types: ${[...changeTypes].join(', ')}`);
+            console.log(`Auto-approvable: ${autoApprove}`);
+
+  run-automated-checks:
+    name: Run Automated Code Checks
+    runs-on: ubuntu-latest
+    needs: analyze-pr-risk
+    outputs:
+      checks_passed: ${{ steps.checks.outputs.passed }}
+      issues_found: ${{ steps.checks.outputs.issues }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run code quality checks
+        id: checks
+        run: |
+          echo "Running automated checks..."
+
+          issues=0
+
+          # Check for common issues
+          echo "Checking for hardcoded secrets..."
+          if grep -r "password\s*=\s*['\"]" . --exclude-dir=.git --exclude-dir=node_modules 2>/dev/null; then
+            echo "⚠️ Found hardcoded passwords"
+            ((issues++))
+          fi
+
+          if grep -r "api_key\s*=\s*['\"]" . --exclude-dir=.git --exclude-dir=node_modules 2>/dev/null; then
+            echo "⚠️ Found hardcoded API keys"
+            ((issues++))
+          fi
+
+          # Check for TODO/FIXME
+          todo_count=$(grep -r "TODO\|FIXME" . --exclude-dir=.git --exclude-dir=node_modules 2>/dev/null | wc -l || echo 0)
+          if [ "$todo_count" -gt 5 ]; then
+            echo "⚠️ Found $todo_count TODO/FIXME comments"
+            ((issues++))
+          fi
+
+          # Check for console.log (if JS files exist)
+          if [ -f "package.json" ]; then
+            console_logs=$(grep -r "console\.log" . --include="*.js" --exclude-dir=node_modules 2>/dev/null | wc -l || echo 0)
+            if [ "$console_logs" -gt 3 ]; then
+              echo "⚠️ Found $console_logs console.log statements"
+              ((issues++))
+            fi
+          fi
+
+          passed="true"
+          if [ $issues -gt 0 ]; then
+            passed="false"
+          fi
+
+          echo "passed=$passed" >> $GITHUB_OUTPUT
+          echo "issues=$issues" >> $GITHUB_OUTPUT
+
+          echo "Checks complete: $issues issues found"
+
+  intelligent-review:
+    name: Intelligent PR Review
+    runs-on: ubuntu-latest
+    needs: [analyze-pr-risk, run-automated-checks]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate review comments
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const riskLevel = '${{ needs.analyze-pr-risk.outputs.risk_level }}';
+            const riskScore = '${{ needs.analyze-pr-risk.outputs.risk_score }}';
+            const changeTypes = '${{ needs.analyze-pr-risk.outputs.change_types }}'.split(',');
+            const checksPassed = '${{ needs.run-automated-checks.outputs.checks_passed }}';
+            const issuesFound = '${{ needs.run-automated-checks.outputs.issues_found }}';
+
+            const pr = context.payload.pull_request;
+
+            // Generate review feedback
+            let reviewBody = `## 🤖 Automated Review\n\n`;
+            reviewBody += `### Risk Assessment\n`;
+            reviewBody += `- **Risk Level:** ${riskLevel.toUpperCase()} (Score: ${riskScore})\n`;
+            reviewBody += `- **Change Types:** ${changeTypes.join(', ')}\n`;
+            reviewBody += `- **Files Changed:** ${pr.changed_files}\n`;
+            reviewBody += `- **Lines Changed:** +${pr.additions} -${pr.deletions}\n\n`;
+
+            reviewBody += `### Automated Checks\n`;
+            if (checksPassed === 'true') {
+              reviewBody += `✅ All automated checks passed\n\n`;
+            } else {
+              reviewBody += `⚠️ Found ${issuesFound} potential issues\n\n`;
+            }
+
+            // Risk-specific recommendations
+            reviewBody += `### Recommendations\n`;
+            if (riskLevel === 'low') {
+              reviewBody += `- ✅ Low risk changes - looks good for merge\n`;
+              reviewBody += `- Consider quick manual review\n`;
+            } else if (riskLevel === 'medium') {
+              reviewBody += `- 👀 Medium risk - recommend thorough review\n`;
+              reviewBody += `- Verify configuration changes carefully\n`;
+            } else if (riskLevel === 'high') {
+              reviewBody += `- ⚠️ High risk changes detected\n`;
+              reviewBody += `- Require senior developer review\n`;
+              reviewBody += `- Test in staging environment\n`;
+            } else {
+              reviewBody += `- 🚨 Critical risk level\n`;
+              reviewBody += `- Require multiple approvals\n`;
+              reviewBody += `- Full QA testing required\n`;
+            }
+
+            // Post review comment
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              event: 'COMMENT',
+              body: reviewBody
+            });
+
+  auto-approve-safe-changes:
+    name: Auto-Approve Safe Changes
+    runs-on: ubuntu-latest
+    needs: [analyze-pr-risk, run-automated-checks, intelligent-review]
+    if: |
+      needs.analyze-pr-risk.outputs.auto_approvable == 'true' &&
+      needs.run-automated-checks.outputs.checks_passed == 'true'
+    steps:
+      - name: Auto-approve PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            // Create approval review
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              event: 'APPROVE',
+              body: `## ✅ Auto-Approved
+
+              This PR has been automatically approved based on:
+              - Low risk score
+              - Only documentation/test changes
+              - All automated checks passed
+              - Small change size
+
+              **Safe to merge!**
+
+              🤖 Auto-approved by Review Bot
+              `
+            });
+
+            // Add approval label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: ['auto-approved', 'safe-to-merge']
+            }).catch(() => {});
+
+            console.log('✅ PR auto-approved');
+
+  request-human-review:
+    name: Request Human Review
+    runs-on: ubuntu-latest
+    needs: [analyze-pr-risk, run-automated-checks]
+    if: |
+      needs.analyze-pr-risk.outputs.auto_approvable != 'true' ||
+      needs.run-automated-checks.outputs.checks_passed != 'true'
+    steps:
+      - name: Request reviewers
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const riskLevel = '${{ needs.analyze-pr-risk.outputs.risk_level }}';
+            const pr = context.payload.pull_request;
+
+            // Determine reviewers based on risk
+            let reviewers = [];
+            let teams = [];
+
+            if (riskLevel === 'critical' || riskLevel === 'high') {
+              // Request senior reviewers for high risk
+              reviewers = ['senior-dev-1', 'senior-dev-2'];
+              teams = ['security-team'];
+            } else if (riskLevel === 'medium') {
+              reviewers = ['team-lead'];
+            }
+
+            // Request reviews (will fail gracefully if reviewers don't exist)
+            if (reviewers.length > 0) {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                reviewers: reviewers
+              }).catch(err => console.log('Could not assign reviewers:', err.message));
+            }
+
+            // Add review-required label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: ['review-required', `risk-${riskLevel}`]
+            }).catch(() => {});
+
+  review-summary:
+    name: Review Summary
+    runs-on: ubuntu-latest
+    needs: [analyze-pr-risk, run-automated-checks, intelligent-review, auto-approve-safe-changes, request-human-review]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🤖 Auto-Review Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Risk Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "- Risk Level: **${{ needs.analyze-pr-risk.outputs.risk_level }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Risk Score: **${{ needs.analyze-pr-risk.outputs.risk_score }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Change Types: ${{ needs.analyze-pr-risk.outputs.change_types }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Automated Checks" >> $GITHUB_STEP_SUMMARY
+          echo "- Checks Passed: ${{ needs.run-automated-checks.outputs.checks_passed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Issues Found: ${{ needs.run-automated-checks.outputs.issues_found }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Actions Taken" >> $GITHUB_STEP_SUMMARY
+          echo "| Action | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Auto-Approve | ${{ needs.auto-approve-safe-changes.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Request Review | ${{ needs.request-human-review.result }} |" >> $GITHUB_STEP_SUMMARY

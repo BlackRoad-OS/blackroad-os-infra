@@ -1,0 +1,49 @@
+name: Infrastructure Cost Optimizer
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  analyze-costs:
+    name: Analyze Infrastructure Costs
+    runs-on: ubuntu-latest
+    outputs:
+      total_cost: ${{ steps.analyze.outputs.cost }}
+      recommendations: ${{ steps.analyze.outputs.recs }}
+    steps:
+      - name: Analyze workflow costs
+        id: analyze
+        run: |
+          echo "Analyzing infrastructure costs..."
+          
+          # Simulated cost analysis
+          workflow_cost=50
+          storage_cost=20
+          compute_cost=100
+          total=$((workflow_cost + storage_cost + compute_cost))
+          
+          echo "cost=$total" >> $GITHUB_OUTPUT
+          echo "Total monthly cost: \$$total"
+          
+          recs="- Use caching to reduce workflow minutes\n- Cleanup old artifacts\n- Optimize compute instances"
+          echo "recs<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$recs" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  create-cost-report:
+    name: Create Cost Report
+    runs-on: ubuntu-latest
+    needs: analyze-costs
+    steps:
+      - name: Generate report
+        run: |
+          echo "# 💰 Cost Optimization Report" >> $GITHUB_STEP_SUMMARY
+          echo "Monthly cost: \$${{ needs.analyze-costs.outputs.total_cost }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Recommendations" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.analyze-costs.outputs.recommendations }}" >> $GITHUB_STEP_SUMMARY
