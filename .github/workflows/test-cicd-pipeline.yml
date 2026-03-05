@@ -50,9 +50,9 @@ jobs:
             head="HEAD"
           fi
 
-          workflows_changed=$(git diff --name-only $base $head | grep -c '.github/workflows/' || echo "0")
-          scripts_changed=$(git diff --name-only $base $head | grep -c 'scripts/' || echo "0")
-          infra_changed=$(git diff --name-only $base $head | grep -c 'infrastructure/' || echo "0")
+          workflows_changed=$(git diff --name-only $base $head | grep -cF '.github/workflows/' || echo "0")
+          scripts_changed=$(git diff --name-only $base $head | grep -cF 'scripts/' || echo "0")
+          infra_changed=$(git diff --name-only $base $head | grep -cF 'infrastructure/' || echo "0")
 
           echo "workflows=$workflows_changed" >> $GITHUB_OUTPUT
           echo "scripts=$scripts_changed" >> $GITHUB_OUTPUT
