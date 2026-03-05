@@ -326,7 +326,7 @@ print('All integration tests passed!')
   cicd-pipeline-summary:
     name: CI/CD Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [detect-changes, test-build-stage, test-integration-stage, test-deployment-stage, test-rollback-capability, test-pipeline-observability]
+    needs: [detect-changes, test-build-stage, test-integration-stage, test-deployment-stage, test-rollback-capability, test-pipeline-observability, test-multi-environment-deployment]
     if: always()
     steps:
       - uses: actions/checkout@v4
