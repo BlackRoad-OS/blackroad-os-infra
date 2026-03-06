@@ -62,6 +62,9 @@ jobs:
   dependency-updates:
     name: Auto Update Dependencies
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout

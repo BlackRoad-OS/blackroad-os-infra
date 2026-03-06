@@ -2,6 +2,7 @@
   "name": "@blackroad/cli",
   "version": "1.0.0",
   "description": "BlackRoad OS Command Line Interface",
+  "type": "module",
   "main": "dist/index.js",
   "bin": {
     "blackroad": "./bin/blackroad.js",
