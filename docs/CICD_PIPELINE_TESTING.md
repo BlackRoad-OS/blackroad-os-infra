@@ -18,7 +18,7 @@ This testing suite validates the complete CI/CD pipeline including:
 Automatically detects which parts of the system have changed:
 - Workflow files (`.github/workflows/`)
 - Deployment scripts (`scripts/`)
-- Infrastructure code (`infrastructure/`)
+- Infrastructure code (`infra/`)
 
 Uses git diff to determine the scope of testing needed.
 
