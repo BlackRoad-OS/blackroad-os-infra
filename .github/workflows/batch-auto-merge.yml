@@ -1,0 +1,168 @@
+name: Batch Auto-Merge Open PRs
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (list PRs without merging)'
+        required: false
+        default: false
+        type: boolean
+      include_human_prs:
+        description: 'Include human-authored PRs (default: bot PRs only)'
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    # Run daily at 06:00 UTC to process open dependabot/copilot PRs
+    - cron: '0 6 * * *'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  batch-merge:
+    name: Enable Auto-Merge on Open PRs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enable auto-merge on open PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          INCLUDE_HUMAN_PRS: ${{ github.event.inputs.include_human_prs || 'false' }}
+        run: |
+          echo "🔄 Fetching open pull requests (paginating)..."
+
+          # Paginate through all open, non-draft PRs
+          PAGE=1
+          PER_PAGE=100
+          PAGES_FETCHED=0
+          OPEN_PRS="[]"
+
+          while true; do
+            PAGE_PRS=$(gh pr list \
+              --repo "${{ github.repository }}" \
+              --state open \
+              --json number,title,author,isDraft,mergeable,headRefName \
+              --limit "$PER_PAGE" \
+              --page "$PAGE")
+
+            COUNT=$(echo "$PAGE_PRS" | jq 'length')
+
+            if [ "$COUNT" -eq 0 ]; then
+              break
+            fi
+
+            PAGES_FETCHED=$((PAGES_FETCHED + 1))
+            OPEN_PRS=$(jq -s 'add' <(echo "$OPEN_PRS") <(echo "$PAGE_PRS"))
+
+            if [ "$COUNT" -lt "$PER_PAGE" ]; then
+              break
+            fi
+
+            PAGE=$((PAGE + 1))
+          done
+
+          TOTAL=$(echo "$OPEN_PRS" | jq 'length')
+          echo "📋 Found $TOTAL open PRs across $PAGES_FETCHED page(s)"
+
+          BOT_AUTHORS="dependabot[bot] github-actions[bot] copilot[bot]"
+
+          ENABLED=0
+          PROCESSED=0
+          SKIPPED=0
+          FAILED=0
+
+          while IFS= read -r pr; do
+            PR_NUMBER=$(echo "$pr" | jq -r '.number')
+            PR_TITLE=$(echo "$pr" | jq -r '.title')
+            PR_AUTHOR=$(echo "$pr" | jq -r '.author.login')
+            IS_DRAFT=$(echo "$pr" | jq -r '.isDraft')
+            MERGEABLE=$(echo "$pr" | jq -r '.mergeable')
+            BRANCH=$(echo "$pr" | jq -r '.headRefName')
+
+            echo ""
+            echo "───────────────────────────────────────"
+            echo "PR #$PR_NUMBER: $PR_TITLE"
+            echo "  Author: $PR_AUTHOR | Branch: $BRANCH"
+            echo "  Draft: $IS_DRAFT | Mergeable: $MERGEABLE"
+
+            # Skip draft PRs
+            if [ "$IS_DRAFT" = "true" ]; then
+              echo "  ⏭️  Skipping draft PR"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            # Skip PRs with conflicts
+            if [ "$MERGEABLE" = "CONFLICTING" ]; then
+              echo "  ⚠️  Skipping conflicting PR"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            # Skip human-authored PRs unless explicitly included
+            IS_BOT="false"
+            for bot in $BOT_AUTHORS; do
+              if [ "$PR_AUTHOR" = "$bot" ]; then
+                IS_BOT="true"
+                break
+              fi
+            done
+
+            if [ "$IS_BOT" = "false" ] && [ "$INCLUDE_HUMAN_PRS" != "true" ]; then
+              echo "  ⏭️  Skipping human-authored PR (pass include_human_prs=true to include)"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            PROCESSED=$((PROCESSED + 1))
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "  🔍 [DRY RUN] Would enable auto-merge for PR #$PR_NUMBER"
+              ENABLED=$((ENABLED + 1))
+            else
+              echo "  🚀 Enabling auto-merge for PR #$PR_NUMBER..."
+              if gh pr merge "$PR_NUMBER" \
+                --repo "${{ github.repository }}" \
+                --auto \
+                --squash 2>&1; then
+                echo "  ✅ Auto-merge enabled for PR #$PR_NUMBER"
+                ENABLED=$((ENABLED + 1))
+              else
+                echo "  ⚠️  Could not enable auto-merge for PR #$PR_NUMBER (may already be set or require review)"
+                FAILED=$((FAILED + 1))
+              fi
+            fi
+          done < <(echo "$OPEN_PRS" | jq -c '.[]')
+
+          echo ""
+          echo "═══════════════════════════════════════"
+          echo "📊 Batch Auto-Merge Summary"
+          echo "  Total open PRs: $TOTAL"
+          echo "  Eligible / processed: $PROCESSED"
+          echo "  Auto-merge enabled: $ENABLED"
+          echo "  Skipped: $SKIPPED"
+          echo "  Failed: $FAILED"
+          echo "═══════════════════════════════════════"
+
+          # Write job summary
+          {
+            echo "## 🤖 Batch Auto-Merge Summary"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|--------|-------|"
+            echo "| Total Open PRs | $TOTAL |"
+            echo "| Eligible / Processed | $PROCESSED |"
+            echo "| Auto-Merge Enabled | $ENABLED |"
+            echo "| Skipped (draft/conflict/human) | $SKIPPED |"
+            echo "| Failed | $FAILED |"
+            echo ""
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "> ℹ️ **Dry run** - no changes were made"
+            else
+              echo "> ✅ Auto-merge has been enabled. PRs will merge once required checks pass."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
