@@ -6,14 +6,18 @@ on:
       dry_run:
         description: 'Dry run (list PRs without merging)'
         required: false
-        default: 'false'
+        default: false
+        type: boolean
+      include_human_prs:
+        description: 'Include human-authored PRs (default: bot PRs only)'
+        required: false
+        default: false
         type: boolean
   schedule:
     # Run daily at 06:00 UTC to process open dependabot/copilot PRs
     - cron: '0 6 * * *'
 
 permissions:
-  contents: write
   pull-requests: write
 
 jobs:
@@ -26,20 +30,47 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          INCLUDE_HUMAN_PRS: ${{ github.event.inputs.include_human_prs || 'false' }}
         run: |
-          echo "🔄 Fetching open pull requests..."
+          echo "🔄 Fetching open pull requests (paginating)..."
 
-          # Get all open, non-draft PRs
-          OPEN_PRS=$(gh pr list \
-            --repo "${{ github.repository }}" \
-            --state open \
-            --json number,title,author,isDraft,mergeable,headRefName \
-            --limit 100)
+          # Paginate through all open, non-draft PRs
+          PAGE=1
+          PER_PAGE=100
+          PAGES_FETCHED=0
+          OPEN_PRS="[]"
+
+          while true; do
+            PAGE_PRS=$(gh pr list \
+              --repo "${{ github.repository }}" \
+              --state open \
+              --json number,title,author,isDraft,mergeable,headRefName \
+              --limit "$PER_PAGE" \
+              --page "$PAGE")
+
+            COUNT=$(echo "$PAGE_PRS" | jq 'length')
+
+            if [ "$COUNT" -eq 0 ]; then
+              break
+            fi
+
+            PAGES_FETCHED=$((PAGES_FETCHED + 1))
+            OPEN_PRS=$(jq -s 'add' <(echo "$OPEN_PRS") <(echo "$PAGE_PRS"))
+
+            if [ "$COUNT" -lt "$PER_PAGE" ]; then
+              break
+            fi
+
+            PAGE=$((PAGE + 1))
+          done
 
           TOTAL=$(echo "$OPEN_PRS" | jq 'length')
-          echo "📋 Found $TOTAL open PRs"
+          echo "📋 Found $TOTAL open PRs across $PAGES_FETCHED page(s)"
 
-          MERGED=0
+          BOT_AUTHORS="dependabot[bot] github-actions[bot] copilot[bot]"
+
+          ENABLED=0
+          PROCESSED=0
           SKIPPED=0
           FAILED=0
 
@@ -71,9 +102,26 @@ jobs:
               continue
             fi
 
+            # Skip human-authored PRs unless explicitly included
+            IS_BOT="false"
+            for bot in $BOT_AUTHORS; do
+              if [ "$PR_AUTHOR" = "$bot" ]; then
+                IS_BOT="true"
+                break
+              fi
+            done
+
+            if [ "$IS_BOT" = "false" ] && [ "$INCLUDE_HUMAN_PRS" != "true" ]; then
+              echo "  ⏭️  Skipping human-authored PR (pass include_human_prs=true to include)"
+              SKIPPED=$((SKIPPED + 1))
+              continue
+            fi
+
+            PROCESSED=$((PROCESSED + 1))
+
             if [ "$DRY_RUN" = "true" ]; then
               echo "  🔍 [DRY RUN] Would enable auto-merge for PR #$PR_NUMBER"
-              MERGED=$((MERGED + 1))
+              ENABLED=$((ENABLED + 1))
             else
               echo "  🚀 Enabling auto-merge for PR #$PR_NUMBER..."
               if gh pr merge "$PR_NUMBER" \
@@ -81,7 +129,7 @@ jobs:
                 --auto \
                 --squash 2>&1; then
                 echo "  ✅ Auto-merge enabled for PR #$PR_NUMBER"
-                MERGED=$((MERGED + 1))
+                ENABLED=$((ENABLED + 1))
               else
                 echo "  ⚠️  Could not enable auto-merge for PR #$PR_NUMBER (may already be set or require review)"
                 FAILED=$((FAILED + 1))
@@ -93,7 +141,8 @@ jobs:
           echo "═══════════════════════════════════════"
           echo "📊 Batch Auto-Merge Summary"
           echo "  Total open PRs: $TOTAL"
-          echo "  Processed: $MERGED"
+          echo "  Eligible / processed: $PROCESSED"
+          echo "  Auto-merge enabled: $ENABLED"
           echo "  Skipped: $SKIPPED"
           echo "  Failed: $FAILED"
           echo "═══════════════════════════════════════"
@@ -105,8 +154,9 @@ jobs:
             echo "| Metric | Count |"
             echo "|--------|-------|"
             echo "| Total Open PRs | $TOTAL |"
-            echo "| Auto-Merge Enabled | $MERGED |"
-            echo "| Skipped (draft/conflict) | $SKIPPED |"
+            echo "| Eligible / Processed | $PROCESSED |"
+            echo "| Auto-Merge Enabled | $ENABLED |"
+            echo "| Skipped (draft/conflict/human) | $SKIPPED |"
             echo "| Failed | $FAILED |"
             echo ""
             if [ "$DRY_RUN" = "true" ]; then
@@ -115,3 +165,4 @@ jobs:
               echo "> ✅ Auto-merge has been enabled. PRs will merge once required checks pass."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+

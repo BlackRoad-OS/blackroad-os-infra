@@ -15,6 +15,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Check service health
+        id: health
         continue-on-error: true
         run: |
           echo "Checking health endpoints..."
@@ -43,7 +44,7 @@ jobs:
           fi
 
       - name: Notify on failure
-        if: failure()
+        if: steps.health.outcome == 'failure'
         run: |
           echo "Health check failed! Notification would be sent here."
           # Add Slack/Discord/email notification here
