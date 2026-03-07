@@ -1,0 +1,205 @@
+name: Sentiment Analysis Dashboard
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  analyze-sentiment:
+    name: Analyze Community Sentiment
+    runs-on: ubuntu-latest
+    outputs:
+      overall_sentiment: ${{ steps.analyze.outputs.overall }}
+      positive_pct: ${{ steps.analyze.outputs.positive }}
+      negative_pct: ${{ steps.analyze.outputs.negative }}
+      trend: ${{ steps.analyze.outputs.trend }}
+    steps:
+      - name: Collect and analyze sentiment
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get recent issues and comments
+            const { data: recentIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100,
+              sort: 'updated',
+              direction: 'desc'
+            });
+
+            let positive = 0;
+            let negative = 0;
+            let neutral = 0;
+
+            const positiveWords = ['love', 'great', 'awesome', 'excellent', 'amazing', 'perfect', 'thank', 'good', 'better', 'best'];
+            const negativeWords = ['hate', 'bad', 'terrible', 'awful', 'broken', 'useless', 'worst', 'frustrating', 'annoying'];
+
+            for (const issue of recentIssues) {
+              const text = (issue.title + ' ' + issue.body).toLowerCase();
+
+              let score = 0;
+              for (const word of positiveWords) {
+                if (text.includes(word)) score++;
+              }
+              for (const word of negativeWords) {
+                if (text.includes(word)) score--;
+              }
+
+              if (score > 0) positive++;
+              else if (score < 0) negative++;
+              else neutral++;
+            }
+
+            const total = positive + negative + neutral;
+            const positivePct = Math.round((positive / total) * 100);
+            const negativePct = Math.round((negative / total) * 100);
+
+            let overall = 'neutral';
+            if (positivePct >= 60) overall = 'positive';
+            else if (negativePct >= 40) overall = 'negative';
+
+            let trend = 'stable';
+            if (positivePct >= 70) trend = 'improving';
+            else if (negativePct >= 30) trend = 'declining';
+
+            core.setOutput('overall', overall);
+            core.setOutput('positive', positivePct);
+            core.setOutput('negative', negativePct);
+            core.setOutput('trend', trend);
+
+            console.log(`Sentiment: ${overall} (${positivePct}% positive, ${negativePct}% negative)`);
+
+  create-dashboard:
+    name: Create Sentiment Dashboard
+    runs-on: ubuntu-latest
+    needs: analyze-sentiment
+    steps:
+      - name: Generate dashboard
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const overall = '${{ needs.analyze-sentiment.outputs.overall_sentiment }}';
+            const positive = '${{ needs.analyze-sentiment.outputs.positive_pct }}';
+            const negative = '${{ needs.analyze-sentiment.outputs.negative_pct }}';
+            const trend = '${{ needs.analyze-sentiment.outputs.trend }}';
+            const neutral = 100 - parseInt(positive) - parseInt(negative);
+
+            const emoji = overall === 'positive' ? '😊' : overall === 'negative' ? '😞' : '😐';
+            const trendEmoji = trend === 'improving' ? '📈' : trend === 'declining' ? '📉' : '➡️';
+
+            const dashboard = `## ${emoji} Community Sentiment Dashboard
+
+            **Last Updated:** ${new Date().toISOString()}
+
+            ### Overall Sentiment: **${overall.toUpperCase()}** ${trendEmoji}
+
+            | Sentiment | Percentage |
+            |-----------|-----------|
+            | 😊 Positive | ${positive}% |
+            | 😐 Neutral | ${neutral}% |
+            | 😞 Negative | ${negative}% |
+
+            ### Trend: ${trend}
+
+            ${trend === 'improving' ? '🎉 Community sentiment is improving!' :
+              trend === 'declining' ? '⚠️ Community sentiment needs attention' :
+              '👍 Community sentiment is stable'}
+
+            ### Insights
+
+            ${parseInt(positive) >= 70 ? '- Community is very happy! Keep up the great work!' : ''}
+            ${parseInt(negative) >= 30 ? '- Significant negative sentiment detected. Review recent issues for pain points.' : ''}
+            ${parseInt(positive) < 50 && parseInt(negative) < 30 ? '- Mostly neutral sentiment. Opportunity to delight users!' : ''}
+
+            ### Actions
+
+            ${parseInt(negative) >= 30 ? '- Priority: Address top pain points' : ''}
+            ${parseInt(positive) >= 60 ? '- Share positive feedback with team!' : ''}
+            - Continue monitoring sentiment trends
+            - Engage with community feedback
+            - Celebrate wins, learn from concerns
+
+            ---
+            🤖 Updated every 6 hours | We listen to our community!
+            `;
+
+            // Update or create dashboard
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'sentiment-dashboard',
+              state: 'open'
+            });
+
+            if (existing.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                body: dashboard
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '😊 Community Sentiment Dashboard',
+                body: dashboard,
+                labels: ['sentiment-dashboard', 'pinned']
+              });
+            }
+
+  alert-on-negative-trend:
+    name: Alert on Negative Trend
+    runs-on: ubuntu-latest
+    needs: analyze-sentiment
+    if: needs.analyze-sentiment.outputs.trend == 'declining'
+    steps:
+      - name: Create alert
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Community Sentiment Alert - Declining Trend',
+              body: `## Sentiment Alert
+
+              Community sentiment is trending negatively.
+
+              **Current Status:**
+              - Positive: ${{ needs.analyze-sentiment.outputs.positive_pct }}%
+              - Negative: ${{ needs.analyze-sentiment.outputs.negative_pct }}%
+
+              **Recommended Actions:**
+              1. Review recent issues for pain points
+              2. Engage with community to understand concerns
+              3. Prioritize fixes for common complaints
+              4. Communicate what we're doing to help
+
+              The community needs attention!
+
+              ---
+              🤖 Sentiment Analysis System`,
+              labels: ['alert', 'community-health']
+            });
+
+  sentiment-summary:
+    name: Sentiment Summary
+    runs-on: ubuntu-latest
+    needs: analyze-sentiment
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 😊 Sentiment Analysis Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Overall: ${{ needs.analyze-sentiment.outputs.overall_sentiment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Positive: ${{ needs.analyze-sentiment.outputs.positive_pct }}%" >> $GITHUB_STEP_SUMMARY
+          echo "- Negative: ${{ needs.analyze-sentiment.outputs.negative_pct }}%" >> $GITHUB_STEP_SUMMARY
+          echo "- Trend: ${{ needs.analyze-sentiment.outputs.trend }}" >> $GITHUB_STEP_SUMMARY
