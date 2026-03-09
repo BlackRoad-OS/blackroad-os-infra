@@ -304,7 +304,7 @@ program
 program
   .command('open <service>')
   .description('Open service in browser')
-  .action((service) => {
+  .action(async (service) => {
     const config = SERVICES[service as keyof typeof SERVICES];
     if (!config) {
       console.log(chalk.red(`\n  Service not found: ${service}\n`));
@@ -315,7 +315,7 @@ program
     console.log(chalk.cyan(`\n  Opening ${url}...\n`));
 
     // Open in browser (cross-platform)
-    const { exec } = require('child_process');
+    const { exec } = await import('child_process');
     const cmd = process.platform === 'darwin' ? 'open' :
                 process.platform === 'win32' ? 'start' : 'xdg-open';
     exec(`${cmd} ${url}`);
