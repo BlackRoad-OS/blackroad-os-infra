@@ -39,6 +39,9 @@
 - 🎯 [Agent Orchestrator](agents/src/orchestrator.ts) - Agent coordination system
 - ⚡ [Truth Manifest Workflow](.github/workflows/gaia-truth-manifest.yml) - Automated manifest generation
 
+### 📦 Examples & Templates
+- 🧑‍🤝‍🧑 [Examples Pack v104](docs/examples/EXAMPLES_PACK_v104.md) - Org ladder (7×7 grid) + approval flow templates
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
