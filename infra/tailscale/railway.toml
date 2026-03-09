@@ -1,0 +1,19 @@
+# BlackRoad OS — Tailscale Exit Node
+# Railway deployment manifest for the Tailscale subnet router / exit node.
+# This replaces the Raspberry Pi as the mesh entry point.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "infra/tailscale/Dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+healthcheckPath = ""
+
+# Required environment variables — set these as Railway secrets:
+#   TAILSCALE_AUTHKEY    tskey-auth-<...>   (pre-auth key, no expiry, tag:server)
+#   TAILSCALE_HOSTNAME   blackroad-railway-node
+#   TAILSCALE_TAGS       tag:server,tag:railway
+#   ROUTE_SUBNETS        100.64.0.0/10

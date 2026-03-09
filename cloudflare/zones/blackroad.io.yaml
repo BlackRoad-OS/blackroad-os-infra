@@ -67,3 +67,63 @@ records:
     proxied: true
     ttl: 3600
     notes: Chat experience hosted via Cloudflare Pages demo; move to Railway when conversational API becomes stateful.
+  - type: CNAME
+    name: beacon
+    content: blackroad-os-beacon-production.up.railway.app
+    proxied: true
+    ttl: 3600
+    notes: Beacon identity and heartbeat service on Railway.
+  - type: CNAME
+    name: agents
+    content: blackroad-os-agents-production.up.railway.app
+    proxied: true
+    ttl: 3600
+    notes: Agent orchestration service on Railway.
+  - type: CNAME
+    name: console
+    content: blackroad-os-prism-console-production.up.railway.app
+    proxied: true
+    ttl: 3600
+    notes: Prism console (Browser OS) on Railway.
+  - type: CNAME
+    name: core
+    content: blackroad-os-core-production.up.railway.app
+    proxied: true
+    ttl: 3600
+    notes: Core engine on Railway.
+  - type: CNAME
+    name: home
+    content: blackroad-os-home-production.up.railway.app
+    proxied: true
+    ttl: 3600
+    notes: Landing page on Railway.
+  - type: CNAME
+    name: api
+    content: blackroad-os-api-production.up.railway.app
+    proxied: true
+    ttl: 3600
+    notes: Core API surface on Railway.
+  - type: CNAME
+    name: operator
+    content: blackroad-os-operator-production.up.railway.app
+    proxied: true
+    ttl: 3600
+    notes: Operator engine on Railway.
+  - type: CNAME
+    name: demo
+    content: blackroad-os-demo.pages.dev
+    proxied: true
+    ttl: 3600
+    notes: Public demo on Cloudflare Pages.
+  - type: CNAME
+    name: ai
+    content: blackroad-os-ai-proxy.workers.dev
+    proxied: true
+    ttl: 3600
+    notes: AI vendor proxy Cloudflare Worker — routes AI API calls through BlackRoad infra.
+  - type: CNAME
+    name: stripe
+    content: blackroad-os-stripe-webhook.workers.dev
+    proxied: true
+    ttl: 3600
+    notes: Stripe webhook handler Cloudflare Worker.

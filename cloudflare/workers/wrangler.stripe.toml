@@ -1,0 +1,37 @@
+# BlackRoad OS — Stripe Webhook Handler
+# Cloudflare Worker Configuration
+#
+# Deploy:  wrangler deploy --config wrangler.stripe.toml --env production
+#
+# Secrets (set once, never committed):
+#   wrangler secret put STRIPE_WEBHOOK_SECRET --config wrangler.stripe.toml
+#   wrangler secret put BLACKROAD_API_URL --config wrangler.stripe.toml
+#   wrangler secret put BLACKROAD_INTERNAL_KEY --config wrangler.stripe.toml
+
+name = "blackroad-os-stripe-webhook"
+main = "stripe-webhook.js"
+compatibility_date = "2024-12-01"
+
+# account_id = "your-account-id"  # or set CLOUDFLARE_ACCOUNT_ID env var
+
+routes = [
+  { pattern = "stripe.blackroad.io/webhook/*", zone_name = "blackroad.io" },
+]
+
+[env.production]
+name = "blackroad-os-stripe-webhook-prod"
+routes = [
+  { pattern = "stripe.blackroad.io/webhook/*", zone_name = "blackroad.io" },
+]
+
+[env.staging]
+name = "blackroad-os-stripe-webhook-staging"
+routes = [
+  { pattern = "stripe.staging.blackroad.io/webhook/*", zone_name = "blackroad.io" },
+]
+
+[vars]
+ENVIRONMENT = "production"
+
+[observability]
+enabled = true
