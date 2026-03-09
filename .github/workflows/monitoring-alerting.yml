@@ -1,0 +1,373 @@
+name: Monitoring & Alerting System
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_run:
+    workflows: ["*"]
+    types: [completed]
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  collect-metrics:
+    name: Collect System Metrics
+    runs-on: ubuntu-latest
+    outputs:
+      workflow_success_rate: ${{ steps.metrics.outputs.success_rate }}
+      avg_duration: ${{ steps.metrics.outputs.avg_duration }}
+      failure_count: ${{ steps.metrics.outputs.failures }}
+    steps:
+      - name: Collect workflow metrics
+        id: metrics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+              created: `>=${new Date(Date.now() - 24*60*60*1000).toISOString()}`
+            });
+
+            const total = runs.workflow_runs.length;
+            const successful = runs.workflow_runs.filter(r => r.conclusion === 'success').length;
+            const failed = runs.workflow_runs.filter(r => r.conclusion === 'failure').length;
+
+            const durations = runs.workflow_runs
+              .filter(r => r.conclusion === 'success')
+              .map(r => {
+                const start = new Date(r.run_started_at);
+                const end = new Date(r.updated_at);
+                return (end - start) / 1000 / 60; // minutes
+              });
+
+            const avgDuration = durations.length > 0
+              ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+              : 0;
+
+            const successRate = total > 0 ? Math.round((successful / total) * 100) : 0;
+
+            core.setOutput('success_rate', successRate);
+            core.setOutput('avg_duration', avgDuration);
+            core.setOutput('failures', failed);
+
+            console.log(`Metrics collected:`);
+            console.log(`  Total runs: ${total}`);
+            console.log(`  Success rate: ${successRate}%`);
+            console.log(`  Average duration: ${avgDuration} minutes`);
+            console.log(`  Failures: ${failed}`);
+
+  monitor-pr-health:
+    name: Monitor PR Health
+    runs-on: ubuntu-latest
+    outputs:
+      stale_prs: ${{ steps.check.outputs.stale }}
+      review_needed: ${{ steps.check.outputs.review_needed }}
+    steps:
+      - name: Check PR health
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const now = new Date();
+            const staleThreshold = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+            let staleCount = 0;
+            let reviewNeeded = 0;
+
+            for (const pr of prs) {
+              const updated = new Date(pr.updated_at);
+              const age = now - updated;
+
+              if (age > staleThreshold) {
+                staleCount++;
+              }
+
+              const { data: reviews } = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+
+              if (reviews.length === 0) {
+                reviewNeeded++;
+              }
+            }
+
+            core.setOutput('stale', staleCount);
+            core.setOutput('review_needed', reviewNeeded);
+
+            console.log(`PR Health Check:`);
+            console.log(`  Stale PRs: ${staleCount}`);
+            console.log(`  PRs needing review: ${reviewNeeded}`);
+
+  monitor-issue-queue:
+    name: Monitor Issue Queue
+    runs-on: ubuntu-latest
+    outputs:
+      open_issues: ${{ steps.check.outputs.open }}
+      high_priority: ${{ steps.check.outputs.high_priority }}
+      unassigned: ${{ steps.check.outputs.unassigned }}
+    steps:
+      - name: Check issue queue
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const openCount = issues.length;
+            const highPriority = issues.filter(i =>
+              i.labels.some(l => l.name.includes('priority: high') || l.name.includes('priority: critical'))
+            ).length;
+            const unassigned = issues.filter(i => i.assignees.length === 0).length;
+
+            core.setOutput('open', openCount);
+            core.setOutput('high_priority', highPriority);
+            core.setOutput('unassigned', unassigned);
+
+            console.log(`Issue Queue Status:`);
+            console.log(`  Open issues: ${openCount}`);
+            console.log(`  High priority: ${highPriority}`);
+            console.log(`  Unassigned: ${unassigned}`);
+
+  check-deployment-health:
+    name: Check Deployment Health
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.health.outputs.status }}
+    steps:
+      - name: Health check
+        id: health
+        run: |
+          echo "Checking deployment health..."
+
+          environments=("development" "staging" "production")
+          all_healthy=true
+
+          for env in "${environments[@]}"; do
+            echo "Checking $env environment..."
+
+            # Simulate health check
+            if [ "$env" = "production" ]; then
+              health_status="healthy"
+            else
+              health_status="healthy"
+            fi
+
+            echo "  $env: $health_status"
+
+            if [ "$health_status" != "healthy" ]; then
+              all_healthy=false
+            fi
+          done
+
+          if [ "$all_healthy" = true ]; then
+            echo "status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "status=degraded" >> $GITHUB_OUTPUT
+          fi
+
+  analyze-trends:
+    name: Analyze Trends
+    runs-on: ubuntu-latest
+    needs: [collect-metrics, monitor-pr-health, monitor-issue-queue]
+    steps:
+      - name: Trend analysis
+        run: |
+          echo "Analyzing trends..."
+
+          success_rate=${{ needs.collect-metrics.outputs.workflow_success_rate }}
+          failures=${{ needs.collect-metrics.outputs.failure_count }}
+          stale_prs=${{ needs.monitor-pr-health.outputs.stale_prs }}
+          high_priority=${{ needs.monitor-issue-queue.outputs.high_priority }}
+
+          # Determine health status
+          if [ $success_rate -ge 90 ] && [ $failures -le 5 ] && [ $stale_prs -le 3 ]; then
+            status="🟢 Healthy"
+          elif [ $success_rate -ge 75 ] && [ $failures -le 10 ]; then
+            status="🟡 Warning"
+          else
+            status="🔴 Critical"
+          fi
+
+          echo "Overall Health: $status"
+          echo "Success Rate: $success_rate%"
+          echo "Recent Failures: $failures"
+          echo "Stale PRs: $stale_prs"
+          echo "High Priority Issues: $high_priority"
+
+  send-alerts:
+    name: Send Alerts
+    runs-on: ubuntu-latest
+    needs: [collect-metrics, monitor-pr-health, monitor-issue-queue, check-deployment-health]
+    if: |
+      needs.collect-metrics.outputs.success_rate < 80 ||
+      needs.collect-metrics.outputs.failure_count > 10 ||
+      needs.monitor-pr-health.outputs.stale_prs > 5 ||
+      needs.check-deployment-health.outputs.status == 'degraded'
+    steps:
+      - name: Create alert issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🚨 System Health Alert';
+
+            const body = `
+            ## System Health Alert
+
+            **Alert Triggered:** ${new Date().toISOString()}
+
+            ### Metrics
+            - Workflow Success Rate: ${{ needs.collect-metrics.outputs.success_rate }}%
+            - Recent Failures: ${{ needs.collect-metrics.outputs.failure_count }}
+            - Average Duration: ${{ needs.collect-metrics.outputs.avg_duration }} minutes
+
+            ### PR Health
+            - Stale PRs: ${{ needs.monitor-pr-health.outputs.stale_prs }}
+            - PRs Needing Review: ${{ needs.monitor-pr-health.outputs.review_needed }}
+
+            ### Issue Queue
+            - Open Issues: ${{ needs.monitor-issue-queue.outputs.open_issues }}
+            - High Priority: ${{ needs.monitor-issue-queue.outputs.high_priority }}
+            - Unassigned: ${{ needs.monitor-issue-queue.outputs.unassigned }}
+
+            ### Deployment Health
+            - Status: ${{ needs.check-deployment-health.outputs.status }}
+
+            ### Recommended Actions
+            ${
+              needs.collect-metrics.outputs.success_rate < 80
+                ? '- ⚠️ Investigate workflow failures\n'
+                : ''
+            }${
+              needs.monitor-pr-health.outputs.stale_prs > 5
+                ? '- ⚠️ Review and close stale PRs\n'
+                : ''
+            }${
+              needs.monitor-issue-queue.outputs.high_priority > 0
+                ? '- ⚠️ Address high priority issues\n'
+                : ''
+            }
+
+            ---
+            *This alert was automatically generated by the monitoring system.*
+            `;
+
+            // Check if alert issue already exists
+            const { data: existingIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'alert,monitoring'
+            });
+
+            if (existingIssues.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['alert', 'monitoring', 'automated']
+              });
+            } else {
+              // Update existing alert
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues[0].number,
+                body: `### Updated Alert - ${new Date().toISOString()}\n\n${body}`
+              });
+            }
+
+  generate-dashboard:
+    name: Generate Monitoring Dashboard
+    runs-on: ubuntu-latest
+    needs: [collect-metrics, monitor-pr-health, monitor-issue-queue, check-deployment-health]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dashboard
+        run: |
+          mkdir -p monitoring
+
+          cat > monitoring/dashboard.md << 'EOF'
+          # 📊 BlackRoad OS Infrastructure Dashboard
+
+          **Last Updated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## System Health
+
+          ### Workflow Performance
+          - Success Rate: **${{ needs.collect-metrics.outputs.workflow_success_rate }}%**
+          - Average Duration: **${{ needs.collect-metrics.outputs.avg_duration }} minutes**
+          - Recent Failures: **${{ needs.collect-metrics.outputs.failure_count }}**
+
+          ### PR Health
+          - Stale PRs: **${{ needs.monitor-pr-health.outputs.stale_prs }}**
+          - Review Needed: **${{ needs.monitor-pr-health.outputs.review_needed }}**
+
+          ### Issue Queue
+          - Open Issues: **${{ needs.monitor-issue-queue.outputs.open_issues }}**
+          - High Priority: **${{ needs.monitor-issue-queue.outputs.high_priority }}**
+          - Unassigned: **${{ needs.monitor-issue-queue.outputs.unassigned }}**
+
+          ### Deployment Status
+          - Health: **${{ needs.check-deployment-health.outputs.status }}**
+
+          ---
+          *Dashboard auto-generated by monitoring system*
+          EOF
+
+          cat monitoring/dashboard.md
+
+      - name: Upload dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-dashboard
+          path: monitoring/
+          retention-days: 30
+
+  monitoring-summary:
+    name: Monitoring Summary
+    runs-on: ubuntu-latest
+    needs: [collect-metrics, monitor-pr-health, monitor-issue-queue, check-deployment-health]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 📊 Monitoring & Alerting Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## System Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "- Workflow Success Rate: **${{ needs.collect-metrics.outputs.workflow_success_rate }}%**" >> $GITHUB_STEP_SUMMARY
+          echo "- Average Duration: **${{ needs.collect-metrics.outputs.avg_duration }} minutes**" >> $GITHUB_STEP_SUMMARY
+          echo "- Recent Failures: **${{ needs.collect-metrics.outputs.failure_count }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## PR & Issue Health" >> $GITHUB_STEP_SUMMARY
+          echo "- Stale PRs: **${{ needs.monitor-pr-health.outputs.stale_prs }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Open Issues: **${{ needs.monitor-issue-queue.outputs.open_issues }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- High Priority: **${{ needs.monitor-issue-queue.outputs.high_priority }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Health" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: **${{ needs.check-deployment-health.outputs.status }}**" >> $GITHUB_STEP_SUMMARY

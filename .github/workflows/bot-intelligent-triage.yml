@@ -1,0 +1,335 @@
+name: Bot - Intelligent Triage & Routing
+
+on:
+  issues:
+    types: [opened, edited, labeled, assigned]
+  pull_request:
+    types: [opened, edited, labeled, assigned, ready_for_review]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  intelligent-triage:
+    name: Intelligent Issue/PR Triage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Analyze content
+        id: analyze
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue || context.payload.pull_request;
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+
+            // Intelligent categorization
+            const categories = {
+              bug: ['bug', 'error', 'crash', 'broken', 'failing', 'exception', 'fix'],
+              feature: ['feature', 'enhancement', 'improve', 'add', 'new'],
+              docs: ['docs', 'documentation', 'readme', 'guide', 'tutorial'],
+              performance: ['slow', 'performance', 'optimize', 'speed', 'latency'],
+              security: ['security', 'vulnerability', 'cve', 'exploit', 'xss', 'sql injection'],
+              infrastructure: ['deploy', 'ci', 'cd', 'pipeline', 'infrastructure', 'docker', 'k8s'],
+              test: ['test', 'testing', 'spec', 'coverage'],
+              refactor: ['refactor', 'cleanup', 'technical debt', 'architecture']
+            };
+
+            let detectedCategories = [];
+            let priority = 'medium';
+            let urgency = 'normal';
+
+            // Detect categories
+            for (const [category, keywords] of Object.entries(categories)) {
+              if (keywords.some(kw => title.includes(kw) || body.includes(kw))) {
+                detectedCategories.push(category);
+              }
+            }
+
+            // Determine priority
+            if (title.includes('urgent') || body.includes('production down') || body.includes('critical')) {
+              priority = 'critical';
+              urgency = 'urgent';
+            } else if (detectedCategories.includes('security')) {
+              priority = 'high';
+              urgency = 'high';
+            } else if (detectedCategories.includes('bug') && body.includes('user-facing')) {
+              priority = 'high';
+            }
+
+            // Determine team routing
+            const teamRouting = {
+              infrastructure: ['infrastructure', 'deployment', 'ci/cd'],
+              security: ['security', 'vulnerability'],
+              frontend: ['ui', 'ux', 'react', 'vue', 'frontend'],
+              backend: ['api', 'backend', 'database', 'server'],
+              docs: ['documentation']
+            };
+
+            let assignedTeams = [];
+            for (const [team, keywords] of Object.entries(teamRouting)) {
+              if (keywords.some(kw => detectedCategories.includes(kw) || title.includes(kw))) {
+                assignedTeams.push(team);
+              }
+            }
+
+            core.setOutput('categories', detectedCategories.join(','));
+            core.setOutput('priority', priority);
+            core.setOutput('urgency', urgency);
+            core.setOutput('teams', assignedTeams.join(','));
+
+            console.log('Analysis complete:');
+            console.log('  Categories:', detectedCategories);
+            console.log('  Priority:', priority);
+            console.log('  Urgency:', urgency);
+            console.log('  Teams:', assignedTeams);
+
+      - name: Apply intelligent labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const categories = '${{ steps.analyze.outputs.categories }}'.split(',').filter(Boolean);
+            const priority = '${{ steps.analyze.outputs.priority }}';
+            const urgency = '${{ steps.analyze.outputs.urgency }}';
+
+            const labelsToAdd = [
+              ...categories.map(c => `type: ${c}`),
+              `priority: ${priority}`,
+              `urgency: ${urgency}`
+            ];
+
+            const issue = context.payload.issue || context.payload.pull_request;
+
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labelsToAdd
+              });
+              console.log('Applied labels:', labelsToAdd);
+            } catch (error) {
+              console.log('Some labels may not exist, creating them...');
+              // Labels will be created by other workflows
+            }
+
+      - name: Route to teams
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const teams = '${{ steps.analyze.outputs.teams }}'.split(',').filter(Boolean);
+            const issue = context.payload.issue || context.payload.pull_request;
+
+            if (teams.length === 0) return;
+
+            const teamMentions = teams.map(t => `@BlackRoad-OS/${t}`).join(' ');
+
+            const comment = `
+            ## 🤖 Intelligent Triage Results
+
+            This ${issue.pull_request ? 'PR' : 'issue'} has been automatically analyzed and routed.
+
+            **Detected Categories:** ${('${{ steps.analyze.outputs.categories }}' || 'general').split(',').join(', ')}
+            **Priority:** ${{ steps.analyze.outputs.priority }}
+            **Urgency:** ${{ steps.analyze.outputs.urgency }}
+
+            **Routing to teams:** ${teamMentions}
+
+            The appropriate teams have been notified and will respond according to the urgency level.
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: comment
+            });
+
+      - name: Set milestone based on priority
+        if: steps.analyze.outputs.priority == 'critical' || steps.analyze.outputs.priority == 'high'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue || context.payload.pull_request;
+            const priority = '${{ steps.analyze.outputs.priority }}';
+
+            // Get current sprint milestone
+            const { data: milestones } = await github.rest.issues.listMilestones({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              sort: 'due_on',
+              direction: 'asc'
+            });
+
+            if (milestones.length > 0) {
+              const nextMilestone = milestones[0];
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                milestone: nextMilestone.number
+              });
+
+              console.log(`Assigned to milestone: ${nextMilestone.title}`);
+            }
+
+  smart-assignment:
+    name: Smart Issue Assignment
+    runs-on: ubuntu-latest
+    needs: intelligent-triage
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find best assignee
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            // Get team members' recent activity
+            const { data: events } = await github.rest.activity.listRepoEvents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            // Calculate workload and expertise
+            const contributors = {};
+
+            for (const event of events) {
+              if (event.type === 'IssuesEvent' || event.type === 'PullRequestEvent') {
+                const actor = event.actor.login;
+                if (!contributors[actor]) {
+                  contributors[actor] = { openIssues: 0, closedIssues: 0, expertise: [] };
+                }
+
+                if (event.type === 'IssuesEvent' && event.payload.action === 'closed') {
+                  contributors[actor].closedIssues++;
+                } else if (event.type === 'IssuesEvent' && event.payload.action === 'opened') {
+                  contributors[actor].openIssues++;
+                }
+              }
+            }
+
+            // Find least busy contributor
+            let bestAssignee = null;
+            let lowestWorkload = Infinity;
+
+            for (const [login, stats] of Object.entries(contributors)) {
+              const workload = stats.openIssues - (stats.closedIssues * 0.5);
+              if (workload < lowestWorkload) {
+                lowestWorkload = workload;
+                bestAssignee = login;
+              }
+            }
+
+            if (bestAssignee) {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                assignees: [bestAssignee]
+              });
+
+              console.log(`Assigned to: ${bestAssignee} (workload: ${lowestWorkload})`);
+            }
+
+  auto-close-stale:
+    name: Auto-close Stale Issues
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment'
+    steps:
+      - name: Check for stale marker
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment.body.toLowerCase();
+            const issue = context.payload.issue;
+
+            // Check if issue is marked as stale
+            const hasStaleLabel = issue.labels.some(l => l.name === 'stale');
+
+            if (hasStaleLabel && comment.includes('/still-relevant')) {
+              // Remove stale label
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                name: 'stale'
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '✅ Stale marker removed. Issue is still relevant.'
+              });
+            }
+
+  pr-readiness-check:
+    name: PR Readiness Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PR readiness
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            const checks = {
+              hasDescription: pr.body && pr.body.length > 50,
+              hasLinkedIssue: pr.body && /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#\d+/i.test(pr.body),
+              titleFormat: /^(feat|fix|docs|style|refactor|test|chore|ci|perf|build)(\(.+\))?:.+/.test(pr.title),
+              notDraft: !pr.draft,
+              hasChanges: pr.changed_files > 0
+            };
+
+            const readinessScore = Object.values(checks).filter(Boolean).length;
+            const totalChecks = Object.keys(checks).length;
+            const percentage = Math.round((readinessScore / totalChecks) * 100);
+
+            let status = '🔴 Not Ready';
+            if (percentage >= 80) status = '🟢 Ready';
+            else if (percentage >= 60) status = '🟡 Almost Ready';
+
+            const checklist = `
+            ## ${status} - PR Readiness: ${percentage}%
+
+            **Checklist:**
+            - [${checks.hasDescription ? 'x' : ' '}] Has detailed description (>50 chars)
+            - [${checks.hasLinkedIssue ? 'x' : ' '}] Links to an issue
+            - [${checks.titleFormat ? 'x' : ' '}] Follows conventional commit format
+            - [${checks.notDraft ? 'x' : ' '}] Not marked as draft
+            - [${checks.hasChanges ? 'x' : ' '}] Has file changes
+
+            ${percentage < 100 ? '**Action needed:** Please address the unchecked items above.' : '**Great job!** This PR looks ready for review.'}
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: checklist
+            });
+
+            // Add ready-for-review label if checks pass
+            if (percentage >= 80) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['ready-for-review']
+              }).catch(() => {});
+            }
