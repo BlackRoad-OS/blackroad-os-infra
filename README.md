@@ -42,6 +42,10 @@
 ### 📦 Examples & Templates
 - 🧑‍🤝‍🧑 [Examples Pack v104](docs/examples/EXAMPLES_PACK_v104.md) - Org ladder (7×7 grid) + approval flow templates
 
+### 🎨 Visual Resources
+- 🧩 **[Forge Shapes Chart Pack](docs/FORGE_SHAPES_CHART_PACK.md)** - Visual pattern library (triangles, diamonds, waves, spirals, gates)
+- 🚦 [Trinity System](trinity/README.md) - Complete visual language framework
+
 ---
 
 **Infrastructure-as-Code repository for BlackRoad OS**
