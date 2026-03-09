@@ -14,6 +14,19 @@ routes = [
   { pattern = "*.blackroad.systems/*", zone_name = "blackroad.systems" },
 ]
 
+# Variables (secrets should be set via wrangler secret)
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+
+# Observability
+[observability]
+enabled = true
+
+# Triggers (cron for health checks)
+[triggers]
+crons = ["*/5 * * * *"]  # Every 5 minutes
+
 # Environment-specific configuration
 [env.production]
 name = "blackroad-os-router-prod"
@@ -29,15 +42,23 @@ routes = [
   { pattern = "*.staging.blackroad.systems/*", zone_name = "blackroad.systems" },
 ]
 
-# Variables (secrets should be set via wrangler secret)
-[vars]
-ENVIRONMENT = "production"
-LOG_LEVEL = "info"
+# ──────────────────────────────────────────────────────────────────────────────
+# Lucidia Gateway — @Lucidia SSH deployment gateway via Tailscale
+# Deploy: wrangler deploy --config wrangler.toml --env lucidia-gateway
+# Secrets: GITHUB_WEBHOOK_SECRET, TAILSCALE_AUTH_KEY, DEPLOY_API_KEY
+# ──────────────────────────────────────────────────────────────────────────────
+[env.lucidia-gateway]
+name = "blackroad-lucidia-gateway"
+main = "lucidia-gateway.js"
+compatibility_date = "2024-01-01"
+routes = [
+  { pattern = "lucidia.blackroad.systems/*", zone_name = "blackroad.systems" },
+]
 
-# Observability
-[observability]
-enabled = true
-
-# Triggers (cron for health checks)
-[triggers]
-crons = ["*/5 * * * *"]  # Every 5 minutes
+[env.lucidia-gateway.vars]
+ENVIRONMENT          = "production"
+LUCIDIA_HOST         = "lucidia"
+OCTAVIA_HOST         = "octavia"
+ALICE_HOST           = "alice"
+DEPLOY_USER          = "pi"
+# TAILSCALE_SSH_API_URL — set to your Tailscale SSH proxy URL (e.g. https://ts-ssh-proxy.internal)
