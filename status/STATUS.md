@@ -6,18 +6,18 @@ Last updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
 | Service | Status | Response Time |
 |---------|--------|---------------|
-| agents.blackroad.io | ⚠️ Degraded | 0.054224s |
-| beacon.blackroad.io | ⚠️ Degraded | 0.053144s |
-| gateway.blackroad.io | ⚠️ Degraded | 0.1287740s |
-| home.blackroad.io | ⚠️ Degraded | 0.0313980s |
-| demo.blackroad.io | ⚠️ Degraded | 0.0314200s |
-| core.blackroad.io | ⚠️ Degraded | 0.0314180s |
-| operator.blackroad.io | ⚠️ Degraded | 0.0153370s |
-| prism.blackroad.io | ⚠️ Degraded | 0.053797s |
-| console.blackroad.io | ⚠️ Degraded | 0.054574s |
-| research.blackroad.io | ⚠️ Degraded | 0.059966s |
-| docs.blackroad.io | ⚠️ Degraded | 0.062580s |
-| brand.blackroad.io | ⚠️ Degraded | 0.049144s |
-| api.blackroad.io | ⚠️ Degraded | 0.059574s |
-| app.blackroad.io | ⚠️ Degraded | 0.055925s |
-| blackroad.io | ⚠️ Degraded | 0.061067s |
+| agents.blackroad.io | ⚠️ Degraded | 0.033211s |
+| beacon.blackroad.io | ⚠️ Degraded | 0.033931s |
+| gateway.blackroad.io | ⚠️ Degraded | 0.0314150s |
+| home.blackroad.io | ⚠️ Degraded | 0.0072780s |
+| demo.blackroad.io | ⚠️ Degraded | 0.0153650s |
+| core.blackroad.io | ⚠️ Degraded | 0.0153390s |
+| operator.blackroad.io | ⚠️ Degraded | 0.0072990s |
+| prism.blackroad.io | ⚠️ Degraded | 0.032728s |
+| console.blackroad.io | ⚠️ Degraded | 0.033933s |
+| research.blackroad.io | ⚠️ Degraded | 0.035357s |
+| docs.blackroad.io | ⚠️ Degraded | 0.036313s |
+| brand.blackroad.io | ⚠️ Degraded | 0.031962s |
+| api.blackroad.io | ⚠️ Degraded | 0.032923s |
+| app.blackroad.io | ⚠️ Degraded | 0.033269s |
+| blackroad.io | ⚠️ Degraded | 0.031760s |
